@@ -1,6 +1,6 @@
-import SalesStatisticOne from "./child/SalesStatisticOne";
-import TotalSubscriberOne from "./child/TotalSubscriberOne";
-import UnitCountOne from "./child/UnitCountOne";
+import SalesStatisticOne from "./general/child/SalesStatisticOne";
+import TotalSubscriberOne from "./general/child/TotalSubscriberOne";
+import UnitCountOne from "./general/child/UnitCountOne";
 
 const DashBoardLayerOne = () => {
   return (
