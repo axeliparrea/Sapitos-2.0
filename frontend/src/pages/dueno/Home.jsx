@@ -1,11 +1,11 @@
-import MasterLayout from "../masterLayout/MasterLayout";
-import DashBoardLayerOne from "../components/DashBoardLayerOne";
+import MasterLayout from "../../components/masterLayout";
+import DashBoardLayerOne from "../../components/DashBoardLayerOne";
 
 const HomePageOne = () => {
   return (
     <>
       {/* MasterLayout */}
-      <MasterLayout>
+      <MasterLayout role="dueno">
         {/* DashBoardLayerOne */}
         <DashBoardLayerOne />
       </MasterLayout>

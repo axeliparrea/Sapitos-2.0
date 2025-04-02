@@ -1,5 +1,5 @@
 import ReactApexChart from "react-apexcharts";
-import useReactApexChart from "../../hook/useReactApexChart";
+import useReactApexChart from "../../../hook/useReactApexChart";
 
 const GeneratedContent = () => {
   let { paymentStatusChartSeries, paymentStatusChartOptions } =

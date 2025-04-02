@@ -1,11 +1,11 @@
-import MasterLayout from "../masterLayout/MasterLayout";
-import InvoiceListLayer from "../components/InvoiceListLayer";
+import MasterLayout from "../../components/masterLayout";
+import InvoiceListLayer from "../../components/InvoiceListLayer";
 
 const InvoiceListPage = () => {
   return (
     <>
       {/* MasterLayout */}
-      <MasterLayout>
+      <MasterLayout role="admin">
 
         {/* InvoiceListLayer */}
         <InvoiceListLayer />

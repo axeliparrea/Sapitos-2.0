@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 
 import ReactApexChart from "react-apexcharts";
-import useReactApexChart from "../../hook/useReactApexChart";
+import useReactApexChart from "../../../hook/useReactApexChart";
 
 const TotalSubscriberOne = () => {
   let { barChartSeries, barChartOptions } = useReactApexChart();

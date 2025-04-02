@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import ReactApexChart from "react-apexcharts";
-import useReactApexChart from "../../hook/useReactApexChart";
+import useReactApexChart from "../../../hook/useReactApexChart";
 
 const SalesStatisticOne = () => {
   let { chartOptions, chartSeries } = useReactApexChart();
