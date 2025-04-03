@@ -8,10 +8,16 @@ const userRoutes = require("./routes/users");
 
 const app = express();
 
+const corsOptions = {
+    origin: "http://localhost:5173", // Your frontend's origin
+    methods: "GET,POST",             // Specify methods you want to allow
+    credentials: true,               // Allow credentials (cookies)
+  };
+
 app.use(cookieParser()); 
 
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.use("/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs)); 
