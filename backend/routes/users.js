@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerUser, loginUser, getUsers } = require("../controllers/userController");
+const { registerUser, loginUser, getUsers, getSession, logoutUser } = require("../controllers/userController");
 const router = express.Router();
 
 const { auth } = require('../middleware/auth'); // Import the middleware
@@ -88,6 +88,10 @@ router.post("/login", loginUser);
  *         description: Server error
  */
 
-router.get("/getUsers", auth(["administrador"]), getUsers);
+router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
+
+router.get("/getSession", getSession)
+
+router.post("/logoutUser", logoutUser)
 
 module.exports = router;

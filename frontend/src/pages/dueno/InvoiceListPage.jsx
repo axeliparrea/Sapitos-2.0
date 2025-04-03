@@ -6,7 +6,6 @@ const InvoiceListPage = () => {
     <>
       {/* MasterLayout */}
       <MasterLayout role="dueno">
-
         {/* InvoiceListLayer */}
         <InvoiceListLayer />
       </MasterLayout>

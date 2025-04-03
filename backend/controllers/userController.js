@@ -44,6 +44,7 @@ const loginUser = async (req, res) => {
       }
 
       const user = result[0];
+      console.log(user)
       const contrasenaMatch = await bcrypt.compare(contrasena, user.CONTRASENA);
 
       if (!contrasenaMatch) {
@@ -52,7 +53,7 @@ const loginUser = async (req, res) => {
 
       // Generate JWT with role
       const token = jwt.sign(
-        { correo: user.CORREO, rol: user.ROL, organizacion: user.ORGANIZACION },
+        { CORREO: user.CORREO, ROL: user.ROL, ORGANIZACION: user.ORGANIZACION },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
@@ -62,8 +63,8 @@ const loginUser = async (req, res) => {
       // Store token in HTTP-only cookie
       res.cookie("SessionData", token, {
         httpOnly: true,  // Secure, prevents JS access (XSS protection)
-        secure: true,    // Only send over HTTPS
-        sameSite: "Strict",
+        secure: false,    // CHANGE THIS WHEN GOING TO PROD TO TRUE
+        sameSite: "Lax",
         maxAge: 3600000, // 1 hour
       });
 
@@ -93,4 +94,17 @@ const getUsers = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getUsers };
+const getSession = async (req, res) => {
+  const token = req.cookies.SessionData;  // Read the cookie
+  if (!token) return res.status(401).json({ error: "Not authenticated" });
+
+  return res.json({ token });
+}
+
+const logoutUser = async (req, res) => {
+  res.clearCookie("SessionData", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
+  res.status(200).json({ message: "Sesión cerrada" });
+};
+
+
+module.exports = { registerUser, loginUser, getUsers, getSession, logoutUser };
