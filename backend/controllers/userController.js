@@ -42,15 +42,15 @@ const loginUser = async (req, res) => {
         console.error("Query Error:", err);
         return res.status(500).json({ error: "Server error" });
       }
+      if (!result || result.length === 0) {
+        return res.status(404).json({ error: "Email or password incorrect" });
+      }      
 
       const user = result[0];
-      console.log(user)
       const contrasenaMatch = await bcrypt.compare(contrasena, user.CONTRASENA);
-
       if (!contrasenaMatch) {
-        return res.status(401).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Email or password incorrect" });
       }
-
       // Generate JWT with role
       const token = jwt.sign(
         { CORREO: user.CORREO, ROL: user.ROL, ORGANIZACION: user.ORGANIZACION },
@@ -67,7 +67,7 @@ const loginUser = async (req, res) => {
         sameSite: "Lax",
         maxAge: 3600000, // 1 hour
       });
-
+      //console.log("Logged in")
       return res.json({ message: "Login successful" });
     });
   } catch (error) {
