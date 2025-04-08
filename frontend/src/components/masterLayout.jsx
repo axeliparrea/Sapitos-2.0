@@ -21,7 +21,7 @@ const MasterLayout = ({ children, role }) => {
   let [sidebarActive, setSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
   const location = useLocation();
-  console.log(role)
+  //console.log(role)
   const { Navbar, Sidebar } = ROLE_COMPONENTS[role] || ROLE_COMPONENTS.admin;
 
   useEffect(() => {

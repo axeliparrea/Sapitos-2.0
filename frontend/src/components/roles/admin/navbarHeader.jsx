@@ -7,11 +7,12 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    const cookieData = getCookie("SessionData");
+    const cookieData = getCookie("UserData");
     if (cookieData) {
       try {
-        setUserData(JSON.parse(cookieData));
-        console.log(userData)
+        setUserData(cookieData);
+        //console.log(cookieData) 
+        //console.log(cookieData.NOMBRE) 
       } catch (e) {
         console.log("x")
         console.error("Invalid JSON in SessionData cookie:", e);

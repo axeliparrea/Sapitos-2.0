@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 // Middleware to authenticate JWT from cookies and get user info
 const auth = (roles = []) => (req, res, next) => {
-  const token = req.cookies.SessionData;
+  const token = req.cookies.Auth;
   if (!token) return res.status(401).json({ message: "Unauthorized" });
 
   try {
