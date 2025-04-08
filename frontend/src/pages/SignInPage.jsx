@@ -8,10 +8,10 @@ const SignInPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const hasCheckedSession = useRef(false); // 👈 Evita múltiples llamadas
+  const hasCheckedSession = useRef(false)
 
   useEffect(() => {
-    if (hasCheckedSession.current) return; // Si ya se ejecutó, no lo hace de nuevo
+    if (hasCheckedSession.current) return; 
     hasCheckedSession.current = true;
 
     const checkSession = async () => {
@@ -30,7 +30,7 @@ const SignInPage = () => {
         console.log("Usuario ya autenticado:", decoded);
 
         const userRole = decoded.ROL;
-        if (userRole === "admin" || userRole === "dueno") {
+        if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {
           navigate("/dashboard");
         }
       } catch (error) {
@@ -39,7 +39,7 @@ const SignInPage = () => {
     };
 
     checkSession();
-  }, [navigate]); // 🔥 Ahora solo se ejecuta una vez
+  }, [navigate]); 
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -51,13 +51,15 @@ const SignInPage = () => {
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
       });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed");
+      }
 
-      if (!response.ok) throw new Error("Login failed");
-
-      window.location.reload(); // ✅ Recarga la página para validar la sesión
+      window.location.reload(); 
     } catch (error) {
       console.error("Error:", error);
-      alert("Error en el inicio de sesión");
+      alert(error.message || "Login failed");
     }
   };
 
