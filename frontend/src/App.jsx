@@ -47,7 +47,7 @@ const App = () => {
 
         // Decode token
         const decoded = jwtDecode(token);
-        console.log("Decoded JWT:", decoded);
+        //console.log("Decoded JWT:", decoded);
 
         setRole(decoded.ROL); // Ensure it's lowercase (matching the JWT field)
       } catch (error) {

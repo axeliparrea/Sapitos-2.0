@@ -27,7 +27,7 @@ const SignInPage = () => {
         if (!token) return;
 
         const decoded = jwtDecode(token);
-        console.log("Usuario ya autenticado:", decoded);
+        //console.log("Usuario ya autenticado:", decoded);
 
         const userRole = decoded.ROL;
         if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {

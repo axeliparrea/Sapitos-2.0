@@ -48,25 +48,43 @@ const loginUser = async (req, res) => {
 
       const user = result[0];
       const contrasenaMatch = await bcrypt.compare(contrasena, user.CONTRASENA);
+      
       if (!contrasenaMatch) {
         return res.status(401).json({ error: "Email or password incorrect" });
       }
-      // Generate JWT with role
+      
+      // Generate JWT
       const token = jwt.sign(
-        { CORREO: user.CORREO, ROL: user.ROL, ORGANIZACION: user.ORGANIZACION },
+        {
+          CORREO: user.CORREO,
+          ROL: user.ROL,
+          ORGANIZACION: user.ORGANIZACION
+        },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
-
+      
+      // Secure auth token in HttpOnly cookie
+      res.cookie("Auth", token, {
+        httpOnly: true,
+        secure: false, // Set to true in production (HTTPS required)
+        sameSite: "Lax",
+        maxAge: 3600000 // 1 hour
+      });
+      
+      res.cookie("UserData", JSON.stringify({
+        CORREO: user.CORREO,
+        ROL: user.ROL,
+        ORGANIZACION: user.ORGANIZACION,
+        NOMBRE: user.NOMBRE // added for clarity
+      }), {
+        httpOnly: false,
+        secure: false, // true in prod
+        sameSite: "Lax",
+        maxAge: 3600000
+      });
       
 
-      // Store token in HTTP-only cookie
-      res.cookie("SessionData", token, {
-        httpOnly: true,  // Secure, prevents JS access (XSS protection)
-        secure: false,    // CHANGE THIS WHEN GOING TO PROD TO TRUE
-        sameSite: "Lax",
-        maxAge: 3600000, // 1 hour
-      });
       //console.log("Logged in")
       return res.json({ message: "Login successful" });
     });
@@ -95,14 +113,14 @@ const getUsers = async (req, res) => {
 };
 
 const getSession = async (req, res) => {
-  const token = req.cookies.SessionData;  // Read the cookie
+  const token = req.cookies.Auth;  // Read the cookie
   if (!token) return res.status(401).json({ error: "Not authenticated" });
 
   return res.json({ token });
 }
 
 const logoutUser = async (req, res) => {
-  res.clearCookie("SessionData", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
+  res.clearCookie("Auth", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
   res.status(200).json({ message: "Sesión cerrada" });
 };
 
