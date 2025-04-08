@@ -23,7 +23,7 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
       </button> */}
       
       <div>
-        <Link to='/' className='sidebar-logo'>
+        <Link to='/dashboard' className='sidebar-logo'>
           <img
             src='assets/images/logo.png'
             alt='site logo'
@@ -43,11 +43,11 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
       </div>
       <div className='sidebar-menu-area'>
         <ul className='sidebar-menu' id='sidebar-menu'>
-            <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Dashboard' />
-            <SidebarButton to='/invoice-list' icon='hugeicons:invoice-03' label='Pedidos' />
-            <SidebarButton to='/dashboard' label='Dueno' />
-            <SidebarButton label='No en admin' />
-
+            <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Estadisticas' />
+            <SidebarButton to='/inventario' icon='hugeicons:invoice-03' label='Inventario' />
+            <SidebarButton to='/ordenes-proveedores' label='Ordenes Proveedores'/>
+            <SidebarButton to='/ordenes-clientes' label='Ordenes Clientes' />
+            <SidebarButton to='/recomendaciones-IA' label='Recomendaciones IA' />
         </ul>
       </div>
     </aside>
