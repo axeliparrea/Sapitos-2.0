@@ -1,14 +1,14 @@
 import MasterLayout from "../../components/masterLayout";
 
-const HomeAdmin = () => {
+const Inventario = () => {
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout role="admin">
-        <h1>Usuarios</h1>
+        <h1>Inventario</h1>
       </MasterLayout>
     </>
   );
 };
 
-export default HomeAdmin;
+export default Inventario;
