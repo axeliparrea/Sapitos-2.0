@@ -1,11 +1,24 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+
 import SignInPage from "./pages/SignInPage";
+
 import HomeAdmin from "./pages/admin/Home";
+import InventarioAdmin from "./pages/admin/Inventario";
+
 import HomeDueno from "./pages/dueno/Home";
-import InvoiceListPageAdmin from "./pages/admin/InvoiceListPage";
-import InvoiceListPageDueno from "./pages/dueno/InvoiceListPage";
+import InventarioDueno from "./pages/dueno/Inventario";
+import OrdenesProveedoresDueno from "./pages/dueno/OrdenesProveedores";
+import OrdenesClientesDueno from "./pages/dueno/OrdenesClientes";
+import RecomendacionesIADueno from "./pages/dueno/RecomendacionesIA";
+
+import HomeCliente from "./pages/cliente/Home";
+import InventarioCliente from "./pages/cliente/Inventario"
+
+import HomeProveedor from "./pages/proveedor/Home";
+import InventarioProveedor from "./pages/proveedor/Inventario"
+import OrdenesProveedor from "./pages/proveedor/Ordenes"
 
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
@@ -62,17 +75,49 @@ const App = () => {
           element={
             role === "admin" ? <HomeAdmin /> :
             role === "dueno" ? <HomeDueno /> :
+            role === "cliente" ? <HomeCliente /> :
+            role === "proveedor" ? <HomeProveedor /> :
             <Navigate to="/" />
           }
         />
         <Route 
-          path="/invoice-list" 
+          path="/inventario" 
           element={
-            role === "admin" ? <InvoiceListPageAdmin /> :
-            role === "dueno" ? <InvoiceListPageDueno /> :
+            role === "admin" ? <InventarioAdmin /> :
+            role === "dueno" ? <InventarioDueno /> :
+            role === "cliente" ? <InventarioCliente/> :
+            role === "proveedor" ? <InventarioProveedor/> :
             <Navigate to="/" />
           } 
         />
+        <Route 
+          path="/ordenes-proveedores" 
+          element={
+            role === "dueno" ? <OrdenesProveedoresDueno/> :
+            <Navigate to="/"/>
+            }
+          />
+        <Route 
+          path="/ordenes-clientes" 
+          element={
+            role === "dueno" ? <OrdenesClientesDueno/> :
+            <Navigate to="/"/>
+            }
+          />
+        <Route 
+          path="/recomendaciones-IA" 
+          element={
+            role === "dueno" ? <RecomendacionesIADueno/> :
+            <Navigate to="/"/>
+            }
+          />
+        <Route 
+          path="/ordenes" 
+          element={
+            role === "proveedor" ? <OrdenesProveedor/> :
+            <Navigate to="/"/>
+            }
+          />
       </Routes>
     </BrowserRouter>
   );

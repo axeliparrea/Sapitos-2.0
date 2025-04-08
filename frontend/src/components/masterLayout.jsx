@@ -5,17 +5,23 @@ const AdminNavbar = lazy(() => import("./roles/admin/navbarHeader"));
 const AdminSidebar = lazy(() => import("./roles/admin/sidebar"));
 const DuenoNavbar = lazy(() => import("./roles/dueno/navbarHeader"));
 const DuenoSidebar = lazy(() => import("./roles/dueno/sidebar"));
+const ClienteNavbar = lazy(() => import("./roles/cliente/navbarHeader"));
+const ClienteSidebar = lazy(() => import("./roles/cliente/sidebar"));
+const ProveedorNavbar = lazy(() => import("./roles/proveedor/navbarHeader"));
+const ProveedorSidebar = lazy(() => import("./roles/proveedor/sidebar"));
 
 const ROLE_COMPONENTS = {
   admin: { Navbar: AdminNavbar, Sidebar: AdminSidebar },
   dueno: { Navbar: DuenoNavbar, Sidebar: DuenoSidebar },
+  cliente: { Navbar: ClienteNavbar, Sidebar: ClienteSidebar },
+  proveedor: { Navbar: ProveedorNavbar, Sidebar: ProveedorSidebar }
 };
 
 const MasterLayout = ({ children, role }) => {
   let [sidebarActive, setSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
   const location = useLocation();
-
+  console.log(role)
   const { Navbar, Sidebar } = ROLE_COMPONENTS[role] || ROLE_COMPONENTS.admin;
 
   useEffect(() => {

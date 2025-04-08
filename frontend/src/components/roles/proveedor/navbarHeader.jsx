@@ -1,24 +1,7 @@
-import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import UserMenu from "../../general/userMenu";
-import getCookie from "../../../utils/cookies";
 
 const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
-  const [userData, setUserData] = useState(null);
-
-  useEffect(() => {
-    const cookieData = getCookie("SessionData");
-    if (cookieData) {
-      try {
-        setUserData(JSON.parse(cookieData));
-        console.log(userData)
-      } catch (e) {
-        console.log("x")
-        console.error("Invalid JSON in SessionData cookie:", e);
-      }
-    }
-  }, []);
-
   return (
     <div className="navbar-header">
       <div className="row align-items-center justify-content-between">
@@ -34,12 +17,16 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
             <button onClick={mobileMenuControl} type="button" className="sidebar-mobile-toggle">
               <Icon icon="heroicons:bars-3-solid" className="icon" />
             </button>
+            {/*<form className="navbar-search">
+              <input type="text" name="search" placeholder="Search" />
+              <Icon icon="ion:search-outline" className="icon" />
+            </form> */}
           </div>
         </div>
 
         <UserMenu
-          name={userData?.NOMBRE || "Usuario"} 
-          role={userData?.ROL || "Rol"} 
+          name="Sheccid Leija"
+          role="Admin"
           profileImage="assets/images/user.png"
           onClose={() => console.log("Cerrar menú")}
         />
