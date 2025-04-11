@@ -64,8 +64,8 @@ const { auth } = require('../middleware/auth');
  *         description: Server error
  */
 
-// router.get("/", auth(["admin", "dueno", "empleado"]), getInventory);
-router.get("/", getInventory);
+router.get("/", auth(["admin", "dueno", "empleado"]), getInventory);
+// router.get("/", getInventory);
 
 
 /**

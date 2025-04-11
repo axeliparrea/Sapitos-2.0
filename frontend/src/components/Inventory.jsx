@@ -19,12 +19,12 @@ const Inventory = () => {
     fechaUltimaCompra: '',
     fechaUltimaVenta: '',
     precioCompra: 0,
-    precioVenta: 0,
-    temporada: '',
-    margenGanancia: 0,
-    tiempoReposicionProm: 0,
-    demandaProm: 0,
-    stockSeguridad: 0
+    precioVenta: 0
+    // temporada: '',
+    // margenGanancia: 0,
+    // tiempoReposicionProm: 0,
+    // demandaProm: 0,
+    // stockSeguridad: 0
   });
 
   useEffect(() => {
@@ -94,15 +94,14 @@ const Inventory = () => {
         fechaUltimaCompra: '',
         fechaUltimaVenta: '',
         precioCompra: 0,
-        precioVenta: 0,
-        temporada: '',
-        margenGanancia: 0,
-        tiempoReposicionProm: 0,
-        demandaProm: 0,
-        stockSeguridad: 0
+        precioVenta: 0
+        // temporada: '',
+        // margenGanancia: 0,
+        // tiempoReposicionProm: 0,
+        // demandaProm: 0,
+        // stockSeguridad: 0
       });
       
-      // Recargar el inventario después de agregar un producto
       const response = await axios.get('/inventory');
       setInventory(response.data);
     } catch (err) {
@@ -120,17 +119,17 @@ const Inventory = () => {
   if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
-    <div className="inventory-container">
-      <div className="d-flex justify-content-between align-items-center mb-3">
+    <div className="inventory-container mb-5">
+      {/* <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="d-flex gap-2">
           <Button variant="primary" onClick={() => setShowModal(true)}>
             <i className="bi bi-plus-circle"></i> Agregar Item
           </Button>
           <Button variant="outline-secondary">Exportar</Button>
         </div>
-      </div>
+      </div> */}
       
-      <div className="d-flex justify-content-between mb-3">
+      <div className="d-flex justify-content-between mb-4">
         <InputGroup className="w-50">
           <InputGroup.Text>
             <i className="bi bi-search"></i>
@@ -141,9 +140,9 @@ const Inventory = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </InputGroup>
-        <Button variant="outline-secondary">
+        {/* <Button variant="outline-secondary">
           <i className="bi bi-funnel"></i> Filtrar
-        </Button>
+        </Button> */}
       </div>
 
       <Table responsive bordered hover>
@@ -166,6 +165,8 @@ const Inventory = () => {
             <th>Precio Venta</th>
             <th>Última Compra</th>
             <th>Última Venta</th>
+            {/* <th>Precio Compra</th>
+            <th>Precio Venta</th> */}
           </tr>
         </thead>
         <tbody>
@@ -185,8 +186,8 @@ const Inventory = () => {
                 <td>{item.categoria}</td>
                 <td>{item.stockActual}</td>
                 <td>{item.stockMinimo}</td>
-                <td>${item.precioCompra?.toFixed(2)}</td>
-                <td>${item.precioVenta?.toFixed(2)}</td>
+                <td>${parseFloat(item.precioCompra)?.toFixed(2)}</td>
+                <td>${parseFloat(item.precioVenta)?.toFixed(2)}</td>
                 <td>{formatDate(item.fechaUltimaCompra)}</td>
                 <td>{formatDate(item.fechaUltimaVenta)}</td>
               </tr>
@@ -199,6 +200,9 @@ const Inventory = () => {
         </tbody>
       </Table>
 
+
+      {/* // Esto solo es para agregar una funcion de insertado */}
+      {/* Se puede borrar */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Agregar Producto</Modal.Title>

@@ -38,13 +38,7 @@ const getInventory = async (req, res) => {
         fechaUltimaVenta: producto.FECHAULTIMAVENTA,
         precioCompra: producto.PRECIOCOMPRA,
         precioVenta: producto.PRECIOVENTA,
-        temporada: producto.TEMPORADA,
-        margenGanancia: producto.MARGENGANANCIA,
-        tiempoReposicionProm: producto.TIEMPOREPOSIPROM,
-        demandaProm: producto.DEMANDAPROM,
-        stockSeguridad: producto.STOCKSEGURIDAD
       }));
-      console.log(formatted)
       res.status(200).json(formatted);
     });
   } catch (error) {
