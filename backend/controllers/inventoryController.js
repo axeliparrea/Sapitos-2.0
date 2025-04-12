@@ -1,8 +1,7 @@
 const { connection } = require("../config/db");
-
+const jwt = require("jsonwebtoken");
 
 const getInventory = async (req, res) => {
-  // const {id, proveedor, nombre, categoria, stockActual, stockMinimo, fechaUltimaCompra, fechaUltimaVenta, precioCompra, precioVenta} = req.body;
 
   try {
     const query = `
@@ -19,12 +18,11 @@ const getInventory = async (req, res) => {
         PRECIOVENTA
       FROM DBADMIN.Productos
     `;
-    // const params = [id, proveedor, nombre, categoria, stockActual, stockMinimo, fechaUltimaCompra, fechaUltimaVenta, precioCompra, precioVenta];
 
     connection.exec(query, [], async (err, result) => {
       if (err) {
-        console.error("Error al obtener inventario:", err);
-        return res.status(500).json({ error: "Error al obtener inventario" });
+        console.error("Error al obtener el inventario", err);
+        return res.status(500).json({ error: "Error al obtener el inventario" });
       }
 
       const formatted = result.map(producto => ({

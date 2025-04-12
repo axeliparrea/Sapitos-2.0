@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const { swaggerUi, specs } = require("./docs/swagger"); 
 const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
+const pedidoRoutes = require("./routes/pedido");
 
 const app = express();
 
@@ -27,5 +28,8 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // inventory routes
 app.use("/inventory", inventoryRoutes);
+
+// ordenes routes
+app.use("/pedido", pedidoRoutes);
 
 module.exports = app;
