@@ -4,7 +4,7 @@ import Inventory from "../../components/Inventory";
 const Inventario = () => {
   return (
     <>
-      <MasterLayout role="cliente">
+      <MasterLayout role="proveedor">
         <h1>Inventario</h1>
         <Inventory />
       </MasterLayout>
