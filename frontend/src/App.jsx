@@ -17,7 +17,6 @@ import HomeCliente from "./pages/cliente/Home";
 import InventarioCliente from "./pages/cliente/Inventario"
 
 import HomeProveedor from "./pages/proveedor/Home";
-import InventarioProveedor from "./pages/proveedor/Inventario"
 import OrdenesProveedor from "./pages/proveedor/Ordenes"
 
 const App = () => {
@@ -48,8 +47,7 @@ const App = () => {
         // Decode token
         const decoded = jwtDecode(token);
         //console.log("Decoded JWT:", decoded);
-
-        setRole(decoded.ROL); // Ensure it's lowercase (matching the JWT field)
+        setRole(decoded.ROL); 
       } catch (error) {
         console.error("Error fetching session:", error);
       }
@@ -86,7 +84,6 @@ const App = () => {
             role === "admin" ? <InventarioAdmin /> :
             role === "dueno" ? <InventarioDueno /> :
             role === "cliente" ? <InventarioCliente/> :
-            role === "proveedor" ? <InventarioProveedor/> :
             <Navigate to="/" />
           } 
         />

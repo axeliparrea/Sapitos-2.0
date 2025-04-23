@@ -4,7 +4,10 @@ CREATE TABLE Usuarios (
     Organizacion VARCHAR(255),
     Contrasena VARCHAR(255) NOT NULL,
     Rol VARCHAR(50) NOT NULL,
-    FechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    FechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    --Andre
+    DiasOrdenProm NUMERIC DEFAULT 0,
+    ValorOrdenProm NUMERIC DEFAULT 0
 );
 
 CREATE TABLE Ordenes (
@@ -24,6 +27,12 @@ CREATE TABLE Ordenes (
     Calidad VARCHAR(50),
     Estatus VARCHAR(50) NOT NULL,
     Total DECIMAL(10,2),
+    --Andre
+    MetodoPago VARCHAR(50),
+    DescuentoAplicado NUMERIC DEFAULT 0,
+    TiempoReposicion NUMERIC,
+    TiempoEntrega NUMERIC,
+
     FOREIGN KEY (Creada_por) REFERENCES Usuarios(Correo)
 );
 
@@ -46,8 +55,14 @@ CREATE TABLE Productos (
     StockMinimo INT DEFAULT 0,
     FechaUltimaCompra TIMESTAMP,
     FechaUltimaVenta TIMESTAMP,
-    PrecioCompra DECIMAL(10,2) NOT NULL,
-    PrecioVenta DECIMAL(10,2) NOT NULL
+    PrecioCompra NUMERIC NOT NULL,
+    PrecioVenta NUMERIC NOT NULL,
+    --Andre
+    Temporada VARCHAR(50),
+    MargenGanancia NUMERIC,
+    TiempReposiProm NUMERIC,
+    DemandaProm NUMERIC,
+    StockSeguridad NUMERIC
 );
 
 CREATE TABLE OrdenesProductos (
@@ -55,7 +70,7 @@ CREATE TABLE OrdenesProductos (
     OrdenID INT NOT NULL,
     ProductID INT NOT NULL,
     Cantidad INT NOT NULL,
-    PrecioUnitario DECIMAL(10,2) NOT NULL,
+    PrecioUnitario NUMERIC NOT NULL,
     FOREIGN KEY (OrdenID) REFERENCES Ordenes(ID),
     FOREIGN KEY (ProductID) REFERENCES Productos(ID)
 );
@@ -67,6 +82,10 @@ CREATE TABLE HistorialPreciosProductos (
     PrecioVenta DECIMAL(10,2) NOT NULL,
     FechaCambio TIMESTAMP NOT NULL,
     MotivoCambio NVARCHAR(500),
+    --Andre
+    PrecioCompraProm NUMERIC,
+    PrecioVentaProm NUMERIC,
+
     FOREIGN KEY (ProductID) REFERENCES Productos(ID)
 );
 
