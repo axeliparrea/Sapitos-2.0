@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const registerUser = async (req, res) => {
-  const { correo, nombre, organizacion, contrasena, rol } = req.body;
+  const { correo, nombre, organizacion, contrasena, rol, diasordenprom, valorordenprom } = req.body;
 
   if (!correo || !nombre || !contrasena) {
     return res.status(400).json({ error: "All fields are required" });
@@ -11,8 +11,12 @@ const registerUser = async (req, res) => {
 
   try {
     const contrasenaHash = await bcrypt.hash(contrasena, 10);
-    const query = "INSERT INTO DBADMIN.Usuarios (Correo, Nombre, Organizacion, Contrasena, Rol) VALUES (?, ?, ?, ?, ?)";
-    const params = [correo, nombre, organizacion, contrasenaHash, rol];
+    const query = `
+      INSERT INTO DBADMIN.Usuarios 
+      (Correo, Nombre, Organizacion, contrasena, Rol, DiasOrdenProm, ValorOrdenProm)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    const params = [correo, nombre, organizacion, contrasenaHash, rol, diasordenprom, valorordenprom];
 
     connection.exec(query, params, (err) => {
       if (err) {

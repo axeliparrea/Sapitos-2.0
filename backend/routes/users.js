@@ -31,6 +31,10 @@ const { auth } = require('../middleware/auth'); // Import the middleware
  *                 type: string
  *               rol:
  *                 type: string
+ *               diasordenprom:
+ *                 type: number
+ *               valorordenprom:
+ *                 type: number
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -39,6 +43,7 @@ const { auth } = require('../middleware/auth'); // Import the middleware
  *       500:
  *         description: Server error
  */
+
 
 router.post("/register", registerUser);
 
@@ -89,6 +94,8 @@ router.post("/login", loginUser);
  */
 
 router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
+// router.get("/getUsers", getUsers);
+
 
 router.get("/getSession", getSession)
 
