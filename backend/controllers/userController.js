@@ -101,18 +101,95 @@ const loginUser = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const query = "SELECT correo, nombre, organizacion, contrasena, rol, fechacreacion FROM DBADMIN.Usuarios";
+    const query = `
+      SELECT
+        CORREO,
+        NOMBRE,
+        ORGANIZACION,
+        CONTRASENA,
+        ROL,
+        DIASORDENPROM,
+        VALORORDENPROM
+      FROM DBADMIN.Usuarios
+    `;
 
     connection.exec(query, [], (err, result) => {
       if (err) {
-        console.error("Error fetching users:", err);
-        return res.status(500).json({ error: "Server error" });
+        console.error("Error al obtener los usuarios:", err);
+        return res.status(500).json({ error: "Error al obtener los usuarios" });
       }
-      res.status(200).json(result);
+
+      // Verifica si el resultado es un array
+      if (!Array.isArray(result)) {
+        return res.status(500).json({ error: "El formato de los datos es incorrecto" });
+      }
+
+      // Mapea el resultado en el formato deseado
+      const formatted = result.map(usuario => ({
+        id: usuario.CORREO,  // Si el correo es único, lo puedes usar como ID
+        correo: usuario.CORREO,
+        nombre: usuario.NOMBRE,
+        organizacion: usuario.ORGANIZACION,
+        rol: usuario.ROL,
+        diasOrdenProm: usuario.DIASORDENPROM,
+        valorOrdenProm: usuario.VALORORDENPROM
+      }));
+      
+      res.status(200).json(formatted);
     });
   } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error("Error general:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+
+//Agregado para usurios / admin
+const deleteUser = async (req, res) => {
+  const { correo } = req.body;
+  
+  if (!correo) {
+    return res.status(400).json({ error: "Necesitas un email" });
+  }
+  
+  try {
+    const query = "DELETE FROM DBADMIN.Usuarios WHERE Correo = ?";
+    connection.exec(query, [correo], (err, result) => {
+      if (err) {
+        console.error("Error eliminando usario:", err);
+        return res.status(500).json({ error: "Error servidor" });
+      }
+      res.status(200).json({ message: "Borrado exito" });
+    });
+  } catch (error) {
+    console.error("Error borrando usuario:", error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+};
+
+const updateUser = async (req, res) => {
+  const { correo, nombre, organizacion, rol } = req.body;
+  
+  if (!correo) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+  
+  try {
+    const query = `
+      UPDATE DBADMIN.Usuarios 
+      SET Nombre = ?, Organizacion = ?, Rol = ?
+      WHERE Correo = ?
+    `;
+    connection.exec(query, [nombre, organizacion, rol, correo], (err, result) => {
+      if (err) {
+        console.error("Error actualizando:", err);
+        return res.status(500).json({ error: "Error servidor" });
+      }
+      res.status(200).json({ message: "Se actualizo bien" });
+    });
+  } catch (error) {
+    console.error("Error actualizadno:", error);
+    res.status(500).json({ error: "Error servidor" });
   }
 };
 
@@ -129,4 +206,4 @@ const logoutUser = async (req, res) => {
 };
 
 
-module.exports = { registerUser, loginUser, getUsers, getSession, logoutUser };
+module.exports = { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser };

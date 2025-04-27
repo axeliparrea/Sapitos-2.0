@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Form, InputGroup, Button, Modal } from 'react-bootstrap';
+import { Table, Form, InputGroup, Button, Modal, Dropdown, Badge } from 'react-bootstrap';
 import axios from 'axios';
 
 const Inventory = () => {
@@ -8,23 +8,17 @@ const Inventory = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [newProduct, setNewProduct] = useState({
-    id: '',
-    proveedor: '',
-    nombre: '',
-    categoria: '',
-    stockActual: 0,
-    stockMinimo: 0,
-    fechaUltimaCompra: '',
-    fechaUltimaVenta: '',
-    precioCompra: 0,
-    precioVenta: 0
-    // temporada: '',
-    // margenGanancia: 0,
-    // tiempoReposicionProm: 0,
-    // demandaProm: 0,
-    // stockSeguridad: 0
+  
+  // Estados del filtro 
+  const [filters, setFilters] = useState({
+    proveedor: [],
+    categoria: [],
+    stockStatus: [] 
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterOptions, setFilterOptions] = useState({
+    proveedores: [],
+    categorias: []
   });
 
   useEffect(() => {
@@ -34,6 +28,18 @@ const Inventory = () => {
         const response = await axios.get('/inventory');
         console.log('Tipo de response.data:', typeof response.data, response.data);
         setInventory(response.data);
+        
+        // Extraer opciones de filtro únicas
+        if (Array.isArray(response.data)) {
+          const proveedores = [...new Set(response.data.map(item => item.proveedor).filter(Boolean))];
+          const categorias = [...new Set(response.data.map(item => item.categoria).filter(Boolean))];
+          
+          setFilterOptions({
+            proveedores,
+            categorias
+          });
+        }
+        
         setError(null);
       } catch (err) {
         setError('Error al cargar el inventario: ' + err.message);
@@ -48,7 +54,7 @@ const Inventory = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allIds = inventory.map(item => item.id);
+      const allIds = filteredItems.map(item => item.id);
       setSelectedItems(allIds);
     } else {
       setSelectedItems([]);
@@ -63,73 +69,97 @@ const Inventory = () => {
     }
   };
 
+  const toggleFilter = (type, value) => {
+    setFilters(prevFilters => {
+      if (prevFilters[type].includes(value)) {
+        return {
+          ...prevFilters,
+          [type]: prevFilters[type].filter(item => item !== value)
+        };
+      } else {
+        return {
+          ...prevFilters,
+          [type]: [...prevFilters[type], value]
+        };
+      }
+    });
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      proveedor: [],
+      categoria: [],
+      stockStatus: []
+    });
+  };
+
   const filteredItems = Array.isArray(inventory) 
-  ? inventory.filter(item =>
-      item.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.id?.toString() || '').includes(searchTerm) ||
-      item.proveedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.categoria?.toLowerCase().includes(searchTerm.toLowerCase()))
-  : [];
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewProduct((prevState) => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
-
-  const handleSubmitNewProduct = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post('/inventory', newProduct);
-      setShowModal(false); 
-      setNewProduct({
-        id: '',
-        proveedor: '',
-        nombre: '',
-        categoria: '',
-        stockActual: 0,
-        stockMinimo: 0,
-        fechaUltimaCompra: '',
-        fechaUltimaVenta: '',
-        precioCompra: 0,
-        precioVenta: 0
-        // temporada: '',
-        // margenGanancia: 0,
-        // tiempoReposicionProm: 0,
-        // demandaProm: 0,
-        // stockSeguridad: 0
-      });
-      
-      const response = await axios.get('/inventory');
-      setInventory(response.data);
-    } catch (err) {
-      setError('Error al agregar el producto: ' + err.message);
-    }
-  };
+    ? inventory.filter(item => {
+        const matchesSearch = 
+          item.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (item.id?.toString() || '').includes(searchTerm) ||
+          item.proveedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.categoria?.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // proveedor
+        const matchesProveedor = filters.proveedor.length === 0 || 
+          filters.proveedor.includes(item.proveedor);
+        
+        // categoría
+        const matchesCategoria = filters.categoria.length === 0 || 
+          filters.categoria.includes(item.categoria);
+        
+        // estado de stock
+        const matchesStockStatus = filters.stockStatus.length === 0 || 
+          (filters.stockStatus.includes('bajo') && item.stockActual <= item.stockMinimo) ||
+          (filters.stockStatus.includes('normal') && item.stockActual > item.stockMinimo);
+        
+        return matchesSearch && matchesProveedor && matchesCategoria && matchesStockStatus;
+      })
+    : [];
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES');
   };
+  
+  // Contador de filtros activos
+  const activeFilterCount = Object.values(filters).reduce(
+    (count, filterArray) => count + filterArray.length, 0
+  );
 
   if (loading) return <div className="text-center p-4">Cargando inventario...</div>;
   if (error) return <div className="alert alert-danger">{error}</div>;
 
+  const exportToCSV = () => {
+    const headers = ['ID', 'Nombre', 'Proveedor', 'Categoría', 'Stock Actual', 'Stock Mínimo', 'Precio Compra', 'Precio Venta', 'Última Compra', 'Última Venta'];
+    const rows = filteredItems.map(item => [
+      item.id,
+      item.nombre,
+      item.proveedor,
+      item.categoria,
+      item.stockActual,
+      item.stockMinimo,
+      item.precioCompra,
+      item.precioVenta,
+      formatDate(item.fechaUltimaCompra),
+      formatDate(item.fechaUltimaVenta),
+    ]);
+  
+    const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'inventario_filtrado.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
   return (
     <div className="inventory-container mb-5">
-      {/* <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="d-flex gap-2">
-          <Button variant="primary" onClick={() => setShowModal(true)}>
-            <i className="bi bi-plus-circle"></i> Agregar Item
-          </Button>
-          <Button variant="outline-secondary">Exportar</Button>
-        </div>
-      </div> */}
-      
-      <div className="d-flex justify-content-between mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
         <InputGroup className="w-50">
           <InputGroup.Text>
             <i className="bi bi-search"></i>
@@ -140,10 +170,98 @@ const Inventory = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </InputGroup>
-        {/* <Button variant="outline-secondary">
-          <i className="bi bi-funnel"></i> Filtrar
-        </Button> */}
+        <div>
+          <Button 
+            variant="success" 
+            onClick={exportToCSV}
+            className="me-5 p-3"
+          >
+            <i className="bi bi-download"></i> Exportar CSV
+          </Button>
+          
+          <Button 
+            variant={activeFilterCount > 0 ? "primary" : "outline-secondary"} 
+            onClick={() => setShowFilters(!showFilters)}
+            className="position-relative p-3"
+          >
+            <i className="bi bi-funnel"></i> Filtrar
+            {activeFilterCount > 0 && (
+              <Badge bg="danger" pill className="position-absolute top-0 start-100 translate-middle">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+        </div>
+
       </div>
+
+      {/* Panel de filtros */}
+      {showFilters && (
+        <div className="filter-panel p-4 mb-3 border rounded shadow-sm bg-light">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="m-0 text-primary">Filtros</h5>
+            <Button variant="link" size="sm" onClick={clearFilters} className="text-danger">
+              Limpiar filtros
+            </Button>
+          </div>
+          
+          <div className="row">
+            {/* Filtro de Proveedores */}
+            <div className="col-md-4 mb-3">
+              <h6 className="fw-bold text-muted">Proveedor</h6>
+              <div className="filter-options" style={{maxHeight: '250px', overflowY: 'auto', paddingRight: '10px'}}>
+                {filterOptions.proveedores.map(proveedor => (
+                  <Form.Check 
+                    key={proveedor}
+                    type="checkbox"
+                    id={`filter-prov-${proveedor}`}
+                    label={proveedor}
+                    checked={filters.proveedor.includes(proveedor)}
+                    onChange={() => toggleFilter('proveedor', proveedor)}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* Filtro de Categorías */}
+            <div className="col-md-4 mb-3">
+              <h6 className="fw-bold text-muted">Categoría</h6>
+              <div className="filter-options" style={{maxHeight: '250px', overflowY: 'auto', paddingRight: '10px'}}>
+                {filterOptions.categorias.map(categoria => (
+                  <Form.Check 
+                    key={categoria}
+                    type="checkbox"
+                    id={`filter-cat-${categoria}`}
+                    label={categoria}
+                    checked={filters.categoria.includes(categoria)}
+                    onChange={() => toggleFilter('categoria', categoria)}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* Filtro de Estado de Stock */}
+            <div className="col-md-4 mb-3">
+              <h6 className="fw-bold text-muted">Estado de Stock</h6>
+              <Form.Check 
+                type="checkbox"
+                id="filter-stock-bajo"
+                label="Bajo stock (menor o igual al mínimo)"
+                checked={filters.stockStatus.includes('bajo')}
+                onChange={() => toggleFilter('stockStatus', 'bajo')}
+              />
+              <Form.Check 
+                type="checkbox"
+                id="filter-stock-normal"
+                label="Stock normal"
+                checked={filters.stockStatus.includes('normal')}
+                onChange={() => toggleFilter('stockStatus', 'normal')}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <Table responsive bordered hover>
         <thead className="table-light">
@@ -152,21 +270,86 @@ const Inventory = () => {
               <Form.Check
                 type="checkbox"
                 onChange={handleSelectAll}
-                checked={selectedItems.length === inventory.length && inventory.length > 0}
+                checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
               />
             </th>
             <th>#</th>
             <th>Nombre</th>
-            <th>Proveedor</th>
-            <th>Categoría</th>
-            <th>Stock Actual</th>
+            <th>
+              Proveedor
+              <Dropdown className="d-inline-block ms-1">
+                <Dropdown.Toggle variant="light" size="sm" id="dropdown-proveedor" style={{padding: '0 5px'}}>
+                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {filterOptions.proveedores.map(proveedor => (
+                    <Dropdown.Item key={proveedor} onClick={() => toggleFilter('proveedor', proveedor)}>
+                      <Form.Check 
+                        type="checkbox"
+                        checked={filters.proveedor.includes(proveedor)}
+                        label={proveedor}
+                        onChange={() => {}}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </th>
+            <th>
+              Categoría
+              <Dropdown className="d-inline-block ms-1">
+                <Dropdown.Toggle variant="light" size="sm" id="dropdown-categoria" style={{padding: '0 5px'}}>
+                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {filterOptions.categorias.map(categoria => (
+                    <Dropdown.Item key={categoria} onClick={() => toggleFilter('categoria', categoria)}>
+                      <Form.Check 
+                        type="checkbox"
+                        checked={filters.categoria.includes(categoria)}
+                        label={categoria}
+                        onChange={() => {}}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </th>
+            <th>
+              Stock Actual
+              <Dropdown className="d-inline-block ms-1">
+                <Dropdown.Toggle variant="light" size="sm" id="dropdown-stock" style={{padding: '0 5px'}}>
+                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'bajo')}>
+                    <Form.Check 
+                      type="checkbox"
+                      checked={filters.stockStatus.includes('bajo')}
+                      label="Bajo stock"
+                      onChange={() => {}}
+                      onClick={e => e.stopPropagation()}
+                    />
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'normal')}>
+                    <Form.Check 
+                      type="checkbox"
+                      checked={filters.stockStatus.includes('normal')}
+                      label="Stock normal"
+                      onChange={() => {}}
+                      onClick={e => e.stopPropagation()}
+                    />
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            </th>
             <th>Stock Mínimo</th>
             <th>Precio Compra</th>
             <th>Precio Venta</th>
             <th>Última Compra</th>
             <th>Última Venta</th>
-            {/* <th>Precio Compra</th>
-            <th>Precio Venta</th> */}
           </tr>
         </thead>
         <tbody>
@@ -200,158 +383,24 @@ const Inventory = () => {
         </tbody>
       </Table>
 
+      {/* Estadísticas de resultados filtrados */}
+      <div className="d-flex justify-content-between align-items-center mt-3">
+        <div>
+          <small className="text-muted">
+            Mostrando {filteredItems.length} de {inventory.length} productos
+            {activeFilterCount > 0 ? ` (${activeFilterCount} filtros aplicados)` : ''}
+          </small>
+        </div>
+        <div>
+          {selectedItems.length > 0 && (
+            <Button variant="outline-danger" size="sm">
+              <i className="bi bi-trash"></i> Eliminar seleccionados ({selectedItems.length})
+            </Button>
+          )}
+        </div>
+      </div>
 
-      {/* // Esto solo es para agregar una funcion de insertado */}
-      {/* Se puede borrar */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Agregar Producto</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmitNewProduct}>
-            <div className="row">
-              <div className="col-md-6">
-                <Form.Group className="mb-3" controlId="formProductName">
-                  <Form.Label>Nombre</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="nombre"
-                    value={newProduct.nombre}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </div>
-              <div className="col-md-6">
-                <Form.Group className="mb-3" controlId="formProductProveedor">
-                  <Form.Label>Proveedor</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="proveedor"
-                    value={newProduct.proveedor}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </div>
-            </div>
-
-            <div className="row">
-              <div className="col-md-6">
-                <Form.Group className="mb-3" controlId="formProductCategoria">
-                  <Form.Label>Categoría</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="categoria"
-                    value={newProduct.categoria}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </div>
-              <div className="col-md-3">
-                <Form.Group className="mb-3" controlId="formProductStockActual">
-                  <Form.Label>Stock Actual</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="stockActual"
-                    value={newProduct.stockActual}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </div>
-              <div className="col-md-3">
-                <Form.Group className="mb-3" controlId="formProductStockMinimo">
-                  <Form.Label>Stock Mínimo</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="stockMinimo"
-                    value={newProduct.stockMinimo}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </div>
-            </div>
-
-            <div className="row">
-              <div className="col-md-6">
-                <Form.Group className="mb-3" controlId="formProductPrecioCompra">
-                  <Form.Label>Precio Compra</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="0.01"
-                    name="precioCompra"
-                    value={newProduct.precioCompra}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </div>
-              <div className="col-md-6">
-                <Form.Group className="mb-3" controlId="formProductPrecioVenta">
-                  <Form.Label>Precio Venta</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="0.01"
-                    name="precioVenta"
-                    value={newProduct.precioVenta}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </div>
-            </div>
-
-            <div className="row">
-              <div className="col-md-4">
-                <Form.Group className="mb-3" controlId="formProductTemporada">
-                  <Form.Label>Temporada</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="temporada"
-                    value={newProduct.temporada}
-                    onChange={handleInputChange}
-                  />
-                </Form.Group>
-              </div>
-              <div className="col-md-4">
-                <Form.Group className="mb-3" controlId="formProductMargen">
-                  <Form.Label>Margen Ganancia (%)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="0.01"
-                    name="margenGanancia"
-                    value={newProduct.margenGanancia}
-                    onChange={handleInputChange}
-                  />
-                </Form.Group>
-              </div>
-              <div className="col-md-4">
-                <Form.Group className="mb-3" controlId="formProductTiempoReposicion">
-                  <Form.Label>Tiempo Reposición (días)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="tiempoReposicionProm"
-                    value={newProduct.tiempoReposicionProm}
-                    onChange={handleInputChange}
-                  />
-                </Form.Group>
-              </div>
-            </div>
-
-            <div className="mt-4 d-flex justify-content-end gap-2">
-              <Button variant="secondary" onClick={() => setShowModal(false)}>
-                Cancelar
-              </Button>
-              <Button variant="primary" type="submit">
-                Guardar
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
+     
     </div>
   );
 };

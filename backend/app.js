@@ -7,6 +7,7 @@ const { swaggerUi, specs } = require("./docs/swagger");
 const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
+const ordenesRoutes = require("./routes/ordenes");
 
 const app = express();
 
@@ -24,12 +25,14 @@ app.use(cors(corsOptions));
 // login, register, and logout routes
 app.use("/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs)); 
+app.use("users/getUsers", userRoutes); 
 
 
 // inventory routes
 app.use("/inventory", inventoryRoutes);
 
 // ordenes routes
-app.use("/pedido", pedidoRoutes);
+app.use("/ordenes", ordenesRoutes);
+
 
 module.exports = app;

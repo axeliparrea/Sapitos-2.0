@@ -45,6 +45,7 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
         <ul className='sidebar-menu' id='sidebar-menu'>
             <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Dashboard' />
             <SidebarButton to='/inventario' icon='hugeicons:invoice-03' label='Inventario' />
+            <SidebarButton to='/usuarios' icon='solar:user-linear' label='Usuarios' />
         </ul>
       </div>
     </aside>

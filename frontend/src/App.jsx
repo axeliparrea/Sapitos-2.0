@@ -20,6 +20,9 @@ import HomeProveedor from "./pages/proveedor/Home";
 import InventarioProveedor from "./pages/proveedor/Inventario"
 import OrdenesProveedor from "./pages/proveedor/Ordenes"
 
+// Para usuarios admin 
+import Usuarios from "./pages/admin/UsuarioPagina";
+
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
   const [loading, setLoading] = useState(true); // Loading state
@@ -118,8 +121,17 @@ const App = () => {
             <Navigate to="/"/>
             }
           />
-      </Routes>
+
+        <Route 
+          path="/usuarios" 
+          element={
+            role === "admin" ? <Usuarios /> :
+            <Navigate to="/" />
+          } 
+        />
+      </Routes> 
     </BrowserRouter>
+
   );
 };
 
