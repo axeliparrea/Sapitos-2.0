@@ -20,8 +20,11 @@ import HomeProveedor from "./pages/proveedor/Home";
 import InventarioProveedor from "./pages/proveedor/Inventario"
 import OrdenesProveedor from "./pages/proveedor/Ordenes"
 
+import Pedidos from "./pages/admin/Pedidos"
+
 // Para usuarios admin 
 import Usuarios from "./pages/admin/UsuarioPagina";
+import UsuariosShec from "./pages/admin/UsuariosShec";
 
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
@@ -121,11 +124,17 @@ const App = () => {
             <Navigate to="/"/>
             }
           />
-
+        <Route 
+          path="/pedidos" 
+          element={
+            role === "admin" ? <Pedidos/> :
+            <Navigate to="/"/>
+            }
+          />
         <Route 
           path="/usuarios" 
           element={
-            role === "admin" ? <Usuarios /> :
+            role === "admin" ? <UsuariosShec /> :
             <Navigate to="/" />
           } 
         />
