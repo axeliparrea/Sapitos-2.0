@@ -347,7 +347,7 @@ const Usuarios = () => {
                   <InputGroup>
                     <InputGroup.Text><FaShieldAlt /></InputGroup.Text>
                     <Form.Select
-                      name="rol?"
+                      name="rol"
                       value={modalMode === "edit" ? usuarioEditando.rol : nuevoUsuario.rol}
                       onChange={handleInputChange}
                     >
