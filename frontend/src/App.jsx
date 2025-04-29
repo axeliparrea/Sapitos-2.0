@@ -26,6 +26,7 @@ import Pedidos from "./pages/admin/Pedidos"
 import Usuarios from "./pages/admin/UsuarioPagina";
 import UsuariosShec from "./pages/admin/UsuariosShec";
 import AddUserLayer from "./components/AddUserLayer";
+import InvoiceAddLayer from "./components/InvoiceAddLayer";
 
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
