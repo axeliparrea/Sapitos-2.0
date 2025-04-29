@@ -34,5 +34,8 @@ app.use("/inventory", inventoryRoutes);
 // ordenes routes
 app.use("/ordenes", ordenesRoutes);
 
+// pedidos routes
+app.use("/pedido", pedidoRoutes);
+
 
 module.exports = app;

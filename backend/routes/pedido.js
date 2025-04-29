@@ -1,9 +1,6 @@
 const express = require("express");
-const { 
-  getPedido, insertPedido
-} = require("../controllers/pedidosController");
+const { getPedido, insertPedido, deletePedido, updatePedido, getProveedores} = require("../controllers/pedidosController");
 const router = express.Router();
-
 const { auth } = require('../middleware/auth');
 
 /**
@@ -27,10 +24,6 @@ const { auth } = require('../middleware/auth');
  *                   id:
  *                     type: integer
  *                   creadaPor:
- *                     type: string
- *                   tipoOrden:
- *                     type: string
- *                   organizacion:
  *                     type: string
  *                   fechaCreacion:
  *                     type: string
@@ -63,18 +56,20 @@ const { auth } = require('../middleware/auth');
  *                     type: string
  *                   total:
  *                     type: number
+ *                   metodoPago:
+ *                     type: string
+ *                   descuentoAplicado:
+ *                     type: number
+ *                   tiempoReposicion:
+ *                     type: number
+ *                   tiempoEntrega:
+ *                     type: number
  *       500:
  *         description: Error del servidor
  */
-
-
-// router.get("/", auth(["admin", "dueno", "empleado"]), getPedido);
 router.get("/", getPedido);
+// router.get("/", auth(["admin", "dueno", "empleado"]), getPedido);
 
-
-
-
-// insert into db 
 /**
  * @swagger
  * /pedido:
@@ -91,18 +86,11 @@ router.get("/", getPedido);
  *             type: object
  *             required:
  *               - creadaPor
- *               - tipoOrden
- *               - organizacion
  *               - fechaCreacion
  *               - estatus
+ *               - total
  *             properties:
- *               id:
- *                 type: integer
  *               creadaPor:
- *                 type: string
- *               tipoOrden:
- *                 type: string
- *               organizacion:
  *                 type: string
  *               fechaCreacion:
  *                 type: string
@@ -135,6 +123,14 @@ router.get("/", getPedido);
  *                 type: string
  *               total:
  *                 type: number
+ *               metodoPago:
+ *                 type: string
+ *               descuentoAplicado:
+ *                 type: number
+ *               tiempoReposicion:
+ *                 type: number
+ *               tiempoEntrega:
+ *                 type: number
  *     responses:
  *       200:
  *         description: Pedido creado exitosamente
@@ -145,8 +141,6 @@ router.get("/", getPedido);
  *               properties:
  *                 message:
  *                   type: string
- *                 id:
- *                   type: integer
  *       400:
  *         description: Datos inválidos
  *       500:
@@ -156,5 +150,148 @@ router.post("/", insertPedido);
 // router.post("/", auth(["admin", "dueno", "empleado"]), insertPedido);
 
 
+/**
+ * @swagger
+ * /pedido/proveedores:
+ *   get:
+ *     summary: Obtener lista de proveedores
+ *     tags: [Pedido]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de proveedores
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   ID:
+ *                     type: integer
+ *                   NOMBRE:
+ *                     type: string
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/proveedores", getProveedores);
 
-module.exports = router; //importante
+// Eliminar pedido por ID
+/**
+ * @swagger
+ * /pedido/{id}:
+ *   delete:
+ *     summary: Eliminar un pedido por ID
+ *     tags: [Pedido]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido a eliminar
+ *     responses:
+ *       200:
+ *         description: Pedido eliminado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Pedido no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.delete("/:id", deletePedido);
+
+// Actualizar pedido por ID
+/**
+ * @swagger
+ * /pedido/{id}:
+ *   put:
+ *     summary: Actualizar un pedido por ID
+ *     tags: [Pedido]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido a actualizar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               creadaPor:
+ *                 type: string
+ *               fechaCreacion:
+ *                 type: string
+ *                 format: date
+ *               fechaEstimaAceptacion:
+ *                 type: string
+ *                 format: date
+ *               fechaAceptacion:
+ *                 type: string
+ *                 format: date
+ *               fechaEstimaPago:
+ *                 type: string
+ *                 format: date
+ *               fechaPago:
+ *                 type: string
+ *                 format: date
+ *               comprobantePago:
+ *                 type: string
+ *               fechaEstimaEntrega:
+ *                 type: string
+ *                 format: date
+ *               fechaEntrega:
+ *                 type: string
+ *                 format: date
+ *               entregaATiempo:
+ *                 type: boolean
+ *               calidad:
+ *                 type: number
+ *               estatus:
+ *                 type: string
+ *               total:
+ *                 type: number
+ *               metodoPago:
+ *                 type: string
+ *               descuentoAplicado:
+ *                 type: number
+ *               tiempoReposicion:
+ *                 type: number
+ *               tiempoEntrega:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Pedido actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Datos inválidos
+ *       404:
+ *         description: Pedido no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.put("/:id", updatePedido);
+
+
+module.exports = router;

@@ -13,14 +13,13 @@ const InvoiceAddLayer = () => {
     setPedidoID(nuevoID);
     setPedidoEnviado(true);
 
-    // Simulamos que el pedido se guarda correctamente
     setTimeout(() => {
-      navigate("/pedidos"); // Redireccionar a la página de pedidos
-    }, 2500); // Redirige después de 2.5 segundos
+      navigate("/pedidos"); 
+    }, 2500); 
   };
 
   const generarIDPedido = () => {
-    const random = Math.floor(Math.random() * 900000) + 100000; // Genera un número de 6 dígitos
+    const random = Math.floor(Math.random() * 900000) + 100000; 
     return `#${random}`;
   };
 
