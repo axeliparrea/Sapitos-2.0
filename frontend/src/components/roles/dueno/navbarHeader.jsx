@@ -11,7 +11,7 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
     if (cookieData) {
       try {
         setUserData(cookieData);
-        //console.log(cookieData) 
+        console.log(cookieData) 
         //console.log(cookieData.NOMBRE) 
       } catch (e) {
         console.log("x")
@@ -32,11 +32,21 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
                 className="icon text-2xl non-active"
               />
             </button>
+
+            {/* Organization name */}
+            <div className="d-flex align-items-center" style={{ height: "100%" }}>
+              <span className="fs-4 fw-semibold text-dark">
+                {userData?.ORGANIZACION || ""}
+              </span>
+            </div>
+
             <button onClick={mobileMenuControl} type="button" className="sidebar-mobile-toggle">
               <Icon icon="heroicons:bars-3-solid" className="icon" />
             </button>
           </div>
         </div>
+
+
 
         <UserMenu
           name={userData?.NOMBRE || "Usuario"} 
