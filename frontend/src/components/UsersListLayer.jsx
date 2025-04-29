@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // IMPORTANTE: useNavigate agregado
 import axios from "axios";
 
 const UsersListLayer = () => {
@@ -10,6 +10,8 @@ const UsersListLayer = () => {
   const [paginaActual, setPaginaActual] = useState(1);
   const usuariosPorPagina = 10;
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate(); // Usamos navigate para movernos a AddUserLayer
 
   useEffect(() => {
     fetchUsuarios();
@@ -31,7 +33,7 @@ const UsersListLayer = () => {
   const eliminarUsuario = async (correo) => {
     try {
       await axios.delete('http://localhost:5000/users/deleteUser', { data: { correo } });
-      fetchUsuarios(); // recarga después de eliminar
+      fetchUsuarios();
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
     }
@@ -106,12 +108,16 @@ const UsersListLayer = () => {
                         <td>{usuario.rol}</td>
                         <td className="text-center">
                           <div className="d-flex align-items-center gap-10 justify-content-center">
-                            <button type="button" className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle">
-                              <Icon icon="majesticons:eye-line" className="icon text-xl" />
-                            </button>
-                            <button type="button" className="bg-success-focus bg-hover-success-200 text-success-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle">
+                            {/* Botón Editar */}
+                            <button
+                              type="button"
+                              onClick={() => navigate("/agregar-usuario", { state: { usuarioEditar: usuario } })}
+                              className="bg-success-focus bg-hover-success-200 text-success-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                            >
                               <Icon icon="lucide:edit" className="menu-icon" />
                             </button>
+
+                            {/* Botón Eliminar */}
                             <button
                               type="button"
                               onClick={() => eliminarUsuario(usuario.correo)}
@@ -134,26 +140,21 @@ const UsersListLayer = () => {
               </table>
             </div>
 
+            {/* Paginación */}
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
               <span>Mostrando {indicePrimerUsuario + 1} a {Math.min(indiceUltimoUsuario, usuariosFiltrados.length)} de {usuariosFiltrados.length} registros</span>
               <ul className="pagination d-flex flex-wrap align-items-center gap-2 justify-content-center">
-                <li className="page-item">
-                  <Link to="#" className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px text-md">
-                    <Icon icon="ep:d-arrow-left" />
-                  </Link>
-                </li>
                 {Array.from({ length: totalPaginas }, (_, idx) => (
                   <li key={idx} className="page-item">
-                    <Link to="#" className={`page-link ${paginaActual === idx + 1 ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-secondary-light'} fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md`}>
+                    <button
+                      type="button"
+                      onClick={() => cambiarPagina(idx + 1)}
+                      className={`page-link ${paginaActual === idx + 1 ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-secondary-light'} fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md`}
+                    >
                       {idx + 1}
-                    </Link>
+                    </button>
                   </li>
                 ))}
-                <li className="page-item">
-                  <Link to="#" className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px text-md">
-                    <Icon icon="ep:d-arrow-right" />
-                  </Link>
-                </li>
               </ul>
             </div>
           </>

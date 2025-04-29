@@ -47,17 +47,7 @@ const InvoiceListLayer = () => {
           </div>
         </div>
         <div className='d-flex flex-wrap align-items-center gap-3'>
-          <select
-            className='form-select form-select-sm w-auto'
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value=''>Filtrar</option>
-            <option value='Completado'>Completado</option>
-            <option value='En Reparto'>En Reparto</option>
-            <option value='Pendiente'>Pendiente</option>
-          </select>
-          <Link to='/invoice-add' className='btn btn-sm btn-primary-600'>
+          <Link to='/crearpedido' className='btn btn-sm btn-primary-600'>
             <i className='ri-add-line' /> Crear Pedido
           </Link>
         </div>
@@ -92,9 +82,6 @@ const InvoiceListLayer = () => {
                 <td>
                   <Link to='/invoice-preview' className='w-32-px h-32-px me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'>
                     <Icon icon='iconamoon:eye-light' />
-                  </Link>
-                  <Link to='/invoice-edit' className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'>
-                    <Icon icon='lucide:edit' />
                   </Link>
                   <Link to='#' className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'>
                     <Icon icon='mingcute:delete-2-line' />

@@ -25,6 +25,7 @@ import Pedidos from "./pages/admin/Pedidos"
 // Para usuarios admin 
 import Usuarios from "./pages/admin/UsuarioPagina";
 import UsuariosShec from "./pages/admin/UsuariosShec";
+import AddUserLayer from "./components/AddUserLayer";
 
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
@@ -135,6 +136,21 @@ const App = () => {
           path="/usuarios" 
           element={
             role === "admin" ? <UsuariosShec /> :
+            <Navigate to="/" />
+          } 
+        />
+        <Route 
+          path="/agregar-usuario" 
+          element={
+            role === "admin" ? <AddUserLayer /> :
+            <Navigate to="/" />
+          } 
+        />
+
+        <Route 
+          path="/crearpedido" 
+          element={
+            role === "admin" ? <InvoiceAddLayer /> :
             <Navigate to="/" />
           } 
         />
