@@ -23,7 +23,6 @@ import OrdenesProveedor from "./pages/proveedor/Ordenes"
 import Pedidos from "./pages/admin/Pedidos"
 
 // Para usuarios admin 
-import Usuarios from "./pages/admin/UsuarioPagina";
 import UsuariosShec from "./pages/admin/UsuariosShec";
 import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
