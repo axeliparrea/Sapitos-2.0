@@ -1,5 +1,5 @@
 import MasterLayout from "../../components/masterLayout";
-import InvoiceListLayer from "../../components/InvoiceListLayer";
+import Ordenes from "../../components/OrdenesProveedor";
 
 const HomeProveedor = () => {
   return (
@@ -7,7 +7,7 @@ const HomeProveedor = () => {
       {/* MasterLayout */}
       <MasterLayout role="proveedor">
         
-        <InvoiceListLayer/>
+        <Ordenes/>
 
       </MasterLayout>
     </>

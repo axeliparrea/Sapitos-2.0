@@ -17,7 +17,7 @@ import HomeCliente from "./pages/cliente/Home";
 import InventarioCliente from "./pages/cliente/Inventario"
 
 import HomeProveedor from "./pages/proveedor/Home";
-import OrdenesProveedor from "./pages/proveedor/Ordenes"
+import OrdenesProveedor from "./pages/proveedor/Home";
 
 import Pedidos from "./pages/admin/Pedidos"
 
