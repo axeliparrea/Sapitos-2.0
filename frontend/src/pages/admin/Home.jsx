@@ -1,11 +1,13 @@
 import MasterLayout from "../../components/masterLayout";
+import DashBoardLayerOne from "../../components/DashBoardLayerOne";
+
 
 const HomeAdmin = () => {
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout role="admin">
-        <h1>Usuarios</h1>
+        <DashBoardLayerOne />
       </MasterLayout>
     </>
   );

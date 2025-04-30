@@ -6,38 +6,79 @@ import axios from "axios";
 const InvoiceAddLayer = () => {
   const [pedidoEnviado, setPedidoEnviado] = useState(false);
   const [pedidoID, setPedidoID] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const handleEnviarPedido = () => {
-    const nuevoID = generarIDPedido();
-    setPedidoID(nuevoID);
-    setPedidoEnviado(true);
+  const handleEnviarPedido = async (productos, proveedorSeleccionado, total) => {
+    if (productos.length === 0 || !proveedorSeleccionado || total <= 0) {
+      setError("Por favor selecciona un proveedor y al menos un producto");
+      return;
+    }
 
-    setTimeout(() => {
-      navigate("/pedidos"); 
-    }, 2500); 
-  };
+    setIsSubmitting(true);
+    setError(null);
 
-  const generarIDPedido = () => {
-    const random = Math.floor(Math.random() * 900000) + 100000; 
-    return `#${random}`;
+    try {
+      // Filtrar productos con cantidad > 0
+      const productosParaEnviar = productos
+        .filter(producto => producto.cantidad > 0)
+        .map(producto => ({
+          id: producto.ID || producto.id,
+          cantidad: producto.cantidad,
+          precioUnitario: producto.precio || producto.PrecioCompra
+        }));
+
+      if (productosParaEnviar.length === 0) {
+        setError("Por favor agrega al menos un producto al pedido");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Crear el pedido usando tu endpoint
+      const response = await axios.post("http://localhost:5000/pedidos", {
+        creadaPor: proveedorSeleccionado, // El correo del proveedor
+        productos: productosParaEnviar,
+        total: total,
+        metodoPago: "Transferencia", // Puedes hacer esto configurable
+        descuentoAplicado: 0 // Puedes hacer esto configurable
+      });
+
+      setPedidoID(response.data.pedidoId);
+      setPedidoEnviado(true);
+
+      setTimeout(() => {
+        navigate("/pedidos"); 
+      }, 2500);
+    } catch (err) {
+      console.error("Error al enviar pedido:", err);
+      setError(err.response?.data?.error || "Error al enviar el pedido");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className='card'>
-      <EncabezadoFormulario onEnviar={handleEnviarPedido} />
+      <EncabezadoFormulario isSubmitting={isSubmitting} />
       <div className='card-body py-40'>
+        {error && (
+          <div className='alert alert-danger text-sm mb-4'>
+            <Icon icon='mdi:alert-circle-outline' className='me-2 text-lg' />
+            {error}
+          </div>
+        )}
         {pedidoEnviado && (
           <div className='alert alert-success text-sm mb-4'>
             <Icon icon='mdi:check-circle-outline' className='me-2 text-lg' />
-            Pedido {pedidoID} enviado con éxito.
+            Pedido #{pedidoID} enviado con éxito.
           </div>
         )}
         <div className='row justify-content-center'>
           <div className='col-lg-8'>
             <div className='shadow-4 border radius-8'>
               <InformacionPedido pedidoID={pedidoID} />
-              <TablaProductos />
+              <TablaProductos onEnviarPedido={handleEnviarPedido} isSubmitting={isSubmitting} />
             </div>
           </div>
         </div>
@@ -46,17 +87,10 @@ const InvoiceAddLayer = () => {
   );
 };
 
-const EncabezadoFormulario = ({ onEnviar }) => (
+const EncabezadoFormulario = ({ isSubmitting }) => (
   <div className='card-header'>
-    <div className='d-flex flex-wrap align-items-center justify-content-end gap-2'>
-      <button
-        type='button'
-        onClick={onEnviar}
-        className='btn btn-sm btn-primary-600 radius-8 d-inline-flex align-items-center gap-1'
-      >
-        <Icon icon='mdi:send' className='text-xl' />
-        Enviar Pedido
-      </button>
+    <div className='d-flex flex-wrap align-items-center justify-content-between'>
+      <h2 className='card-title mb-0'>Nuevo Pedido</h2>
     </div>
   </div>
 );
@@ -68,7 +102,7 @@ const InformacionPedido = ({ pedidoID }) => {
     <div className='p-20 border-bottom'>
       <div className='row justify-content-between g-3'>
         <div className='col-sm-6'>
-          <h3 className='text-xl'>Nuevo Pedido {pedidoID ? pedidoID : ""}</h3>
+          <h3 className='text-xl'>Nuevo Pedido {pedidoID ? `#${pedidoID}` : ""}</h3>
           <p className='mb-1 text-sm'>
             Fecha: <span className='fw-semibold'>{fechaHoy}</span>
           </p>
@@ -81,21 +115,37 @@ const InformacionPedido = ({ pedidoID }) => {
   );
 };
 
-const TablaProductos = () => {
+const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState("");
+  const [proveedores, setProveedores] = useState([]);
   const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const proveedores = [
-    "GUCCI", "ZARA", "Bershka", "Tommy Hilfiger", "Michael Kors",
-    "Pull&Bear", "H&M", "Calvin Klein", "Stradivarius", "Levi's"
-  ];
+  // Cargar proveedores al inicio - MODIFICADO para usar el nuevo endpoint
+  useEffect(() => {
+    const fetchProveedores = async () => {
+      try {
+        // Actualizado para usar el nuevo endpoint de proveedores
+        const response = await axios.get('http://localhost:5000/inventory/proveedor');
+        // Como ahora la respuesta será un array de objetos con propiedad "proveedor"
+        setProveedores(response.data || []);
+      } catch (error) {
+        console.error("Error al obtener proveedores:", error);
+      }
+    };
 
+    fetchProveedores();
+  }, []);
+
+  // Cargar productos cuando se selecciona un proveedor - MODIFICADO para usar el nuevo endpoint
   useEffect(() => {
     const fetchProductos = async () => {
       if (!proveedorSeleccionado) return;
-
+      
+      setLoading(true);
       try {
-        const response = await axios.get(`http://localhost:5000/products/by-provider?name=${proveedorSeleccionado}`);
+        // Actualizado para usar el nuevo endpoint para obtener productos por proveedor
+        const response = await axios.get(`http://localhost:5000/inventory/proveedores/${proveedorSeleccionado}`);
         const productosConCantidad = (response.data || []).map(prod => ({
           ...prod,
           cantidad: 0,
@@ -104,6 +154,8 @@ const TablaProductos = () => {
       } catch (error) {
         console.error("Error al obtener productos:", error);
         setProductos([]);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -118,7 +170,10 @@ const TablaProductos = () => {
   };
 
   const calcularSubtotal = () => {
-    return productos.reduce((total, producto) => total + (producto.precio * producto.cantidad), 0);
+    return productos.reduce((total, producto) => {
+      const precio = producto.precioCompra || producto.PrecioCompra || producto.precio || 0;
+      return total + (precio * producto.cantidad);
+    }, 0);
   };
 
   const subtotal = calcularSubtotal();
@@ -139,8 +194,9 @@ const TablaProductos = () => {
           <option value='' disabled>
             Selecciona un proveedor
           </option>
-          {proveedores.map((p, idx) => (
-            <option key={idx} value={p}>{p}</option>
+          {proveedores.map((p, index) => (
+            // Actualizado para usar la propiedad "proveedor" del nuevo endpoint
+            <option key={index} value={p.proveedor}>{p.proveedor}</option>
           ))}
         </select>
       </div>
@@ -153,37 +209,50 @@ const TablaProductos = () => {
               <th>No.</th>
               <th>Producto</th>
               <th>Cantidad</th>
-              <th>Unidad</th>
+              <th>Stock Actual</th>
               <th>Precio Unitario</th>
               <th>Precio Total</th>
             </tr>
           </thead>
           <tbody>
-            {productos.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan='6' className='text-center'>
+                  <div className='spinner-border spinner-border-sm text-primary' role='status'>
+                    <span className='visually-hidden'>Cargando...</span>
+                  </div>
+                  <span className='ms-2'>Cargando productos...</span>
+                </td>
+              </tr>
+            ) : productos.length === 0 ? (
               <tr>
                 <td colSpan='6' className='text-center text-muted'>
-                  Selecciona un proveedor para ver sus productos
+                  {proveedorSeleccionado ? 'No hay productos disponibles' : 'Selecciona un proveedor para ver sus productos'}
                 </td>
               </tr>
             ) : (
-              productos.map((producto, idx) => (
-                <tr key={producto.id || idx}>
-                  <td>{String(idx + 1).padStart(2, '0')}</td>
-                  <td>{producto.nombre}</td>
-                  <td>
-                    <input
-                      type='number'
-                      min='0'
-                      value={producto.cantidad}
-                      onChange={(e) => handleCantidadChange(idx, e.target.value)}
-                      className='form-control form-control-sm w-80-px'
-                    />
-                  </td>
-                  <td>{producto.unidad}</td>
-                  <td>${producto.precio}</td>
-                  <td>${(producto.precio * producto.cantidad).toFixed(2)}</td>
-                </tr>
-              ))
+              productos.map((producto, idx) => {
+                // Actualizado para manejar los diferentes formatos de propiedad
+                const precio = producto.precioCompra || producto.PrecioCompra || producto.precio || 0;
+                return (
+                  <tr key={producto.id || producto.ID || idx}>
+                    <td>{String(idx + 1).padStart(2, '0')}</td>
+                    <td>{producto.nombre || producto.Nombre}</td>
+                    <td>
+                      <input
+                        type='number'
+                        min='0'
+                        value={producto.cantidad}
+                        onChange={(e) => handleCantidadChange(idx, e.target.value)}
+                        className='form-control form-control-sm w-80-px'
+                      />
+                    </td>
+                    <td>{producto.stockActual || producto.StockActual || 'N/A'}</td>
+                    <td>${precio.toFixed(2)}</td>
+                    <td>${(precio * producto.cantidad).toFixed(2)}</td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -237,6 +306,28 @@ const TablaProductos = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Botón de enviar pedido */}
+      <div className='d-flex justify-content-end mt-24'>
+        <button
+          type='button'
+          onClick={() => onEnviarPedido(productos, proveedorSeleccionado, total)}
+          disabled={isSubmitting || !proveedorSeleccionado || productos.length === 0 || total <= 0}
+          className='btn btn-primary-600 radius-8 d-inline-flex align-items-center gap-1'
+        >
+          {isSubmitting ? (
+            <>
+              <span className='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span>
+              <span className='ms-2'>Procesando...</span>
+            </>
+          ) : (
+            <>
+              <Icon icon='mdi:send' className='text-xl' />
+              Enviar Pedido
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

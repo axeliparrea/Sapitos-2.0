@@ -1,11 +1,14 @@
 import MasterLayout from "../../components/masterLayout";
+import InvoiceListLayer from "../../components/InvoiceListLayer";
 
 const HomeProveedor = () => {
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout role="proveedor">
-        <h1>Estadisticas</h1>
+        
+        <InvoiceListLayer/>
+
       </MasterLayout>
     </>
   );
