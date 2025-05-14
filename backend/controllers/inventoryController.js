@@ -267,103 +267,10 @@ const deleteInventory = async (req, res) => {
   }
 };
 
-const getProveedores = async (req, res) => {
-  try {
-    const query = `
-      SELECT DISTINCT PROVEEDOR 
-      FROM DBADMIN.Productos
-      WHERE PROVEEDOR IS NOT NULL
-      ORDER BY PROVEEDOR
-    `;
-
-    connection.exec(query, [], async (err, result) => {
-      if (err) {
-        console.error("Error al obtener los proveedores", err);
-        return res.status(500).json({ error: "Error al obtener los proveedores" });
-      }
-
-      const proveedores = result.map(item => ({
-        proveedor: item.PROVEEDOR
-      }));
-      
-      res.status(200).json(proveedores);
-    });
-  } catch (error) {
-    console.error("Error general:", error);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-};
-
-/**
- * Obtiene todos los productos de un proveedor específico
- */
-const getProductosPorProveedor = async (req, res) => {
-  const proveedor = req.params.proveedor;
-  
-  try {
-    const query = `
-      SELECT
-        ID, 
-        PROVEEDOR,
-        NOMBRE,
-        CATEGORIA,
-        STOCKACTUAL,
-        STOCKMINIMO,
-        FECHAULTIMACOMPRA,
-        FECHAULTIMAVENTA,
-        PRECIOCOMPRA,
-        PRECIOVENTA,
-        TEMPORADA,
-        MARGENGANANCIA,
-        TIEMPOREPOSIPROM,
-        DEMANDAPROM,
-        STOCKSEGURIDAD
-      FROM DBADMIN.Productos
-      WHERE PROVEEDOR = ?
-    `;
-
-    connection.exec(query, [proveedor], (err, result) => {
-      if (err) {
-        console.error("Error al obtener productos del proveedor:", err);
-        return res.status(500).json({ error: "Error al obtener productos del proveedor" });
-      }
-
-      if (result.length === 0) {
-        return res.status(404).json({ error: "No se encontraron productos para este proveedor" });
-      }
-
-      const formatted = result.map(producto => ({
-        id: producto.ID,
-        proveedor: producto.PROVEEDOR,
-        nombre: producto.NOMBRE,
-        categoria: producto.CATEGORIA,
-        stockActual: producto.STOCKACTUAL,
-        stockMinimo: producto.STOCKMINIMO,
-        fechaUltimaCompra: producto.FECHAULTIMACOMPRA,
-        fechaUltimaVenta: producto.FECHAULTIMAVENTA,
-        precioCompra: producto.PRECIOCOMPRA,
-        precioVenta: producto.PRECIOVENTA,
-        temporada: producto.TEMPORADA,
-        margenGanancia: producto.MARGENGANANCIA,
-        tiempoReposicionProm: producto.TIEMPOREPOSIPROM,
-        demandaProm: producto.DEMANDAPROM,
-        stockSeguridad: producto.STOCKSEGURIDAD
-      }));
-
-      res.status(200).json(formatted);
-    });
-  } catch (error) {
-    console.error("Error general:", error);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-};
-
 module.exports = {
   getInventory,
   insertInventory,
   getInventoryById,
   updateInventory,
-  deleteInventory,
-  getProveedores,
-  getProductosPorProveedor
+  deleteInventory
 };

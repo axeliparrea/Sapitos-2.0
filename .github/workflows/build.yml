@@ -1,0 +1,48 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v3
+
+    - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: 📦 Instalar dependencias del backend
+      working-directory: backend
+      run: npm install
+
+    - name: 📦 Instalar dependencias del frontend
+      working-directory: frontend
+      run: npm install
+
+    - name: 🧹 Lint backend
+      working-directory: backend
+      run: npm run lint
+
+    - name: 🧹 Lint frontend
+      working-directory: frontend
+      run: npm run lint
+
+    - name: ✅ Ejecutar pruebas unitarias del backend
+      working-directory: backend
+      run: npm test
+
+    - name: ✅ Ejecutar pruebas del frontend
+      working-directory: frontend
+      run: npx vitest run --coverage

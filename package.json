@@ -1,0 +1,29 @@
+{
+  "name": "sapatos",
+  "version": "1.0.0",
+  "description": "Before running the project, ensure you have the following:",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SapatosSinNombre/Sapatos.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/SapatosSinNombre/Sapatos/issues"
+  },
+  "homepage": "https://github.com/SapatosSinNombre/Sapatos#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "eslint": "^9.26.0",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.1.0",
+    "jest": "^29.7.0"
+  }
+}

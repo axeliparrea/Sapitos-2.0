@@ -4,9 +4,7 @@ const {
   insertInventory, 
   getInventoryById, 
   updateInventory, 
-  deleteInventory,
-  getProveedores,
-  getProductosPorProveedor
+  deleteInventory 
 } = require("../controllers/inventoryController");
 const router = express.Router();
 
@@ -66,8 +64,8 @@ const { auth } = require('../middleware/auth');
  *         description: Server error
  */
 
-// router.get("/", auth(["admin", "dueno", "empleado"]), getInventory);
-router.get("/", getInventory);
+router.get("/", auth(["admin", "dueno", "empleado"]), getInventory);
+// router.get("/", getInventory);
 
 
 /**
@@ -211,98 +209,5 @@ router.put("/:id", auth(["admin", "dueno"]), updateInventory);
  *         description: Server error
  */
 router.delete("/:id", auth(["admin", "dueno"]), deleteInventory);
-
-/**
- * @swagger
- * /proveedores:
- *   get:
- *     summary: Obtener todos los proveedores
- *     tags: [Proveedores]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de proveedores
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   proveedor:
- *                     type: string
- *       500:
- *         description: Error del servidor
- */
-// router.get("/", auth(["admin", "dueno", "empleado"]), getProveedores);
-router.get("/", getProveedores);
-
-
-/**
- * @swagger
- * /proveedores/{proveedor}:
- *   get:
- *     summary: Obtener todos los productos por proveedor
- *     tags: [Proveedores]
- *     parameters:
- *       - in: path
- *         name: proveedor
- *         schema:
- *           type: string
- *         required: true
- *         description: Nombre del proveedor
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de productos del proveedor
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   proveedor:
- *                     type: string
- *                   nombre:
- *                     type: string
- *                   categoria:
- *                     type: string
- *                   stockActual:
- *                     type: integer
- *                   stockMinimo:
- *                     type: integer
- *                   fechaUltimaCompra:
- *                     type: string
- *                     format: date
- *                   fechaUltimaVenta:
- *                     type: string
- *                     format: date
- *                   precioCompra:
- *                     type: number
- *                   precioVenta:
- *                     type: number
- *                   temporada:
- *                     type: string
- *                   margenGanancia:
- *                     type: number
- *                   tiempoReposicionProm:
- *                     type: number
- *                   demandaProm:
- *                     type: number
- *                   stockSeguridad:
- *                     type: number
- *       404:
- *         description: No se encontraron productos para este proveedor
- *       500:
- *         description: Error del servidor
- */
-// router.get("/:proveedor", auth(["admin", "dueno", "empleado"]), getProductosPorProveedor);
-router.get("/:proveedor",getProductosPorProveedor);
-
 
 module.exports = router;

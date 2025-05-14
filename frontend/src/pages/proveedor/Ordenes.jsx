@@ -1,14 +1,14 @@
 import MasterLayout from "../../components/masterLayout";
 
-const HomeProveedor = () => {
+const Ordenes = () => {
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout role="proveedor">
-        <h1>Estadisticas</h1>
+        <h1>Ordenes</h1>
       </MasterLayout>
     </>
   );
 };
 
-export default HomeProveedor;
+export default Ordenes;
