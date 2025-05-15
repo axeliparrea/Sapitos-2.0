@@ -28,10 +28,14 @@ export default [
       'jsx-a11y': jsxA11y,
     },
     rules: {
-      'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'off',
-      'react-hooks/rules-of-hooks': 'error',
+      'react/react-in-jsx-scope': 'warn',
+      'react/prop-types': 'warn',
+      'react-hooks/rules-of-hooks': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
+      // 'react/react-in-jsx-scope': 'off',
+      // 'react/prop-types': 'off',
+      // 'react-hooks/rules-of-hooks': 'error',
+      // 'react-hooks/exhaustive-deps': 'warn',
     },
     settings: {
       react: {
