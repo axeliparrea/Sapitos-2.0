@@ -16,7 +16,7 @@ const SignInPage = () => {
 
     const checkSession = async () => {
       try {
-        const response = await fetch("http://localhost:5000/users/getSession", {
+        const response = await fetch("https://sapitos-20-production.up.railway.app/users/getSession", {
           credentials: "include",
         });
 
@@ -45,7 +45,7 @@ const SignInPage = () => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/users/login", {
+      const response = await fetch("https://sapitos-20-production.up.railway.app/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo: email, contrasena: password }),
