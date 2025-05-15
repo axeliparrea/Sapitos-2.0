@@ -72,7 +72,7 @@ const App = () => {
 
   return (
 
-    <BrowserRouter>
+    <BrowserRouter basename="/Sapitos-2.0">
       <Routes>
         <Route path="/" element={<SignInPage />} />
         <Route
