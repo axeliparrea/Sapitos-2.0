@@ -71,8 +71,8 @@ const loginUser = async (req, res) => {
       // Secure auth token in HttpOnly cookie
       res.cookie("Auth", token, {
         httpOnly: true,
-        secure: false, // Set to true in production (HTTPS required)
-        sameSite: "Lax",
+        secure: true, // Set to true in production (HTTPS required)
+        sameSite: "None", //Es para hacer el crosssite
         maxAge: 3600000 // 1 hour
       });
       
