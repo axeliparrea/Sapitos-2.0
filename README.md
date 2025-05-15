@@ -7,7 +7,7 @@ Before running the project, ensure you have the following:
 
 ---
 
-## How to Run the Project  
+## How to Run the Project h 
 
 ### **1️. Start the Backend**  
 _Open a terminal and run:_  
