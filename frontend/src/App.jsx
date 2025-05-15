@@ -30,45 +30,45 @@ const App = () => {
   const [role, setRole] = useState(null); // Initially null
   const [loading, setLoading] = useState(true); // Loading state
 
-  useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const cookieResponse = await fetch("https://sapitos-20-production.up.railway.app/users/getSession", {
-          credentials: "include",
-        });
+  // useEffect(() => {
+  //   const fetchSession = async () => {
+  //     try {
+  //       const cookieResponse = await fetch("https://sapitos-20-production.up.railway.app/users/getSession", {
+  //         credentials: "include",
+  //       });
 
-        if (!cookieResponse.ok) {
-          setLoading(false);
-          return; // No token found, stop execution
-        }
+  //       if (!cookieResponse.ok) {
+  //         setLoading(false);
+  //         return; // No token found, stop execution
+  //       }
 
-        const data = await cookieResponse.json();
-        //console.log("Session Data:", data);
+  //       const data = await cookieResponse.json();
+  //       //console.log("Session Data:", data);
 
-        const token = data.token;
-        if (!token) {
-          setLoading(false);
-          return;
-        }
+  //       const token = data.token;
+  //       if (!token) {
+  //         setLoading(false);
+  //         return;
+  //       }
 
-        // Decode token
-        const decoded = jwtDecode(token);
-        //console.log("Decoded JWT:", decoded);
-        setRole(decoded.ROL); 
-      } catch (error) {
-        console.error("Error fetching session:", error);
-      }
-      setLoading(false);
-    };
+  //       // Decode token
+  //       const decoded = jwtDecode(token);
+  //       //console.log("Decoded JWT:", decoded);
+  //       setRole(decoded.ROL); 
+  //     } catch (error) {
+  //       console.error("Error fetching session:", error);
+  //     }
+  //     setLoading(false);
+  //   };
 
-    fetchSession();
-  }, []);
+  //   fetchSession();
+  // }, []);
 
-  // Show a loading indicator while waiting for the role
-  if (loading) {
-    console.log("Loading...");
-    return <div>Loading...</div>;
-  }
+  // // Show a loading indicator while waiting for the role
+  // if (loading) {
+  //   console.log("Loading...");
+  //   return <div>Loading...</div>;
+  // }
 
   return (
 

@@ -17,7 +17,6 @@ const SignInPage = () => {
           credentials: "include",
         });
 
-        // Si hay sesión válida, redirigir al dashboard
         if (response.ok) {
           const data = await response.json();
           if (data.token) {
