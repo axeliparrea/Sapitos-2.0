@@ -1,7 +1,7 @@
 import MasterLayout from "../../components/masterLayout";
 import DashBoardLayerOne from "../../components/DashBoardLayerOne";
 
-const HomeAdmin = () => {
+const HomePageOne = () => {
   return (
     <>
       {/* MasterLayout */}
@@ -13,4 +13,5 @@ const HomeAdmin = () => {
   );
 };
 
-export default HomeAdmin;
+export default HomePageOne;
+
