@@ -1,0 +1,1 @@
+import{j as s,N as c,I as r}from"./index-ecUS1zmR.js";const o=({to:a,icon:e,label:i})=>s.jsx("li",{children:s.jsxs(c,{to:a,className:n=>n.isActive?"active-page":"",children:[s.jsx(r,{icon:e,className:"menu-icon"}),s.jsx("span",{children:i})]})});export{o as S};
