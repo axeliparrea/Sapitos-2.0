@@ -1,0 +1,19 @@
+{
+  "builds": [
+    {
+      "src": "backend/package.json",
+      "use": "@railway/node",
+      "config": {
+        "installCommand": "cd backend && npm install",
+        "buildCommand": "cd backend && npm run build",
+        "startCommand": "cd backend && npm start"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "backend"
+    }
+  ]
+}
