@@ -33,6 +33,7 @@ const SignInPage = () => {
     checkSession();
   }, [navigate]);
 
+  
   const handleLogin = async (event) => {
     event.preventDefault();
 
