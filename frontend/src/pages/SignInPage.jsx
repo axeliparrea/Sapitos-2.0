@@ -20,6 +20,10 @@ const SignInPage = () => {
       try {
         const response = await fetch("https://sapitos-20-production.up.railway.app/users/getSession", {
           credentials: "include",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
         });
 
         if (!response.ok) return;
@@ -49,7 +53,10 @@ const SignInPage = () => {
     try {
       const response = await fetch("https://sapitos-20-production.up.railway.app/users/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
       });

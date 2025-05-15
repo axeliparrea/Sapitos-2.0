@@ -11,26 +11,22 @@ const ordenesRoutes = require("./routes/ordenes");
 
 const app = express();
 
-const corsOptions = {
-    origin: function(origin, callback) {
-        const allowedOrigins = ["https://axeliparrea.github.io"];
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    methods: "GET,POST,PUT,DELETE,OPTIONS",
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 200
-};
+
+app.use(cors({
+  origin: ['https://axeliparrea.github.io', 'http://localhost:5173'], 
+  credentials: true, 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'geolocation=(), camera=()');
+  next();
+});
 
 app.use(cookieParser()); 
 app.set('trust proxy', 1);
 
-app.use(cors(corsOptions));
 app.use(express.json());
 
 

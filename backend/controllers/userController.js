@@ -73,7 +73,8 @@ const loginUser = async (req, res) => {
         httpOnly: true,
         secure: true, // Set to true in production (HTTPS required)
         sameSite: "None", //Es para hacer el crosssite
-        maxAge: 3600000 // 1 hour
+        maxAge: 3600000, // 1 hour
+        path: "/" 
       });
       
       res.cookie("UserData", JSON.stringify({
@@ -85,7 +86,8 @@ const loginUser = async (req, res) => {
         httpOnly: false,
         secure: true, // true in prod
         sameSite: "None",
-        maxAge: 3600000
+        maxAge: 3600000,
+        path: "/" 
       });
       
 
@@ -201,7 +203,19 @@ const getSession = async (req, res) => {
 }
 
 const logoutUser = async (req, res) => {
-  res.clearCookie("Auth", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
+  res.clearCookie("Auth", { 
+    path: "/", 
+    httpOnly: true, 
+    secure: true, 
+    sameSite: "None" 
+  });
+  res.clearCookie("UserData", { 
+    path: "/", 
+    httpOnly: false, 
+    secure: true, 
+    sameSite: "None" 
+  });
+  
   res.status(200).json({ message: "Sesión cerrada" });
 };
 
