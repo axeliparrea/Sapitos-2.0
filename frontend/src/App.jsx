@@ -33,7 +33,7 @@ const App = () => {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const cookieResponse = await fetch("http://localhost:5000/users/getSession", {
+        const cookieResponse = await fetch("https://sapitos-20-production.up.railway.app/users/getSession", {
           credentials: "include",
         });
 
