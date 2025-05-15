@@ -12,10 +12,20 @@ const ordenesRoutes = require("./routes/ordenes");
 const app = express();
 
 const corsOptions = {
-    origin: "http://localhost:5173", // Your frontend's origin
-    methods: "GET,POST,PUT,DELETE",             // Specify methods you want to allow
-    credentials: true,               // Allow credentials (cookies)
-  };
+    origin: function(origin, callback) {
+        const allowedOrigins = ["http://localhost:5173", "https://axeliparrea.github.io"];
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: "GET,POST,PUT,DELETE,OPTIONS",
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200
+};
 
 app.use(cookieParser()); 
 
