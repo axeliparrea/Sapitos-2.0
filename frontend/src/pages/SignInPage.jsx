@@ -14,6 +14,10 @@ const SignInPage = () => {
     const checkSession = async () => {
       try {
         const response = await fetch("https://sapitos-20-production.up.railway.app/users/getSession", {
+          method: "GET",
+          headers: { 
+            "Content-Type": "application/json",
+          },
           credentials: "include",
         });
 
@@ -33,7 +37,7 @@ const SignInPage = () => {
     checkSession();
   }, [navigate]);
 
-  
+
   const handleLogin = async (event) => {
     event.preventDefault();
 
