@@ -8,44 +8,31 @@ const SignInPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const hasCheckedSession = useRef(false)
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (hasCheckedSession.current) return; 
-    hasCheckedSession.current = true;
-
-
-  
     const checkSession = async () => {
       try {
         const response = await fetch("https://sapitos-20-production.up.railway.app/users/getSession", {
           credentials: "include",
-          headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          }
         });
 
-        if (!response.ok) return;
-
-        const data = await response.json();
-        const token = data.token;
-        if (!token) return;
-
-        const decoded = jwtDecode(token);
-        //console.log("Usuario ya autenticado:", decoded);
-
-        const userRole = decoded.ROL;
-        if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {
-          navigate("/dashboard");
+        // Si hay sesión válida, redirigir al dashboard
+        if (response.ok) {
+          const data = await response.json();
+          if (data.token) {
+            navigate("/dashboard");
+          }
         }
       } catch (error) {
-        console.error("No se pudo verificar la sesión:", error);
+        console.error("Error checking session:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     checkSession();
-  }, [navigate]); 
+  }, [navigate]);
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -55,22 +42,27 @@ const SignInPage = () => {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Accept": "application/json"
         },
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
       });
-      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.error || "Login failed");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Login failed");
       }
 
-      window.location.reload(); 
+      // Redirigir después de login exitoso
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error:", error);
       alert(error.message || "Login failed");
     }
   };
+
+  if (isLoading) {
+    return <div className="d-flex justify-content-center align-items-center vh-100">Loading...</div>;
+  }
 
   return (
     <section className='auth bg-base d-flex flex-wrap'>
