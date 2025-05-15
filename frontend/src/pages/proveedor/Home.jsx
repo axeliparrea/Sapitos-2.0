@@ -5,7 +5,7 @@ const HomeProveedor = () => {
     <>
       {/* MasterLayout */}
       <MasterLayout role="proveedor">
-        <h1>Estadisticas</h1>
+        <h1>Estadisticas.</h1>
       </MasterLayout>
     </>
   );
