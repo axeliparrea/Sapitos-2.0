@@ -13,7 +13,7 @@ const app = express();
 
 const corsOptions = {
     origin: function(origin, callback) {
-        const allowedOrigins = ["http://localhost:5173", "https://axeliparrea.github.io"];
+        const allowedOrigins = ["https://axeliparrea.github.io"];
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
