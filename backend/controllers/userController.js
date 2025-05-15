@@ -83,8 +83,8 @@ const loginUser = async (req, res) => {
         NOMBRE: user.NOMBRE // added for clarity
       }), {
         httpOnly: false,
-        secure: false, // true in prod
-        sameSite: "Lax",
+        secure: true, // true in prod
+        sameSite: "None",
         maxAge: 3600000
       });
       

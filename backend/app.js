@@ -30,8 +30,9 @@ const corsOptions = {
 app.use(cookieParser()); 
 app.set('trust proxy', 1);
 
-app.use(express.json());
 app.use(cors(corsOptions));
+app.use(express.json());
+
 
 // login, register, and logout routes
 app.use("/users", userRoutes);

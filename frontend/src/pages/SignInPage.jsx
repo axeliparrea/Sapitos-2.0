@@ -14,6 +14,7 @@ const SignInPage = () => {
     if (hasCheckedSession.current) return; 
     hasCheckedSession.current = true;
 
+
     
     const checkSession = async () => {
       try {
