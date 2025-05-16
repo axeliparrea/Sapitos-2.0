@@ -24,14 +24,9 @@ const Inventory = () => {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const response = await fetch("https://sapitos-20-production.up.railway.app/inventory", {
-          method: "GET",
-          headers: { 
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          credentials: "include",
-        });
+        setLoading(true);
+        const response = await axios.get("https://sapitos-20-production.up.railway.app/users//inventory");
+        console.log('Tipo de response.data:', typeof response.data, response.data);
         setInventory(response.data);
         
         // Extraer opciones de filtro únicas
