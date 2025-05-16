@@ -25,7 +25,7 @@ const Inventory = () => {
     const fetchInventory = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("https://sapitos-20-production.up.railway.app/users//inventory");
+        const response = await axios.get('/inventory');
         console.log('Tipo de response.data:', typeof response.data, response.data);
         setInventory(response.data);
         
