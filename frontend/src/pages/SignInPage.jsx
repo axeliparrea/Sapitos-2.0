@@ -4,9 +4,12 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
+import { showAlert, showToast } from '../components/Alerts';
+
 const SignInPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const hasCheckedSession = useRef(false)
 
@@ -51,15 +54,23 @@ const SignInPage = () => {
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
       });
-      const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Login failed");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Error de autenticación");
       }
 
-      window.location.reload(); 
+      const data = await response.json();
+      
+      showToast(`Bienvenido ${email}`);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
     } catch (error) {
-      console.error("Error:", error);
-      alert(error.message || "Login failed");
+      console.error("Error en login:", error);
+      showAlert("Error", error.message || "Error al iniciar sesión", "Error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
