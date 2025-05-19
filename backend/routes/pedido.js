@@ -293,5 +293,7 @@ router.delete("/:id", deletePedido);
  */
 router.put("/:id", updatePedido);
 
+router.post('/proveedor', auth(["admin", "dueno", "empleado"]), pedidosController.crearPedidoAProveedor);
+router.put('/confirmar/:id', auth(["admin", "dueno", "empleado"]), pedidosController.confirmarPedido);
 
 module.exports = router;

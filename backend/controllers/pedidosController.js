@@ -348,6 +348,97 @@ const enviarAInventario = async (req, res) => {
   }
 };
 
+// Crear pedido como dueño a un proveedor
+const crearPedidoAProveedor = async (req, res) => {
+  try {
+    const { proveedorCorreo, productos, total, metodoPago = 'Transferencia' } = req.body;
+
+    if (!proveedorCorreo || !productos?.length || total === undefined) {
+      return res.status(400).json({ error: "Datos incompletos para crear el pedido" });
+    }
+
+    await connection.execSync('BEGIN');
+
+    // Insertar encabezado del pedido
+    const pedidoResult = await connection.execSync(`
+      INSERT INTO Ordenes (
+        Creada_por, TipoOrden, FechaCreacion, Estatus, Total, MetodoPago
+      ) VALUES (?, 'Compra', CURRENT_DATE, 'Solicitado', ?, ?)
+      RETURNING ID
+    `, [req.user.correo, total, metodoPago]);
+
+    const pedidoId = pedidoResult[0].ID;
+
+    // Insertar productos del pedido
+    for (const producto of productos) {
+      await connection.execSync(`
+        INSERT INTO OrdenesProductos (OrdenID, ProductoID, Cantidad, PrecioUnitario)
+        VALUES (?, ?, ?, ?)
+      `, [pedidoId, producto.id, producto.cantidad, producto.precioUnitario]);
+    }
+
+    // Registrar comentario indicando el proveedor
+    await connection.execSync(`
+      INSERT INTO ComentariosOrdenes (OrdenID, Creado_por, Comentario, FechaCreado)
+      VALUES (?, ?, 'Pedido solicitado al proveedor: ' || ?, CURRENT_DATE)
+    `, [pedidoId, req.user.correo, proveedorCorreo]);
+
+    await connection.execSync('COMMIT');
+    
+    res.status(201).json({ 
+      message: "Pedido a proveedor creado exitosamente",
+      pedidoId
+    });
+
+  } catch (error) {
+    await connection.execSync('ROLLBACK');
+    console.error("Error al crear pedido a proveedor:", error);
+    res.status(500).json({ error: "Error al crear el pedido", detalle: error.message });
+  }
+};
+
+// Confirmar pedido (para dueños)
+const confirmarPedido = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Verificar que el pedido esté pendiente
+    const [pedido] = await connection.execSync('SELECT Estatus FROM Ordenes WHERE ID = ?', [id]);
+    
+    if (!pedido) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+    
+    if (pedido.Estatus !== 'Pendiente') {
+      return res.status(400).json({ error: "Solo se pueden confirmar pedidos en estado Pendiente" });
+    }
+
+    await connection.execSync('BEGIN');
+    
+    // Actualizar estado y fechas
+    await connection.execSync(`
+      UPDATE Ordenes SET 
+        Estatus = 'Confirmado',
+        FechaPago = CURRENT_DATE
+      WHERE ID = ?
+    `, [id]);
+
+    // Registrar comentario
+    await connection.execSync(`
+      INSERT INTO ComentariosOrdenes (OrdenID, Creado_por, Comentario, FechaCreado)
+      VALUES (?, ?, 'Pedido confirmado y pagado', CURRENT_DATE)
+    `, [id, req.user.correo]);
+
+    await connection.execSync('COMMIT');
+    
+    res.status(200).json({ message: "Pedido confirmado exitosamente" });
+  } catch (error) {
+    await connection.execSync('ROLLBACK');
+    console.error("Error al confirmar pedido:", error);
+    res.status(500).json({ error: "Error al confirmar el pedido" });
+  }
+};
+
+
 module.exports = {
   getPedido,
   insertPedido,
@@ -358,5 +449,7 @@ module.exports = {
   entregarPedido,
   getPedidosProveedor,
   getDetallesPedido,
-  enviarAInventario
+  enviarAInventario,
+  crearPedidoAProveedor,
+  confirmarPedido
 };

@@ -358,6 +358,46 @@ const getProductosPorProveedor = async (req, res) => {
   }
 };
 
+const getProductosParaPedido = async (req, res) => {
+  const proveedor = req.params.proveedor;
+  
+  try {
+    const query = `
+      SELECT
+        ID, 
+        NOMBRE,
+        CATEGORIA,
+        STOCKACTUAL,
+        STOCKMINIMO,
+        PRECIOCOMPRA
+      FROM DBADMIN.Productos
+      WHERE PROVEEDOR = ?
+      ORDER BY NOMBRE
+    `;
+
+    connection.exec(query, [proveedor], (err, result) => {
+      if (err) {
+        console.error("Error al obtener productos del proveedor:", err);
+        return res.status(500).json({ error: "Error al obtener productos" });
+      }
+
+      const formatted = result.map(producto => ({
+        id: producto.ID,
+        nombre: producto.NOMBRE,
+        categoria: producto.CATEGORIA,
+        stockActual: producto.STOCKACTUAL,
+        stockMinimo: producto.STOCKMINIMO,
+        precioUnitario: producto.PRECIOCOMPRA
+      }));
+
+      res.status(200).json(formatted);
+    });
+  } catch (error) {
+    console.error("Error general:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
 module.exports = {
   getInventory,
   insertInventory,
@@ -365,5 +405,6 @@ module.exports = {
   updateInventory,
   deleteInventory,
   getProveedores,
-  getProductosPorProveedor
+  getProductosPorProveedor,
+  getProductosParaPedido
 };

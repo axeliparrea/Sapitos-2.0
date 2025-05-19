@@ -36,7 +36,7 @@ const InvoiceAddLayer = () => {
       }
 
       // Crear el pedido usando tu endpoint
-      const response = await axios.post("http://localhost:5000/pedidos", {
+      const response = await axios.post("http://localhost:5000/pedido", {
         creadaPor: proveedorSeleccionado, // El correo del proveedor
         productos: productosParaEnviar,
         total: total,
@@ -126,7 +126,7 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
     const fetchProveedores = async () => {
       try {
         // Actualizado para usar el nuevo endpoint de proveedores
-        const response = await axios.get('http://localhost:5000/inventory/proveedor');
+        const response = await axios.get('http://localhost:5000/inventory/proveedores');
         // Como ahora la respuesta será un array de objetos con propiedad "proveedor"
         setProveedores(response.data || []);
       } catch (error) {

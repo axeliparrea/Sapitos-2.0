@@ -1,26 +1,30 @@
-import { MessageBox } from "@ui5/webcomponents-react";
+import MessageBox from "@ui5/webcomponents-react/lib/MessageBox.js";
 
-export const showAlert = (title, message, type = "Information") => {
-  const iconMap = {
-    "Error": MessageBox.Icon.ERROR,
-    "Warning": MessageBox.Icon.WARNING,
-    "Success": MessageBox.Icon.SUCCESS,
-    "Information": MessageBox.Icon.INFORMATION,
-    "Question": MessageBox.Icon.QUESTION
-  };
-
-  MessageBox.show({
-    children: message,
+export const showAlert = async (title, message, type = "Information") => {
+  return MessageBox.show(message, {
     titleText: title,
-    icon: iconMap[type],
-    actions: [MessageBox.Action.OK]
+    icon: type,
+    actions: ["OK"]
   });
 };
 
 export const showToast = (message, duration = 3000) => {
-  const toast = document.createElement("ui5-toast");
-  toast.duration = duration;
-  toast.text = message;
-  document.body.appendChild(toast);
+  let toast = document.getElementById("global-toast");
+  if (!toast) {
+    toast = document.createElement("ui5-toast");
+    toast.id = "global-toast";
+    document.body.appendChild(toast);
+  }
+
+  toast.setAttribute("duration", duration);
+  toast.textContent = message;
   toast.show();
+};
+
+export const showConfirm = async (title, message) => {
+  return MessageBox.show(message, {
+    titleText: title,
+    icon: "Question",
+    actions: ["OK", "Cancel"]
+  });
 };

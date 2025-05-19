@@ -7,7 +7,6 @@ const { swaggerUi, specs } = require("./docs/swagger");
 const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
-const ordenesRoutes = require("./routes/ordenes");
 
 const app = express();
 
@@ -30,9 +29,6 @@ app.use("users/getUsers", userRoutes);
 
 // inventory routes
 app.use("/inventory", inventoryRoutes);
-
-// ordenes routes
-app.use("/ordenes", ordenesRoutes);
 
 // pedidos routes
 app.use("/pedido", pedidoRoutes);

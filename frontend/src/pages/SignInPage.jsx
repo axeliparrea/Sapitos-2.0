@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
-import { showAlert, showToast } from '../components/Alerts';
+// import { showAlert, showToast } from '../components/Alerts';
 
 const SignInPage = () => {
   const [email, setEmail] = useState("");
@@ -47,31 +47,60 @@ const SignInPage = () => {
   const handleLogin = async (event) => {
     event.preventDefault();
 
+    // if (!email || !password) {
+    //   await showAlert("Error", "Por favor ingresa correo y contraseña", "Error");
+    //   return;
+    // }
+    // setIsLoading(true);
+
     try {
+      // const controller = new AbortController();
+      // const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const response = await fetch("http://localhost:5000/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
+        // signal: controller.signal
       });
+      const data = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error de autenticación");
+        throw new Error(data.error || "Login failed");
       }
 
-      const data = await response.json();
-      
-      showToast(`Bienvenido ${email}`);
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-      
+      window.location.reload(); 
     } catch (error) {
-      console.error("Error en login:", error);
-      showAlert("Error", error.message || "Error al iniciar sesión", "Error");
-    } finally {
-      setIsLoading(false);
+      console.error("Error:", error);
+      alert(error.message || "Login failed");
     }
+      // clearTimeout(timeoutId);
+
+      // if (!response.ok) {
+      //   const errorData = await response.json().catch(() => ({}));
+      //   throw new Error(
+      //     errorData.message || 
+      //     (response.status === 401 ? "Credenciales incorrectas" : "Error en el servidor")
+      //   );
+      // }
+
+    //   showToast(`Bienvenido ${email}`);
+      
+    //   setTimeout(() => {
+    //     window.location.href = "/dashboard";
+    //   }, 1500);
+      
+    // } catch (error) {
+    //   console.error("Error en login:", error);
+    //   const errorMessage = error.name === 'AbortError' 
+    //     ? "La solicitud tardó demasiado. Verifica tu conexión."
+    //     : error.message || "Error al iniciar sesión";
+      
+    //   await showAlert("Error", errorMessage, "Error");
+    // } finally {
+    //   setIsLoading(false);
+    // }
+
   };
 
   return (
