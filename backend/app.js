@@ -12,7 +12,7 @@ const ordenesRoutes = require("./routes/ordenes");
 const app = express();
 
 const corsOptions = {
-    origin: "http://localhost:5173", // Your frontend's origin
+    origin: [process.env.FRONTEND_URL, "http://localhost:5173"], // Your frontend's origin
     methods: "GET,POST,PUT,DELETE",             // Specify methods you want to allow
     credentials: true,               // Allow credentials (cookies)
   };

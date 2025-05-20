@@ -9,6 +9,7 @@ const SignInPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const hasCheckedSession = useRef(false)
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
   useEffect(() => {
     if (hasCheckedSession.current) return; 
@@ -16,7 +17,7 @@ const SignInPage = () => {
 
     const checkSession = async () => {
       try {
-        const response = await fetch("http://localhost:5000/users/getSession", {
+        const response = await fetch(`${API_BASE_URL}/users/getSession`, {
           credentials: "include",
         });
 
@@ -39,13 +40,13 @@ const SignInPage = () => {
     };
 
     checkSession();
-  }, [navigate]); 
+  }, [navigate, API_BASE_URL]); 
 
   const handleLogin = async (event) => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/users/login", {
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo: email, contrasena: password }),

@@ -13,6 +13,7 @@ backend/.env
 dist
 dist-ssr
 *.local
+backend/vars.yml
 
 
 # Editor directories and files

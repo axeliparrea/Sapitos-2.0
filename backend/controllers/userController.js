@@ -71,9 +71,10 @@ const loginUser = async (req, res) => {
       // Secure auth token in HttpOnly cookie
       res.cookie("Auth", token, {
         httpOnly: true,
-        secure: false, // Set to true in production (HTTPS required)
-        sameSite: "Lax",
-        maxAge: 3600000 // 1 hour
+        secure: true,
+        sameSite: 'None',
+        domain: process.env.NODE_ENV === "production" ? ".cfapps.io" : undefined,
+        maxAge: 3600000,
       });
       
       res.cookie("UserData", JSON.stringify({

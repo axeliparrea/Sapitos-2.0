@@ -29,11 +29,12 @@ import InvoiceAddLayer from "./components/InvoiceAddLayer";
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
   const [loading, setLoading] = useState(true); // Loading state
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const cookieResponse = await fetch("http://localhost:5000/users/getSession", {
+        const cookieResponse = await fetch(`${API_BASE_URL}/users/getSession`, {
           credentials: "include",
         });
 
