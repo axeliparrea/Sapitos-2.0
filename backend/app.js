@@ -12,15 +12,19 @@ const ordenesRoutes = require("./routes/ordenes");
 const app = express();
 
 const corsOptions = {
-    origin: [process.env.FRONTEND_URL, "http://localhost:5173"], // Your frontend's origin
-    methods: "GET,POST,PUT,DELETE",             // Specify methods you want to allow
-    credentials: true,               // Allow credentials (cookies)
-  };
+  origin: [
+    process.env.FRONTEND_URL,
+    "https://sapitos-frontend.cfapps.us10-001.hana.ondemand.com", "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com"
+  ],
+  methods: "GET,POST,PUT,DELETE",
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
 
 app.use(cookieParser()); 
 
 app.use(express.json());
-app.use(cors(corsOptions));
 
 // login, register, and logout routes
 app.use("/users", userRoutes);

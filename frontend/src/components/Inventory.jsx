@@ -8,6 +8,7 @@ const Inventory = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
+  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   
   // Estados del filtro 
   const [filters, setFilters] = useState({
@@ -25,7 +26,9 @@ const Inventory = () => {
     const fetchInventory = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('/inventory');
+        const response = await fetch(`${API_BASE_URL}/inventory`, {
+          credentials: "include",
+        });
         console.log('Tipo de response.data:', typeof response.data, response.data);
         setInventory(response.data);
         
