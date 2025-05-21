@@ -1,12 +1,13 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+// import axios from "axios";
 
 const EditUserLayer = () => {
-  // Obtendremos el ID del usuario desde los parámetros de la URL
   const { userId } = useParams();
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+
   const [usuario, setUsuario] = useState({
     nombre: "",
     correo: "",
@@ -22,40 +23,43 @@ const EditUserLayer = () => {
 
   const navigate = useNavigate();
 
-  // Efecto para cargar los datos del usuario cuando el componente se monta
   useEffect(() => {
     const fetchUsuario = async () => {
       if (!userId) return;
       
       try {
         setLoadingData(true);
-        // Obtener todos los usuarios y filtrar por el correo/userId
-        const response = await axios.get(`http://localhost:5000/users/getUsers`);
+        const response = await fetch(`${API_BASE_URL}/users/getUsers`, {
+          credentials: "include",
+        });
         
-        // Buscar el usuario específico en la lista
-        const usuarioEncontrado = response.data.find(user => user.correo === userId);
+        if (!response.ok) {
+          throw new Error('Error al obtener usuarios');
+        }
+        
+        const data = await response.json();
+        const usuarioEncontrado = data.find(user => user.correo === userId || user._id === userId);
         
         if (!usuarioEncontrado) {
           throw new Error("Usuario no encontrado");
         }
         
         setUsuario({
-            nombre: usuarioEncontrado.nombre || "",
-            correo: usuarioEncontrado.correo || "",
-            organizacion: usuarioEncontrado.organizacion || "",
-            contrasena: "",
-            rol: usuarioEncontrado.rol || "",
-            diasordenprom: usuarioEncontrado.diasOrdenProm || 0,
-            valorordenprom: usuarioEncontrado.valorOrdenProm || 0,
+          nombre: usuarioEncontrado.nombre || "",
+          correo: usuarioEncontrado.correo || "",
+          organizacion: usuarioEncontrado.organizacion || "",
+          contrasena: "",
+          rol: usuarioEncontrado.rol || "",
+          diasordenprom: usuarioEncontrado.diasOrdenProm || 0,
+          valorordenprom: usuarioEncontrado.valorOrdenProm || 0,
         });
         
-        // Si el usuario tiene una imagen de perfil, la cargamos
         if (usuarioEncontrado.imagen) {
           setImagePreviewUrl(usuarioEncontrado.imagen);
         }
       } catch (error) {
         console.error("Error al cargar datos del usuario:", error);
-        setError('Error al cargar los datos del usuario: ' + (error.response?.data?.error || error.message));
+        setError('Error al cargar los datos del usuario: ' + error.message);
       } finally {
         setLoadingData(false);
       }
@@ -83,7 +87,6 @@ const EditUserLayer = () => {
     setLoading(true);
     setError(null);
     try {
-      // Preparamos los datos para la actualización
       const datosActualizacion = {
         correo: usuario.correo,
         nombre: usuario.nombre,
@@ -91,23 +94,29 @@ const EditUserLayer = () => {
         rol: usuario.rol
       };
 
-      // Si se proporciona una nueva contraseña, la incluimos
       if (usuario.contrasena) {
         datosActualizacion.contrasena = usuario.contrasena;
       }
-
-      // Incluimos la imagen si se actualizó
       if (imagePreviewUrl && imagePreviewUrl !== usuario.imagen) {
         datosActualizacion.imagen = imagePreviewUrl;
       }
 
-      // Usar el endpoint updateUser que ya existe
-      await axios.put(`http://localhost:5000/users/updateUser`, datosActualizacion);
+      const response = await fetch(`${API_BASE_URL}/users/updateUser`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(datosActualizacion)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en la respuesta del servidor');
+      }
       
-      navigate("/usuarios"); // Redirige automáticamente al guardar
+      navigate("/usuarios"); 
     } catch (error) {
       console.error("Error al actualizar usuario:", error);
-      setError('Error al actualizar usuario: ' + (error.response?.data?.error || error.message));
+      setError('Error al actualizar usuario: ' + error.message);
     } finally {
       setLoading(false);
     }

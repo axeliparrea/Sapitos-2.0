@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { Link, useNavigate } from "react-router-dom"; // IMPORTANTE: useNavigate agregado
-import axios from "axios";
+import { Link, useNavigate } from "react-router-dom"; 
+
 
 const UsersListLayer = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -10,8 +10,10 @@ const UsersListLayer = () => {
   const [paginaActual, setPaginaActual] = useState(1);
   const usuariosPorPagina = 10;
   const [loading, setLoading] = useState(false);
+  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
-  const navigate = useNavigate(); // Usamos navigate para movernos a AddUserLayer
+
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     fetchUsuarios();
@@ -20,9 +22,15 @@ const UsersListLayer = () => {
   const fetchUsuarios = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/users/getUsers');
-      setUsuarios(response.data || []);
-      setUsuariosFiltrados(response.data || []);
+      const response = await fetch(`${API_BASE_URL}/users/getUsers`, {
+        credentials: "include", 
+      });   
+      const data = await response.json();
+      console.log('Datos de usuarios:', data);
+      
+      setUsuarios(data || []);
+      setUsuariosFiltrados(data || []);
+
     } catch (error) {
       console.error("Error al obtener usuarios:", error);
     } finally {
@@ -32,8 +40,19 @@ const UsersListLayer = () => {
 
   const eliminarUsuario = async (correo) => {
     try {
-      await axios.delete('http://localhost:5000/users/deleteUser', { data: { correo } });
-      fetchUsuarios();
+      const response = await fetch(`${API_BASE_URL}/users/deleteUser`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ correo })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error en la solicitud');
+      }
+      
+      fetchUsuarios(); 
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
     }
@@ -111,7 +130,7 @@ const UsersListLayer = () => {
                             {/* Botón Editar */}
                             <button
                               type="button"
-                              onClick={() => navigate("/agregar-usuario", { state: { usuarioEditar: usuario } })}
+                              onClick={() => navigate(`/editar-usuario/${usuario.correo || usuario.CORREO}`)}
                               className="bg-success-focus bg-hover-success-200 text-success-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                             >
                               <Icon icon="lucide:edit" className="menu-icon" />
