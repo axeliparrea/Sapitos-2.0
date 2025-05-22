@@ -168,19 +168,36 @@ const deleteUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-  const { correo, nombre, organizacion, rol } = req.body;
+  const { correo, nombre, organizacion, rol, contrasena, imagen } = req.body;
   
   if (!correo) {
     return res.status(400).json({ error: "Email is required" });
   }
   
   try {
-    const query = `
+    let query = `
       UPDATE DBADMIN.Usuarios 
       SET Nombre = ?, Organizacion = ?, Rol = ?
-      WHERE Correo = ?
     `;
-    connection.exec(query, [nombre, organizacion, rol, correo], (err, result) => {
+    let params = [nombre, organizacion, rol];
+    
+    // Si se proporciona contraseña, hash y actualiza
+    if (contrasena) {
+      const contrasenaHash = await bcrypt.hash(contrasena, 10);
+      query += `, Contrasena = ?`;
+      params.push(contrasenaHash);
+    }
+    
+    // Si se proporciona imagen
+    if (imagen) {
+      query += `, Imagen = ?`;
+      params.push(imagen);
+    }
+    
+    query += ` WHERE Correo = ?`;
+    params.push(correo);
+    
+    connection.exec(query, params, (err, result) => {
       if (err) {
         console.error("Error actualizando:", err);
         return res.status(500).json({ error: "Error servidor" });
@@ -188,7 +205,7 @@ const updateUser = async (req, res) => {
       res.status(200).json({ message: "Se actualizo bien" });
     });
   } catch (error) {
-    console.error("Error actualizadno:", error);
+    console.error("Error actualizando:", error);
     res.status(500).json({ error: "Error servidor" });
   }
 };
@@ -206,4 +223,38 @@ const logoutUser = async (req, res) => {
 };
 
 
-module.exports = { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser };
+const getUserByEmail = async (req, res) => {
+  const { correo } = req.params;
+  
+  try {
+    const query = "SELECT * FROM DBADMIN.Usuarios WHERE correo = ?";
+    connection.exec(query, [correo], (err, result) => {
+      if (err) {
+        console.error("Error al obtener usuario:", err);
+        return res.status(500).json({ error: "Error del servidor" });
+      }
+      
+      if (!result || result.length === 0) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      // Formatea el resultado
+      const usuario = {
+        correo: result[0].CORREO,
+        nombre: result[0].NOMBRE,
+        organizacion: result[0].ORGANIZACION,
+        rol: result[0].ROL,
+        diasOrdenProm: result[0].DIASORDENPROM,
+        valorOrdenProm: result[0].VALORORDENPROM
+      };
+      
+      res.status(200).json(usuario);
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+
+module.exports = { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser,getUserByEmail };

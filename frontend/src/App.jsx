@@ -25,6 +25,8 @@ import Pedidos from "./pages/admin/Pedidos"
 import UsuariosShec from "./pages/admin/UsuariosShec";
 import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
+import EditUserLayer from "./components/EditUser";
+
 
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
@@ -142,6 +144,13 @@ const App = () => {
             role === "admin" ? <AddUserLayer /> :
             <Navigate to="/" />
           } 
+        />
+        <Route 
+          path="/editar-usuario/:userId" 
+          element={
+            role === "admin" ? <EditUserLayer /> :
+            <Navigate to="/" />
+          }
         />
 
         <Route 

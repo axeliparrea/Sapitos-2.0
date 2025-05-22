@@ -111,7 +111,7 @@ const UsersListLayer = () => {
                             {/* Botón Editar */}
                             <button
                               type="button"
-                              onClick={() => navigate("/agregar-usuario", { state: { usuarioEditar: usuario } })}
+                              onClick={() => navigate(`/editar-usuario/${usuario.correo || usuario.CORREO}`)}
                               className="bg-success-focus bg-hover-success-200 text-success-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                             >
                               <Icon icon="lucide:edit" className="menu-icon" />
