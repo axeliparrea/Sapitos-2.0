@@ -9,56 +9,69 @@ const InvoiceListLayer = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [loading, setLoading] = useState(true);
+  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     fetchPedidos();
   }, []);
 
-  const fetchPedidos = async () => {
+    const fetchPedidos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:5000/pedido");
+      const response = await fetch(`${API_BASE_URL}/pedido`, {
+        credentials: 'include' 
+      });
       
-      if (!Array.isArray(response.data)) {
-        console.error("La respuesta no es un array:", response.data);
-        const data = response.data.formatted || response.data.pedidos || [];
-        
-        const formattedPedidos = data.map((pedido, index) => ({
-          numero: String(index + 1).padStart(2, '0'),
-          id: `#${pedido.id}`,
-          proveedor: pedido.creadaPor,
-          fecha: formatDate(pedido.fechaCreacion),
-          cantidad: pedido.total,
-          estatus: pedido.estatus
-        }));
-        
-        setPedidos(formattedPedidos);
-      } else {
-        const formattedPedidos = response.data.map((pedido, index) => ({
-          numero: String(index + 1).padStart(2, '0'),
-          id: `#${pedido.id}`,
-          proveedor: pedido.creadaPor, 
-          fecha: formatDate(pedido.fechaCreacion),
-          cantidad: pedido.total,
-          estatus: pedido.estatus
-        }));
-        
-        setPedidos(formattedPedidos);
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
       }
+
+      const responseData = await response.json();
+      const data = Array.isArray(responseData) 
+        ? responseData 
+        : responseData.formatted || responseData.pedidos || [];
+
+      const formattedPedidos = data.map((pedido, index) => ({
+        numero: String(index + 1).padStart(2, '0'),
+        id: `#${pedido.id}`,
+        proveedor: pedido.creadaPor,
+        fecha: formatDate(pedido.fechaCreacion),
+        cantidad: pedido.total,
+        estatus: pedido.estatus
+      }));
+      
+      setPedidos(formattedPedidos);
     } catch (error) {
       console.error("Error al obtener los pedidos:", error);
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No se pudieron cargar los pedidos"
-        });
-      } else {
-        alert("Error: No se pudieron cargar los pedidos");
-      }
+      showAlert("Error", "No se pudieron cargar los pedidos", "error");
     } finally {
       setLoading(false);
     }
+  };
+
+  const showAlert = (title, text, icon) => {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({ title, text, icon });
+    } else {
+      alert(`${title}: ${text}`);
+    }
+  };
+
+  const showConfirmation = async (title, text, icon) => {
+    if (typeof Swal !== 'undefined') {
+      const result = await Swal.fire({
+        title,
+        text,
+        icon,
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar"
+      });
+      return result.isConfirmed;
+    }
+    return confirm(`${title}\n${text}`);
   };
 
   const formatDate = (dateString) => {
@@ -76,49 +89,35 @@ const InvoiceListLayer = () => {
 
   const handleDelete = async (id) => {
     const pedidoId = id.replace("#", "");
-    
+  
     try {
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          title: "¿Estás seguro?",
-          text: "No podrás revertir esta acción",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#3085d6",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Sí, eliminar",
-          cancelButtonText: "Cancelar"
-        }).then(async (result) => {
-          if (result.isConfirmed) {
-            await axios.delete(`http://localhost:5000/pedido/${pedidoId}`);
-            
-            Swal.fire(
-              "Eliminado",
-              "El pedido ha sido eliminado correctamente",
-              "success"
-            );
-            
-            fetchPedidos();
-          }
+      const result = await showConfirmation(
+        "¿Estás seguro?",
+        "No podrás revertir esta acción",
+        "warning"
+      );
+      
+      if (result) {
+        const response = await fetch(`${API_BASE_URL}/pedido/${pedidoId}`, {
+          method: 'DELETE',
+          credentials: 'include'
         });
-      } else {
-        if (confirm("¿Estás seguro de que deseas eliminar este pedido?")) {
-          await axios.delete(`http://localhost:5000/pedido/${pedidoId}`);
-          alert("El pedido ha sido eliminado correctamente");
-          fetchPedidos();
+        
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`);
         }
+
+        showAlert(
+          "Eliminado",
+          "El pedido ha sido eliminado correctamente",
+          "success"
+        );
+        
+        fetchPedidos();
       }
     } catch (error) {
       console.error("Error al eliminar el pedido:", error);
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No se pudo eliminar el pedido"
-        });
-      } else {
-        alert("Error: No se pudo eliminar el pedido");
-      }
+      showAlert("Error", "No se pudo eliminar el pedido", "error");
     }
   };
 

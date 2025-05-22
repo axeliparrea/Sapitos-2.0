@@ -29,8 +29,9 @@ const Inventory = () => {
         const response = await fetch(`${API_BASE_URL}/inventory`, {
           credentials: "include",
         });
-        console.log('Tipo de response.data:', typeof response.data, response.data);
-        setInventory(response.data);
+        const data = await response.json();
+        console.log('Datos del inventario:', data);
+        setInventory(data);
         
         // Extraer opciones de filtro únicas
         if (Array.isArray(response.data)) {

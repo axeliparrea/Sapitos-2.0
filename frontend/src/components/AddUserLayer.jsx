@@ -1,10 +1,11 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+// import axios from "axios";
 
 const AddUserLayer = () => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   const [nuevoUsuario, setNuevoUsuario] = useState({
     nombre: "",
     correo: "",
@@ -35,18 +36,31 @@ const AddUserLayer = () => {
   };
 
   const agregarUsuario = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await axios.post('http://localhost:5000/users/register', nuevoUsuario);
-      navigate("/usuarios"); // redirige automáticamente al guardar
-    } catch (error) {
-      console.error("Error al agregar usuario:", error);
-      setError('Error al agregar usuario: ' + (error.response?.data?.error || error.message));
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null);
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify(nuevoUsuario)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al registrar usuario');
     }
-  };
+
+    navigate("/usuarios");
+  } catch (error) {
+    console.error("Error al agregar usuario:", error);
+    setError('Error al agregar usuario: ' + error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="card h-100 p-0 radius-12">
