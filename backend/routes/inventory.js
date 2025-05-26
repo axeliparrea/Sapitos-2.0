@@ -5,6 +5,10 @@ const {
   getInventoryById, 
   updateInventory, 
   deleteInventory,
+  getLocaciones,
+  getInventoryByLocation,
+  getArticulos,
+  getInventoryByCategory,
   getProveedores,
   getProductosPorProveedor
 } = require("../controllers/inventoryController");
@@ -12,86 +16,39 @@ const router = express.Router();
 
 const { auth } = require('../middleware/auth');
 
+// Rutas principales de inventario
 /**
  * @swagger
  * /inventory:
  *   get:
- *     summary: Get all inventory items
+ *     summary: Obtener todos los items del inventario
  *     tags: [Inventory]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of inventory items
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   proveedor:
- *                     type: string
- *                   nombre:
- *                     type: string
- *                   categoria:
- *                     type: string
- *                   stockActual:
- *                     type: integer
- *                   stockMinimo:
- *                     type: integer
- *                   fechaUltimaCompra:
- *                     type: string
- *                     format: date
- *                   fechaUltimaVenta:
- *                     type: string
- *                     format: date
- *                   precioCompra:
- *                     type: number
- *                   precioVenta:
- *                     type: number
- *                   temporada:
- *                     type: string
- *                   margenGanancia:
- *                     type: number
- *                   tiempoReposicionProm:
- *                     type: number
- *                   demandaProm:
- *                     type: number
- *                   stockSeguridad:
- *                     type: number
+ *         description: Lista de items de inventario
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
-
-// router.get("/", auth(["admin", "dueno", "empleado"]), getInventory);
 router.get("/", getInventory);
-
 
 /**
  * @swagger
  * /inventory/{id}:
  *   get:
- *     summary: Get inventory item by ID
+ *     summary: Obtener un item de inventario por ID
  *     tags: [Inventory]
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: integer
  *         required: true
- *         description: ID of the inventory item
- *     security:
- *       - bearerAuth: []
+ *         description: ID del item de inventario
  *     responses:
  *       200:
- *         description: Inventory item details
+ *         description: Detalles del item de inventario
  *       404:
- *         description: Inventory item not found
+ *         description: Item no encontrado
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
 router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
 
@@ -99,7 +56,7 @@ router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
  * @swagger
  * /inventory:
  *   post:
- *     summary: Add a new inventory item
+ *     summary: Agregar un nuevo item al inventario
  *     tags: [Inventory]
  *     requestBody:
  *       required: true
@@ -107,37 +64,20 @@ router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - nombre
- *               - stock
  *             properties:
- *               id:
+ *               articuloId:
  *                 type: integer
- *               nombre:
- *                 type: string
- *               descripcion:
- *                 type: string
- *               categoria:
- *                 type: string
- *               stock:
+ *               locationId:
  *                 type: integer
- *               stockMinimo:
+ *               stockActual:
  *                 type: integer
- *               precioCompra:
- *                 type: number
- *               precioVenta:
- *                 type: number
- *               temporada:
- *                 type: string
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Inventory item added successfully
+ *         description: Item agregado exitosamente
  *       400:
- *         description: Invalid request
+ *         description: Solicitud inválida
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
 router.post("/", auth(["admin", "dueno"]), insertInventory);
 
@@ -145,15 +85,13 @@ router.post("/", auth(["admin", "dueno"]), insertInventory);
  * @swagger
  * /inventory/{id}:
  *   put:
- *     summary: Update an inventory item
+ *     summary: Actualizar un item de inventario
  *     tags: [Inventory]
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: integer
  *         required: true
- *         description: ID of the inventory item
+ *         description: ID del item de inventario
  *     requestBody:
  *       required: true
  *       content:
@@ -161,29 +99,15 @@ router.post("/", auth(["admin", "dueno"]), insertInventory);
  *           schema:
  *             type: object
  *             properties:
- *               nombre:
- *                 type: string
- *               categoria:
- *                 type: string
  *               stockActual:
  *                 type: integer
- *               stockMinimo:
- *                 type: integer
- *               precioCompra:
- *                 type: number
- *               precioVenta:
- *                 type: number
- *               temporada:
- *                 type: string
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Inventory item updated successfully
+ *         description: Item actualizado exitosamente
  *       404:
- *         description: Inventory item not found
+ *         description: Item no encontrado
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
 router.put("/:id", auth(["admin", "dueno"]), updateInventory);
 
@@ -191,118 +115,128 @@ router.put("/:id", auth(["admin", "dueno"]), updateInventory);
  * @swagger
  * /inventory/{id}:
  *   delete:
- *     summary: Delete an inventory item
+ *     summary: Eliminar un item de inventario
  *     tags: [Inventory]
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: integer
  *         required: true
- *         description: ID of the inventory item
- *     security:
- *       - bearerAuth: []
+ *         description: ID del item de inventario
  *     responses:
  *       200:
- *         description: Inventory item deleted successfully
+ *         description: Item eliminado exitosamente
  *       404:
- *         description: Inventory item not found
+ *         description: Item no encontrado
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
 router.delete("/:id", auth(["admin", "dueno"]), deleteInventory);
 
+// Rutas adicionales de inventario
 /**
  * @swagger
- * /proveedores:
+ * /inventory/locations/all:
+ *   get:
+ *     summary: Obtener todas las ubicaciones
+ *     tags: [Inventory]
+ *     responses:
+ *       200:
+ *         description: Lista de ubicaciones
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/locations/all", getLocaciones);
+
+/**
+ * @swagger
+ * /inventory/location/{locationId}:
+ *   get:
+ *     summary: Obtener inventario por ubicación
+ *     tags: [Inventory]
+ *     parameters:
+ *       - in: path
+ *         name: locationId
+ *         required: true
+ *         description: ID de la ubicación
+ *     responses:
+ *       200:
+ *         description: Lista de items en la ubicación
+ *       404:
+ *         description: No se encontraron items
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/location/:locationId", getInventoryByLocation);
+
+/**
+ * @swagger
+ * /inventory/articles/all:
+ *   get:
+ *     summary: Obtener todos los artículos
+ *     tags: [Inventory]
+ *     responses:
+ *       200:
+ *         description: Lista de artículos
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/articles/all", getArticulos);
+
+/**
+ * @swagger
+ * /inventory/category/{categoria}:
+ *   get:
+ *     summary: Obtener inventario por categoría
+ *     tags: [Inventory]
+ *     parameters:
+ *       - in: path
+ *         name: categoria
+ *         required: true
+ *         description: Nombre de la categoría
+ *     responses:
+ *       200:
+ *         description: Lista de items por categoría
+ *       404:
+ *         description: No se encontraron items
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/category/:categoria", getInventoryByCategory);
+
+// Rutas de proveedores (manteniendo el prefijo /inventory)
+/**
+ * @swagger
+ * /inventory/proveedores:
  *   get:
  *     summary: Obtener todos los proveedores
- *     tags: [Proveedores]
- *     security:
- *       - bearerAuth: []
+ *     tags: [Inventory]
  *     responses:
  *       200:
  *         description: Lista de proveedores
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   proveedor:
- *                     type: string
  *       500:
  *         description: Error del servidor
  */
-// router.get("/", auth(["admin", "dueno", "empleado"]), getProveedores);
-router.get("/", getProveedores);
-
+router.get("/proveedores/all", getProveedores);
 
 /**
  * @swagger
- * /proveedores/{proveedor}:
+ * /inventory/proveedores/{proveedor}:
  *   get:
- *     summary: Obtener todos los productos por proveedor
- *     tags: [Proveedores]
+ *     summary: Obtener productos por proveedor
+ *     tags: [Inventory]
  *     parameters:
  *       - in: path
  *         name: proveedor
- *         schema:
- *           type: string
  *         required: true
  *         description: Nombre del proveedor
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de productos del proveedor
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   proveedor:
- *                     type: string
- *                   nombre:
- *                     type: string
- *                   categoria:
- *                     type: string
- *                   stockActual:
- *                     type: integer
- *                   stockMinimo:
- *                     type: integer
- *                   fechaUltimaCompra:
- *                     type: string
- *                     format: date
- *                   fechaUltimaVenta:
- *                     type: string
- *                     format: date
- *                   precioCompra:
- *                     type: number
- *                   precioVenta:
- *                     type: number
- *                   temporada:
- *                     type: string
- *                   margenGanancia:
- *                     type: number
- *                   tiempoReposicionProm:
- *                     type: number
- *                   demandaProm:
- *                     type: number
- *                   stockSeguridad:
- *                     type: number
  *       404:
- *         description: No se encontraron productos para este proveedor
+ *         description: No se encontraron productos
  *       500:
  *         description: Error del servidor
  */
-// router.get("/:proveedor", auth(["admin", "dueno", "empleado"]), getProductosPorProveedor);
-router.get("/:proveedor",getProductosPorProveedor);
-
+router.get("/proveedores/:proveedor", getProductosPorProveedor);
 
 module.exports = router;
