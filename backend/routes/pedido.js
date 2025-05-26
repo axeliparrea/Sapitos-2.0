@@ -1,5 +1,17 @@
 const express = require("express");
-const { getPedido, insertPedido, deletePedido, updatePedido, getProveedores} = require("../controllers/pedidosController");
+const {
+  getPedido,
+  insertPedido,
+  deletePedido,
+  updatePedido,
+  getProveedores,
+  getProductosPorProveedor,
+  aprobarPedido,
+  entregarPedido,
+  getPedidosProveedor,
+  getDetallesPedido,
+  enviarAInventario
+} = require('../controllers/pedidosController');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
 
@@ -293,5 +305,8 @@ router.delete("/:id", deletePedido);
  */
 router.put("/:id", updatePedido);
 
+// Rutas de proveedores
+router.get('/', getProveedores);           
+router.get('/:proveedorId/productos', getProductosPorProveedor);
 
 module.exports = router;

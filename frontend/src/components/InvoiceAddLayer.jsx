@@ -8,11 +8,34 @@ const InvoiceAddLayer = () => {
   const [pedidoID, setPedidoID] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [proveedores, setProveedores] = useState([]);
   const navigate = useNavigate();
 
-  const handleEnviarPedido = async (productos, proveedorSeleccionado, total) => {
-    if (productos.length === 0 || !proveedorSeleccionado || total <= 0) {
-      setError("Por favor selecciona un proveedor y al menos un producto");
+  // Cargar proveedores al montar el componente
+  useEffect(() => {
+    const fetchProveedores = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/pedido/proveedores');
+        setProveedores(response.data || []);
+      } catch (error) {
+        console.error("Error al obtener proveedores:", error);
+        setError("Error al cargar los proveedores");
+      }
+    };
+    fetchProveedores();
+  }, []);
+
+  const handleEnviarPedido = async (productos, proveedorId, total) => {
+    if (!proveedorId) {
+      setError("Debe seleccionar un proveedor");
+      return;
+    }
+
+    // Filtrar productos con cantidad mayor a 0
+    const productosParaEnviar = productos.filter(p => p.cantidad > 0);
+    
+    if (productosParaEnviar.length === 0) {
+      setError("Debe agregar al menos un producto con cantidad mayor a 0");
       return;
     }
 
@@ -20,42 +43,50 @@ const InvoiceAddLayer = () => {
     setError(null);
 
     try {
-      // Filtrar productos con cantidad > 0
-      const productosParaEnviar = productos
-        .filter(producto => producto.cantidad > 0)
-        .map(producto => ({
-          id: producto.ID || producto.id,
-          cantidad: producto.cantidad,
-          precioUnitario: producto.precio || producto.PrecioCompra
-        }));
-
-      if (productosParaEnviar.length === 0) {
-        setError("Por favor agrega al menos un producto al pedido");
-        setIsSubmitting(false);
-        return;
+      // Obtener el proveedor seleccionado
+      const proveedor = proveedores.find(p => p.ID === proveedorId || p.proveedor === proveedorId);
+      
+      if (!proveedor) {
+        throw new Error("Proveedor no encontrado");
       }
 
-      // Crear el pedido usando tu endpoint
+      // Preparar los productos para el envío
+      const productosFormateados = productosParaEnviar.map(producto => ({
+        id: producto.id || producto.ID,
+        nombre: producto.nombre || producto.Nombre,
+        cantidad: producto.cantidad,
+        precio: producto.precioCompra || producto.PrecioCompra || producto.precio || 0,
+        total: (producto.precioCompra || producto.PrecioCompra || producto.precio || 0) * producto.cantidad
+      }));
+
       const response = await axios.post("http://localhost:5000/pedidos", {
-        creadaPor: proveedorSeleccionado, // El correo del proveedor
-        productos: productosParaEnviar,
+        creadaPor: proveedor.UsuarioAsociado || proveedor.usuario || "Sistema",
+        proveedorId: proveedorId,
+        productos: productosFormateados,
         total: total,
-        metodoPago: "Transferencia", // Puedes hacer esto configurable
-        descuentoAplicado: 0 // Puedes hacer esto configurable
+        metodoPago: "Transferencia",
+        descuentoAplicado: 0,
+        fecha: new Date().toISOString()
       });
 
-      setPedidoID(response.data.pedidoId);
-      setPedidoEnviado(true);
-
-      setTimeout(() => {
-        navigate("/pedidos"); 
-      }, 2500);
-    } catch (err) {
-      console.error("Error al enviar pedido:", err);
-      setError(err.response?.data?.error || "Error al enviar el pedido");
+      if (response.data && response.data.id) {
+        setPedidoID(response.data.id);
+        setPedidoEnviado(true);
+        // Limpiar error si existía
+        setError(null);
+      }
+    } catch (error) {
+      console.error("Error al enviar pedido:", error);
+      setError(error.response?.data?.message || "Error al enviar el pedido");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleNuevoPedido = () => {
+    setPedidoEnviado(false);
+    setPedidoID(null);
+    setError(null);
   };
 
   return (
@@ -72,13 +103,24 @@ const InvoiceAddLayer = () => {
           <div className='alert alert-success text-sm mb-4'>
             <Icon icon='mdi:check-circle-outline' className='me-2 text-lg' />
             Pedido #{pedidoID} enviado con éxito.
+            <button 
+              className='btn btn-sm btn-outline-success ms-3'
+              onClick={handleNuevoPedido}
+            >
+              Crear Nuevo Pedido
+            </button>
           </div>
         )}
         <div className='row justify-content-center'>
           <div className='col-lg-8'>
             <div className='shadow-4 border radius-8'>
               <InformacionPedido pedidoID={pedidoID} />
-              <TablaProductos onEnviarPedido={handleEnviarPedido} isSubmitting={isSubmitting} />
+              <TablaProductos 
+                onEnviarPedido={handleEnviarPedido} 
+                isSubmitting={isSubmitting}
+                proveedores={proveedores}
+                pedidoEnviado={pedidoEnviado}
+              />
             </div>
           </div>
         </div>
@@ -91,12 +133,22 @@ const EncabezadoFormulario = ({ isSubmitting }) => (
   <div className='card-header'>
     <div className='d-flex flex-wrap align-items-center justify-content-between'>
       <h2 className='card-title mb-0'>Nuevo Pedido</h2>
+      {isSubmitting && (
+        <div className='text-primary'>
+          <Icon icon='mdi:loading' className='me-2 text-lg animate-spin' />
+          Procesando...
+        </div>
+      )}
     </div>
   </div>
 );
 
 const InformacionPedido = ({ pedidoID }) => {
-  const fechaHoy = new Date().toLocaleDateString("es-MX");
+  const fechaHoy = new Date().toLocaleDateString("es-MX", {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
   return (
     <div className='p-20 border-bottom'>
@@ -115,37 +167,24 @@ const InformacionPedido = ({ pedidoID }) => {
   );
 };
 
-const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
+const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnviado }) => {
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState("");
-  const [proveedores, setProveedores] = useState([]);
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Cargar proveedores al inicio - MODIFICADO para usar el nuevo endpoint
-  useEffect(() => {
-    const fetchProveedores = async () => {
-      try {
-        // Actualizado para usar el nuevo endpoint de proveedores
-        const response = await axios.get('http://localhost:5000/inventory/proveedor');
-        // Como ahora la respuesta será un array de objetos con propiedad "proveedor"
-        setProveedores(response.data || []);
-      } catch (error) {
-        console.error("Error al obtener proveedores:", error);
-      }
-    };
-
-    fetchProveedores();
-  }, []);
-
-  // Cargar productos cuando se selecciona un proveedor - MODIFICADO para usar el nuevo endpoint
+  // Cargar productos cuando se selecciona un proveedor
   useEffect(() => {
     const fetchProductos = async () => {
-      if (!proveedorSeleccionado) return;
+      if (!proveedorSeleccionado) {
+        setProductos([]);
+        return;
+      }
       
       setLoading(true);
       try {
-        // Actualizado para usar el nuevo endpoint para obtener productos por proveedor
-        const response = await axios.get(`http://localhost:5000/inventory/proveedores/${proveedorSeleccionado}`);
+        const response = await axios.get(
+          `http://localhost:5000/proveedores/${proveedorSeleccionado}/productos`
+        );
         const productosConCantidad = (response.data || []).map(prod => ({
           ...prod,
           cantidad: 0,
@@ -158,12 +197,27 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
         setLoading(false);
       }
     };
-
+    
     fetchProductos();
   }, [proveedorSeleccionado]);
 
+  // Resetear cuando se envía un pedido exitosamente
+  useEffect(() => {
+    if (pedidoEnviado) {
+      setProveedorSeleccionado("");
+      setProductos([]);
+    }
+  }, [pedidoEnviado]);
+
+  const handleProveedorChange = (e) => {
+    const nuevoProveedor = e.target.value;
+    setProveedorSeleccionado(nuevoProveedor);
+    // Resetear productos cuando cambia el proveedor
+    setProductos([]);
+  };
+
   const handleCantidadChange = (index, value) => {
-    const nuevaCantidad = parseInt(value) || 0;
+    const nuevaCantidad = Math.max(0, parseInt(value) || 0);
     const nuevosProductos = [...productos];
     nuevosProductos[index].cantidad = nuevaCantidad;
     setProductos(nuevosProductos);
@@ -181,6 +235,13 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
   const impuesto = 0;
   const total = subtotal - descuento + impuesto;
 
+  const productosConCantidad = productos.filter(p => p.cantidad > 0);
+  const puedeEnviar = !isSubmitting && 
+                      proveedorSeleccionado && 
+                      productos.length > 0 && 
+                      productosConCantidad.length > 0 && 
+                      total > 0;
+
   return (
     <div className='py-28 px-20'>
       {/* Dropdown de proveedor */}
@@ -189,14 +250,17 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
         <select
           className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px'
           value={proveedorSeleccionado}
-          onChange={(e) => setProveedorSeleccionado(e.target.value)}
+          onChange={handleProveedorChange}
+          disabled={isSubmitting}
         >
           <option value='' disabled>
             Selecciona un proveedor
           </option>
-          {proveedores.map((p, index) => (
-            // Actualizado para usar la propiedad "proveedor" del nuevo endpoint
-            <option key={index} value={p.proveedor}>{p.proveedor}</option>
+          {proveedores.map((proveedor, index) => (
+            <option key={proveedor.ID || index} value={proveedor.ID || proveedor.proveedor}>
+              {proveedor.Nombre || proveedor.proveedor} 
+              {proveedor.Contacto && ` (${proveedor.Contacto})`}
+            </option>
           ))}
         </select>
       </div>
@@ -217,7 +281,7 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan='6' className='text-center'>
+                <td colSpan='6' className='text-center py-4'>
                   <div className='spinner-border spinner-border-sm text-primary' role='status'>
                     <span className='visually-hidden'>Cargando...</span>
                   </div>
@@ -226,14 +290,15 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
               </tr>
             ) : productos.length === 0 ? (
               <tr>
-                <td colSpan='6' className='text-center text-muted'>
+                <td colSpan='6' className='text-center text-muted py-4'>
                   {proveedorSeleccionado ? 'No hay productos disponibles' : 'Selecciona un proveedor para ver sus productos'}
                 </td>
               </tr>
             ) : (
               productos.map((producto, idx) => {
-                // Actualizado para manejar los diferentes formatos de propiedad
                 const precio = producto.precioCompra || producto.PrecioCompra || producto.precio || 0;
+                const stock = producto.stockActual || producto.StockActual;
+                
                 return (
                   <tr key={producto.id || producto.ID || idx}>
                     <td>{String(idx + 1).padStart(2, '0')}</td>
@@ -242,14 +307,22 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
                       <input
                         type='number'
                         min='0'
+                        max={stock || 999}
                         value={producto.cantidad}
                         onChange={(e) => handleCantidadChange(idx, e.target.value)}
                         className='form-control form-control-sm w-80-px'
+                        disabled={isSubmitting}
                       />
                     </td>
-                    <td>{producto.stockActual || producto.StockActual || 'N/A'}</td>
+                    <td>
+                      <span className={stock <= 10 ? 'text-warning fw-bold' : ''}>
+                        {stock || 'N/A'}
+                      </span>
+                    </td>
                     <td>${precio.toFixed(2)}</td>
-                    <td>${(precio * producto.cantidad).toFixed(2)}</td>
+                    <td className='fw-semibold'>
+                      ${(precio * producto.cantidad).toFixed(2)}
+                    </td>
                   </tr>
                 );
               })
@@ -257,6 +330,15 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
           </tbody>
         </table>
       </div>
+
+      {/* Resumen de productos seleccionados */}
+      {productosConCantidad.length > 0 && (
+        <div className='mt-3 p-3 bg-light rounded'>
+          <small className='text-muted'>
+            <strong>Resumen:</strong> {productosConCantidad.length} producto(s) seleccionado(s)
+          </small>
+        </div>
+      )}
 
       {/* Resumen de Totales */}
       <div className='d-flex flex-wrap justify-content-between gap-3 mt-24'>
@@ -281,7 +363,7 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
                 <td className='pe-64'>Descuento:</td>
                 <td className='pe-16'>
                   <span className='text-primary-light fw-semibold'>
-                    $0.00
+                    ${descuento.toFixed(2)}
                   </span>
                 </td>
               </tr>
@@ -289,7 +371,7 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
                 <td className='pe-64 border-bottom pb-4'>Impuesto:</td>
                 <td className='pe-16 border-bottom pb-4'>
                   <span className='text-primary-light fw-semibold'>
-                    $0.00
+                    ${impuesto.toFixed(2)}
                   </span>
                 </td>
               </tr>
@@ -298,7 +380,7 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
                   <span className='text-primary-light fw-semibold'>Total:</span>
                 </td>
                 <td className='pe-16 pt-4'>
-                  <span className='text-primary-light fw-semibold'>
+                  <span className='text-primary-light fw-semibold text-lg'>
                     ${total.toFixed(2)}
                   </span>
                 </td>
@@ -313,8 +395,11 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
         <button
           type='button'
           onClick={() => onEnviarPedido(productos, proveedorSeleccionado, total)}
-          disabled={isSubmitting || !proveedorSeleccionado || productos.length === 0 || total <= 0}
-          className='btn btn-primary-600 radius-8 d-inline-flex align-items-center gap-1'
+          disabled={!puedeEnviar}
+          className={`btn radius-8 d-inline-flex align-items-center gap-1 ${
+            puedeEnviar ? 'btn-primary-600' : 'btn-secondary'
+          }`}
+          title={!puedeEnviar ? 'Selecciona un proveedor y agrega productos para continuar' : ''}
         >
           {isSubmitting ? (
             <>
@@ -324,7 +409,7 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting }) => {
           ) : (
             <>
               <Icon icon='mdi:send' className='text-xl' />
-              Enviar Pedido
+              Enviar Pedido ({productosConCantidad.length} productos)
             </>
           )}
         </button>
