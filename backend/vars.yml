@@ -1,9 +1,1 @@
----
-variables:
-  SERVER_NODE=4a53890c-d249-478e-a7ab-6e12660c5573.hana.trial-us10.hanacloud.ondemand.com:443
-  DB_USERNAME=DBADMIN
-  DB_PASSWORD=MrSap@123
-  JWT_SECRET=y6W0p2KAaadOIjFpTCeKrUGWaaHT3ydCnFhCn0Nlsqca
-  BACK_PORT=5000
-  BACKEND_URL=https://sapitos-backend.cfapps.io
-  FRONTEND_URL=https://sapitos-frontend.cfapps.us10-001.hana.ondemand.com/
+
