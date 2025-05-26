@@ -1,13 +1,11 @@
 import MasterLayout from "../../components/masterLayout";
-import UsersListLayer from "../../components/UsersListLayer";
+import Usuarios from "../../components/roles/admin/Usuarios";
 
 const UsuariosShec = () => {
   return (
-    <>
-      <MasterLayout role="admin">
-        <UsersListLayer/>
-      </MasterLayout>
-    </>
+    <MasterLayout role={1} tipoEmpleado={null}>
+      <Usuarios />
+    </MasterLayout>
   );
 };
 

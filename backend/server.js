@@ -7,7 +7,8 @@ const PORT = process.env.BACK_PORT || 5000;
 app.listen(PORT, async () => {
   try {
     await connectDB(); // Ensure DB connection before starting
-    console.log(`Connected to port 443`);
+    console.log(`Connected to port ${PORT}`);
+
   } catch (error) {
     console.error("Database connection failed", error);
     process.exit(1);

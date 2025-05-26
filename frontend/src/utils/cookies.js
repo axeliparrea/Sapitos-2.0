@@ -1,18 +1,17 @@
-const getCookie = (name, decode = true) => {
-  const cookieValue = document.cookie.split('; ').find(row => row.startsWith(`${name}=`))?.split('=')[1];
+const getCookie = (name) => {
+  const cookieValue = document.cookie
+    .split('; ')
+    .find(row => row.startsWith(`${name}=`))
+    ?.split('=')[1];
 
-  //console.log(cookieValue, "Cookie Encoded")
-  
-  let cookieData;
+  if (!cookieValue) return null;
+
   try {
-    cookieData = decodeURIComponent(decodeURIComponent(cookieValue));
-    //console.log(cookieData, "Cookie Decoded");
-    return JSON.parse(cookieData);
+    return JSON.parse(decodeURIComponent(cookieValue));
   } catch (e) {
-    console.error("Failed to parse UserData cookie:", e, cookieValue);
+    console.error("Failed to parse cookie:", e);
     return null;
-}
-
+  }
 };
 
 export default getCookie;

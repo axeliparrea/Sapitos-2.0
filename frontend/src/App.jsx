@@ -1,168 +1,126 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import jwtDecode from "jwt-decode";
 
+// Páginas públicas
 import SignInPage from "./pages/SignInPage";
 
+// Admin
 import HomeAdmin from "./pages/admin/Home";
 import InventarioAdmin from "./pages/admin/Inventario";
+import Pedidos from "./pages/admin/Pedidos";
+import UsuariosShec from "./pages/admin/UsuariosShec";
+import AddUserLayer from "./components/AddUserLayer";
+import InvoiceAddLayer from "./components/InvoiceAddLayer";
+import EditUserLayer from "./components/EditUser";
+import Roles from "./pages/admin/Roles";
+import LocationsPage from "./pages/admin/LocationsPage";
 
+
+
+
+// Dueño
 import HomeDueno from "./pages/dueno/Home";
 import InventarioDueno from "./pages/dueno/Inventario";
 import OrdenesProveedoresDueno from "./pages/dueno/OrdenesProveedores";
 import OrdenesClientesDueno from "./pages/dueno/OrdenesClientes";
 import RecomendacionesIADueno from "./pages/dueno/RecomendacionesIA";
 
-import HomeCliente from "./pages/cliente/Home";
-import InventarioCliente from "./pages/cliente/Inventario"
+// Empleado (por ahora genérico)
+import HomeEmpleado from "./pages/empleado/Home";
+import InventarioEmpleado from "./pages/empleado/Inventario";
+import OrdenesEmpleado from "./pages/empleado/Ordenes";
 
-import HomeProveedor from "./pages/proveedor/Home";
-import OrdenesProveedor from "./pages/proveedor/Home";
-
-import Pedidos from "./pages/admin/Pedidos"
-
-// Para usuarios admin 
-import UsuariosShec from "./pages/admin/UsuariosShec";
-import AddUserLayer from "./components/AddUserLayer";
-import InvoiceAddLayer from "./components/InvoiceAddLayer";
-import EditUserLayer from "./components/EditUser";
-
+const ROLE_ID_MAP = {
+  1: "admin",
+  2: "dueno",
+  3: "empleado",
+};
 
 const App = () => {
-  const [role, setRole] = useState(null); // Initially null
-  const [loading, setLoading] = useState(true); // Loading state
+  const [roleId, setRoleId] = useState(null);
+  const [tipoEmpleado, setTipoEmpleado] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const cookieResponse = await fetch("http://localhost:5000/users/getSession", {
+        const response = await fetch("http://localhost:5000/usuario2/getSession", {
           credentials: "include",
         });
 
-        if (!cookieResponse.ok) {
-          setLoading(false);
-          return; // No token found, stop execution
-        }
-
-        const data = await cookieResponse.json();
-        //console.log("Session Data:", data);
-
-        const token = data.token;
-        if (!token) {
+        if (!response.ok) {
           setLoading(false);
           return;
         }
 
-        // Decode token
-        const decoded = jwtDecode(token);
-        //console.log("Decoded JWT:", decoded);
-        setRole(decoded.ROL); 
+        const data = await response.json();
+        const decoded = jwtDecode(data.token);
+
+        setRoleId(decoded.rol);
+        setTipoEmpleado(decoded.tipoEmpleado || null);
       } catch (error) {
-        console.error("Error fetching session:", error);
+        console.error("❌ Error al obtener sesión:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchSession();
   }, []);
 
-  // Show a loading indicator while waiting for the role
   if (loading) {
-    console.log("Loading...");
-    return <div>Loading...</div>;
+    return <div style={{ padding: "2rem" }}>Cargando sesión...</div>;
   }
 
-  return (
+  const role = ROLE_ID_MAP[roleId] || null;
 
+  return (
     <BrowserRouter>
       <Routes>
+        {/* Ruta pública */}
         <Route path="/" element={<SignInPage />} />
-        <Route
-          path="/dashboard"
-          element={
-            role === "admin" ? <HomeAdmin /> :
-            role === "dueno" ? <HomeDueno /> :
-            role === "cliente" ? <HomeCliente /> :
-            role === "proveedor" ? <HomeProveedor /> :
-            <Navigate to="/" />
-          }
-        />
-        <Route 
-          path="/inventario" 
-          element={
-            role === "admin" ? <InventarioAdmin /> :
-            role === "dueno" ? <InventarioDueno /> :
-            role === "cliente" ? <InventarioCliente/> :
-            <Navigate to="/" />
-          } 
-        />
-        <Route 
-          path="/ordenes-proveedores" 
-          element={
-            role === "dueno" ? <OrdenesProveedoresDueno/> :
-            <Navigate to="/"/>
-            }
-          />
-        <Route 
-          path="/ordenes-clientes" 
-          element={
-            role === "dueno" ? <OrdenesClientesDueno/> :
-            <Navigate to="/"/>
-            }
-          />
-        <Route 
-          path="/recomendaciones-IA" 
-          element={
-            role === "dueno" ? <RecomendacionesIADueno/> :
-            <Navigate to="/"/>
-            }
-          />
-        <Route 
-          path="/ordenes" 
-          element={
-            role === "proveedor" ? <OrdenesProveedor/> :
-            <Navigate to="/"/>
-            }
-          />
-        <Route 
-          path="/pedidos" 
-          element={
-            role === "admin" ? <Pedidos/> :
-            <Navigate to="/"/>
-            }
-          />
-        <Route 
-          path="/usuarios" 
-          element={
-            role === "admin" ? <UsuariosShec /> :
-            <Navigate to="/" />
-          } 
-        />
-        <Route 
-          path="/agregar-usuario" 
-          element={
-            role === "admin" ? <AddUserLayer /> :
-            <Navigate to="/" />
-          } 
-        />
-        <Route 
-          path="/editar-usuario/:userId" 
-          element={
-            role === "admin" ? <EditUserLayer /> :
-            <Navigate to="/" />
-          }
-        />
 
-        <Route 
-          path="/crearpedido" 
-          element={
-            role === "admin" ? <InvoiceAddLayer /> :
-            <Navigate to="/" />
-          } 
-        />
-      </Routes> 
+        {/* Rutas de ADMIN */}
+        {role === "admin" && (
+          <>
+            <Route path="/dashboard" element={<HomeAdmin />} />
+            <Route path="/inventario" element={<InventarioAdmin />} />
+            <Route path="/pedidos" element={<Pedidos />} />
+            <Route path="/usuarios" element={<UsuariosShec />} />
+            <Route path="/agregar-usuario" element={<AddUserLayer />} />
+            <Route path="/editar-usuario/:userId" element={<EditUserLayer />} />
+            <Route path="/crearpedido" element={<InvoiceAddLayer />} />
+            <Route path="/roles" element={<Roles />} />
+            <Route path="/location" element={<LocationsPage />} />
+          </>
+        )}
+
+        {/* Rutas de DUEÑO */}
+        {role === "dueno" && (
+          <>
+            <Route path="/dashboard" element={<HomeDueno />} />
+            <Route path="/inventario" element={<InventarioDueno />} />
+            <Route path="/ordenes-proveedores" element={<OrdenesProveedoresDueno />} />
+            <Route path="/ordenes-clientes" element={<OrdenesClientesDueno />} />
+            <Route path="/recomendaciones-IA" element={<RecomendacionesIADueno />} />
+          </>
+        )}
+
+        {/* Rutas de EMPLEADO genérico */}
+        {role === "empleado" && (
+          <>
+            <Route path="/dashboard" element={<HomeEmpleado />} />
+            <Route path="/inventario" element={<InventarioEmpleado />} />
+            <Route path="/ordenes" element={<OrdenesEmpleado />} />
+            {/* Más rutas específicas por tipoEmpleado si lo deseas */}
+          </>
+        )}
+
+        {/* Redirección por defecto si no hay acceso */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </BrowserRouter>
-
   );
 };
 

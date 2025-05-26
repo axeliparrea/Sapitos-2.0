@@ -1,36 +1,35 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import * as jwt_decode from "jwt-decode";
+const jwtDecode = jwt_decode.default;
+
+
 
 const SignInPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [correoOUsuario, setCorreoOUsuario] = useState("");
+  const [clave, setClave] = useState("");
   const navigate = useNavigate();
-  const hasCheckedSession = useRef(false)
+  const hasCheckedSession = useRef(false);
 
   useEffect(() => {
-    if (hasCheckedSession.current) return; 
+    if (hasCheckedSession.current) return;
     hasCheckedSession.current = true;
 
     const checkSession = async () => {
       try {
-        const response = await fetch("http://localhost:5000/users/getSession", {
+        const response = await fetch("http://localhost:5000/usuario2/getSession", {
           credentials: "include",
         });
 
         if (!response.ok) return;
 
         const data = await response.json();
-        const token = data.token;
-        if (!token) return;
+        const decoded = jwtDecode(data.token);
+        const rol = decoded.rol;
 
-        const decoded = jwtDecode(token);
-        //console.log("Usuario ya autenticado:", decoded);
-
-        const userRole = decoded.ROL;
-        if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {
+        if ([1, 2, 3].includes(rol)) {
           navigate("/dashboard");
         }
       } catch (error) {
@@ -39,27 +38,37 @@ const SignInPage = () => {
     };
 
     checkSession();
-  }, [navigate]); 
+  }, [navigate]);
 
-  const handleLogin = async (event) => {
-    event.preventDefault();
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/users/login", {
+      const response = await fetch("http://localhost:5000/usuario2/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          correoOUsuario,
+          Clave: clave,
+        }),
       });
-      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error("Error al iniciar sesión");
       }
 
-      window.location.reload(); 
+      const data = await response.json();
+      const decoded = jwtDecode(data.token);
+      const rol = decoded.rol;
+
+      if ([1, 2, 3].includes(rol)) {
+        window.location.href = "/dashboard";
+      }
     } catch (error) {
-      console.error("Error:", error);
-      alert(error.message || "Login failed");
+      console.error("❌ Login fallido:", error);
     }
   };
 
@@ -67,14 +76,14 @@ const SignInPage = () => {
     <section className='auth bg-base d-flex flex-wrap'>
       <div className='auth-left d-lg-block d-none'>
         <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
-          <img src='assets/images/auth/auth-img.png' alt='WowDash React Vite' />
+          <img src='assets/images/auth/auth-img.png' alt='WowDash Auth' />
         </div>
       </div>
       <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center'>
         <div className='max-w-464-px mx-auto w-100'>
           <div>
             <Link to='/index' className='mb-40 max-w-290-px'>
-              <img src='assets/images/logo.png' alt='WowDash React Vite' />
+              <img src='assets/images/logo.png' alt='WowDash Logo' />
             </Link>
             <h4 className='mb-12'>Iniciar sesión</h4>
             <p className='mb-32 text-secondary-light text-lg'>
@@ -87,11 +96,11 @@ const SignInPage = () => {
                 <Icon icon='mage:email' />
               </span>
               <input
-                type='email'
+                type='text'
                 className='form-control h-56-px bg-neutral-50 radius-12'
-                placeholder='Correo electrónico'
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder='Correo o Usuario'
+                value={correoOUsuario}
+                onChange={(e) => setCorreoOUsuario(e.target.value)}
                 required
               />
             </div>
@@ -103,20 +112,20 @@ const SignInPage = () => {
                 <input
                   type='password'
                   className='form-control h-56-px bg-neutral-50 radius-12'
-                  id='your-password'
                   placeholder='Contraseña'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={clave}
+                  onChange={(e) => setClave(e.target.value)}
                   required
                 />
               </div>
             </div>
-            
-            <button type='submit'
-              className='btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32'>
+
+            <button
+              type='submit'
+              className='btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32'
+            >
               Iniciar sesión
             </button>
-    
           </form>
         </div>
       </div>

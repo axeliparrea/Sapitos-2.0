@@ -1,12 +1,12 @@
 import MasterLayout from "../../components/masterLayout";
-import Usuarios from "../../components/roles/admin/Usuarios";
+import Locations from "../../components/roles/admin/Location";
 
-const UsuariosPagina = () => {
+const LocationsPage = () => {
   return (
     <MasterLayout role={1} tipoEmpleado={null}>
-      <Usuarios />
+      <Locations />
     </MasterLayout>
   );
 };
 
-export default UsuariosPagina;
+export default LocationsPage;
