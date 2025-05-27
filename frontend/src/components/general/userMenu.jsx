@@ -5,20 +5,21 @@ const UserMenu = ({ name = "Usuario", role = "Invitado", profileImage = "assets/
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/users/logoutUser", {
-        method: "POST",
-        credentials: "include", // Ensures cookies are included in the request
-      });
+  try {
+    const response = await fetch("http://localhost:5000/usuario2/logout", {
+      method: "POST",
+      credentials: "include",
+    });
 
-      if (!response.ok) throw new Error("Logout failed");
+    if (!response.ok) throw new Error("Logout failed");
 
-      navigate("/"); // Redirect to login or home page
-    } catch (error) {
-      console.error("Error during logout:", error);
-      alert("No se pudo cerrar sesión.");
-    }
-  };
+    navigate("/"); // Redirige al inicio de sesión
+  } catch (error) {
+    console.error("Error during logout:", error);
+    alert("No se pudo cerrar sesión.");
+  }
+};
+
 
   return (
     <div className="col-auto">

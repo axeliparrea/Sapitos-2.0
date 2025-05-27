@@ -15,6 +15,9 @@ const Usuarios = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [usuarioEditando, setUsuarioEditando] = useState(null);
+  const [orden, setOrden] = useState({ columna: null, asc: true });
   const [nuevoUsuario, setNuevoUsuario] = useState({
     Nombre: "",
     Correo: "",
@@ -73,6 +76,22 @@ const Usuarios = () => {
     );
   });
 
+  const usuariosOrdenados = [...usuariosFiltrados].sort((a, b) => {
+    if (!orden.columna) return 0;
+    const valorA = a[orden.columna]?.toString().toLowerCase() || "";
+    const valorB = b[orden.columna]?.toString().toLowerCase() || "";
+    if (valorA < valorB) return orden.asc ? -1 : 1;
+    if (valorA > valorB) return orden.asc ? 1 : -1;
+    return 0;
+  });
+
+  const cambiarOrden = (col) => {
+    setOrden(prev => ({
+      columna: col,
+      asc: prev.columna === col ? !prev.asc : true
+    }));
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNuevoUsuario(prev => ({ ...prev, [name]: value }));
@@ -80,13 +99,33 @@ const Usuarios = () => {
 
   const handleSave = async () => {
     try {
-      await axios.post("http://localhost:5000/usuario2", nuevoUsuario);
-      setShowModal(false);
+      if (modoEdicion) {
+        await axios.put("http://localhost:5000/usuario2/updateUsuario", nuevoUsuario);
+      } else {
+        await axios.post("http://localhost:5000/usuario2", nuevoUsuario);
+      }
+      handleCloseModal();
       window.location.reload();
     } catch (error) {
-      console.error("Error al crear usuario:", error);
-      alert("Error al crear usuario");
+      console.error("Error al guardar usuario:", error);
+      alert("Error al guardar usuario");
     }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setModoEdicion(false);
+    setUsuarioEditando(null);
+    setNuevoUsuario({
+      Nombre: "",
+      Correo: "",
+      Clave: "",
+      Location_ID: "",
+      Rol_ID: "",
+      RFC: "",
+      Username: "",
+      FechaEmpiezo: new Date().toISOString().split("T")[0],
+    });
   };
 
   return (
@@ -146,6 +185,7 @@ const Usuarios = () => {
                 <th>Location</th>
                 <th>FechaCreado</th>
                 <th>RFC</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -158,6 +198,30 @@ const Usuarios = () => {
                   <td>{locations[usuario.LOCATION_ID] || "-"}</td>
                   <td>{usuario.FECHAEMPIEZO}</td>
                   <td>{usuario.RFC}</td>
+                  <td>
+                    <Button
+                      variant="warning"
+                      size="sm"
+                      onClick={() => {
+                        setUsuarioEditando(usuario);
+                        setNuevoUsuario({
+                          Usuario_ID: usuario.USUARIO_ID,
+                          Nombre: usuario.NOMBRE,
+                          Correo: usuario.CORREO,
+                          Clave: "",
+                          Location_ID: usuario.LOCATION_ID,
+                          Rol_ID: usuario.ROL_ID,
+                          RFC: usuario.RFC,
+                          Username: usuario.USERNAME,
+                          FechaEmpiezo: usuario.FECHAEMPIEZO?.split("T")[0] || ""
+                        });
+                        setModoEdicion(true);
+                        setShowModal(true);
+                      }}
+                    >
+                      Editar
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -170,9 +234,9 @@ const Usuarios = () => {
           </Alert>
         )}
 
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal show={showModal} onHide={handleCloseModal}>
           <Modal.Header closeButton>
-            <Modal.Title>Agregar Usuario</Modal.Title>
+            <Modal.Title>{modoEdicion ? "Editar Usuario" : "Agregar Usuario"}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
@@ -250,8 +314,10 @@ const Usuarios = () => {
             </Form>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
-            <Button variant="primary" onClick={handleSave}>Guardar</Button>
+            <Button variant="secondary" onClick={handleCloseModal}>Cancelar</Button>
+            <Button variant="primary" onClick={handleSave}>
+              {modoEdicion ? "Actualizar" : "Guardar"}
+            </Button>
           </Modal.Footer>
         </Modal>
       </Container>

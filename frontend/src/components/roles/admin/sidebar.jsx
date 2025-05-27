@@ -49,6 +49,8 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
             <SidebarButton to='/pedidos' icon='solar:user-linear' label='Pedidos' />
             <SidebarButton to='/roles' icon='mdi:shield-account-outline' label='Roles' />
             <SidebarButton to='/location' icon='mdi:location' label='Location' />
+            <SidebarButton to='/articulos' icon='mdi:package-variant' label='Artículos' />
+
 
         </ul>
       </div>

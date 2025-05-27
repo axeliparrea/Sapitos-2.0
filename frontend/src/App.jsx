@@ -15,6 +15,7 @@ import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
 import Roles from "./pages/admin/Roles";
 import LocationsPage from "./pages/admin/LocationsPage";
+import ArticulosPage from "./pages/admin/ArticulosPage";
 
 
 
@@ -93,6 +94,7 @@ const App = () => {
             <Route path="/crearpedido" element={<InvoiceAddLayer />} />
             <Route path="/roles" element={<Roles />} />
             <Route path="/location" element={<LocationsPage />} />
+            <Route path="/articulos" element={<ArticulosPage />} />
           </>
         )}
 
