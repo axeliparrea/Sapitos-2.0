@@ -14,6 +14,7 @@ const corsOptions = {
     origin: "http://localhost:5173", // Your frontend's origin
     methods: "GET,POST,PUT,DELETE",             // Specify methods you want to allow
     credentials: true,               // Allow credentials (cookies)
+    allowedHeaders: ["Content-Type", "Authorization"],  
   };
 
 app.use(cookieParser()); 

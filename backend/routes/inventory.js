@@ -216,7 +216,7 @@ router.get("/category/:categoria", getInventoryByCategory);
  *       500:
  *         description: Error del servidor
  */
-router.get("/proveedores/all", getProveedores);
+// router.get("/proveedores/all", getProveedores);
 
 /**
  * @swagger
@@ -237,6 +237,6 @@ router.get("/proveedores/all", getProveedores);
  *       500:
  *         description: Error del servidor
  */
-router.get("/proveedores/:proveedor", getProductosPorProveedor);
+// router.get("/proveedores/:proveedor", getProductosPorProveedor);
 
 module.exports = router;
