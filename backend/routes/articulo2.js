@@ -1,6 +1,18 @@
 const express = require("express");
 const router = express.Router();
-const { getArticulos, createArticulo } = require("../controllers/articulo2Controller");
+const {
+  getArticulos,
+  createArticulo,
+  updateArticulo,
+  deleteArticulo
+} = require("../controllers/articulo2Controller");
+
+/**
+ * @swagger
+ * tags:
+ *   name: Articulo2
+ *   description: Gestión de artículos
+ */
 
 /**
  * @swagger
@@ -11,6 +23,25 @@ const { getArticulos, createArticulo } = require("../controllers/articulo2Contro
  *     responses:
  *       200:
  *         description: Lista de artículos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   Articulo_ID:
+ *                     type: integer
+ *                   Nombre:
+ *                     type: string
+ *                   Categoria:
+ *                     type: string
+ *                   PrecioProveedor:
+ *                     type: number
+ *                   PrecioVenta:
+ *                     type: number
+ *                   Temporada:
+ *                     type: string
  */
 router.get("/", getArticulos);
 
@@ -26,6 +57,12 @@ router.get("/", getArticulos);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - Nombre
+ *               - Categoria
+ *               - PrecioProveedor
+ *               - PrecioVenta
+ *               - Temporada
  *             properties:
  *               Nombre:
  *                 type: string
@@ -42,5 +79,53 @@ router.get("/", getArticulos);
  *         description: Artículo creado
  */
 router.post("/", createArticulo);
+
+/**
+ * @swagger
+ * /articulo2/{id}:
+ *   put:
+ *     summary: Actualizar un artículo existente
+ *     tags: [Articulo2]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID del artículo a actualizar
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - Nombre
+ *               - Categoria
+ *               - PrecioProveedor
+ *               - PrecioVenta
+ *               - Temporada
+ *             properties:
+ *               Nombre:
+ *                 type: string
+ *               Categoria:
+ *                 type: string
+ *               PrecioProveedor:
+ *                 type: number
+ *               PrecioVenta:
+ *                 type: number
+ *               Temporada:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Artículo actualizado correctamente
+ *       500:
+ *         description: Error del servidor
+ */
+router.put("/:id", updateArticulo);
+
+// ejemplo en backend/rutas/articulo2.js
+router.delete("/:id", deleteArticulo);
+
 
 module.exports = router;
