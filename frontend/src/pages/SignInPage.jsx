@@ -27,11 +27,14 @@ const SignInPage = () => {
         if (!token) return;
 
         const decoded = jwtDecode(token);
-        //console.log("Usuario ya autenticado:", decoded);
+        console.log("Usuario ya autenticado:", decoded);
+
 
         const userRole = decoded.ROL;
         if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {
           navigate("/dashboard");
+        } else {
+          console.log("Rol no reconocido:", userRole); 
         }
       } catch (error) {
         console.error("No se pudo verificar la sesión:", error);
@@ -56,7 +59,7 @@ const SignInPage = () => {
         throw new Error(data.error || "Login failed");
       }
 
-      window.location.reload(); 
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error:", error);
       alert(error.message || "Login failed");
