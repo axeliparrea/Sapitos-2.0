@@ -165,6 +165,7 @@ const Inventory = () => {
             <i className="bi bi-search"></i>
           </InputGroup.Text>
           <Form.Control
+            id="buscadorInventario" 
             placeholder="Buscar por nombre, ID, proveedor o categoría..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -172,6 +173,7 @@ const Inventory = () => {
         </InputGroup>
         <div>
           <Button 
+            id="btnExportarCSV"
             variant="success" 
             onClick={exportToCSV}
             className="me-5 p-3"
@@ -180,6 +182,7 @@ const Inventory = () => {
           </Button>
           
           <Button 
+            id="btnFiltrarInventario" 
             variant={activeFilterCount > 0 ? "primary" : "outline-secondary"} 
             onClick={() => setShowFilters(!showFilters)}
             className="position-relative p-3"
@@ -200,7 +203,7 @@ const Inventory = () => {
         <div className="filter-panel p-4 mb-3 border rounded shadow-sm bg-light">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="m-0 text-primary">Filtros</h5>
-            <Button variant="link" size="sm" onClick={clearFilters} className="text-danger">
+            <Button id="btnLimpiarFiltros" variant="link" size="sm" onClick={clearFilters} className="text-danger">
               Limpiar filtros
             </Button>
           </div>

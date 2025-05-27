@@ -5,10 +5,11 @@ const UsuariosShec = () => {
   return (
     <>
       <MasterLayout role="admin">
-        <UsersListLayer/>
+        <div id="usuariosAdmin"> {/* ID agregado aquí */}
+          <UsersListLayer />
+        </div>
       </MasterLayout>
     </>
   );
 };
-
 export default UsuariosShec;

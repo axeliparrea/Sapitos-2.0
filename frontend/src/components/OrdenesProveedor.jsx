@@ -141,6 +141,7 @@ const OrdenesProveedor = () => {
                       <td>
                         <div className="btn-group" role="group">
                           <button
+                            id={`aceptarPedido-${pedido.idOriginal}`}
                             onClick={() => aceptarPedido(pedido.idOriginal)}
                             className="btn btn-sm btn-success"
                             title="Marcar como En Reparto"
@@ -149,6 +150,7 @@ const OrdenesProveedor = () => {
                             Aceptar
                           </button>
                           <button
+                            id={`rechazarPedido-${pedido.idOriginal}`}
                             onClick={() => rechazarPedido(pedido.idOriginal)}
                             className="btn btn-sm btn-danger ms-2"
                             title="Rechazar Pedido"
