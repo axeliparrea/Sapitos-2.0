@@ -12,9 +12,7 @@ const SignInPage = () => {
 
   useEffect(() => {
     if (hasCheckedSession.current) return; 
-    hasCheckedSession.current = true;
-
-    const checkSession = async () => {
+    hasCheckedSession.current = true;    const checkSession = async () => {
       try {
         const response = await fetch("http://localhost:5000/users/getSession", {
           credentials: "include",
@@ -23,14 +21,20 @@ const SignInPage = () => {
         if (!response.ok) return;
 
         const data = await response.json();
-        const token = data.token;
-        if (!token) return;
+        console.log("Session data:", data);
+        
+        // Determinar el rol del usuario
+        let userRole;
+        if (data.usuario && data.usuario.rol) {
+          userRole = data.usuario.rol;
+        } else if (data.token) {
+          const decoded = jwtDecode(data.token);
+          console.log("Usuario ya autenticado:", decoded);
+          userRole = decoded.rol || decoded.ROL;
+        } else {
+          return; // No hay información válida de sesión
+        }
 
-        const decoded = jwtDecode(token);
-        console.log("Usuario ya autenticado:", decoded);
-
-
-        const userRole = decoded.ROL;
         if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {
           navigate("/dashboard");
         } else {
@@ -43,7 +47,6 @@ const SignInPage = () => {
 
     checkSession();
   }, [navigate]); 
-
   const handleLogin = async (event) => {
     event.preventDefault();
 
@@ -66,7 +69,11 @@ const SignInPage = () => {
       }
 
       console.log("Login exitoso:", data.usuario);
-      navigate("/dashboard");
+      
+      // Pequeño retraso para asegurar que las cookies se guarden
+      setTimeout(() => {
+        window.location.href = "/dashboard";  // Usar redirección directa en lugar de navigate
+      }, 100);
       
     } catch (error) {
       console.error("Error:", error);

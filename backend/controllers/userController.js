@@ -13,6 +13,7 @@ const getSession = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     res.json({
+      token: token,
       usuario: {
         id: decoded.id || decoded.USUARIO_ID,
         nombre: decoded.nombre || decoded.NOMBRE,
