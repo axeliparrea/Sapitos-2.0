@@ -17,7 +17,8 @@ import HomeCliente from "./pages/cliente/Home";
 import InventarioCliente from "./pages/cliente/Inventario"
 
 import HomeProveedor from "./pages/proveedor/Home";
-import OrdenesProveedor from "./pages/proveedor/Home";
+import InvoiceListProveedorPage from "./pages/proveedor/InvoiceListProveedorPage";
+import InvoiceProveedorPage from "./pages/proveedor/InvoiceProveedorPage";
 
 import Pedidos from "./pages/admin/Pedidos"
 
@@ -26,7 +27,6 @@ import UsuariosShec from "./pages/admin/UsuariosShec";
 import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
-import InvoiceProveedor from "./components/InvoiceProveedor";
 
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
@@ -97,7 +97,7 @@ const App = () => {
         <Route 
           path="/ordenes-proveedores" 
           element={
-            role === "dueno" ? <InvoiceProveedor/> :
+            role === "dueno" ? <InvoiceProveedorPage/> :
             <Navigate to="/"/>
             }
           />
@@ -118,7 +118,21 @@ const App = () => {
         <Route 
           path="/ordenes" 
           element={
-            role === "proveedor" ? <OrdenesProveedor/> :
+            role === "proveedor" ? <InvoiceProveedorPage/> :
+            <Navigate to="/"/>
+            }
+          />
+        <Route 
+          path="/ordenes-aceptadas" 
+          element={
+            role === "proveedor" ? <InvoiceListProveedorPage aceptadas={true}/> :
+            <Navigate to="/"/>
+            }
+          />
+        <Route 
+          path="/ordenes/:id" 
+          element={
+            role === "proveedor" ? <InvoiceProveedorPage/> :
             <Navigate to="/"/>
             }
           />
