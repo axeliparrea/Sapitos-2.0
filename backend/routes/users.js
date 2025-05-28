@@ -297,6 +297,6 @@ router.put("/updateUser", updateUser);
  */
 router.get("/:correo", getUserByEmail);
 
-router.get('/session', auth(), getSession);
+router.get("/getSession", getSession);
 
 module.exports = router;

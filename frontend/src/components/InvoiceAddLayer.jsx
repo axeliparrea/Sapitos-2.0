@@ -10,7 +10,7 @@ const useUserSession = () => {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/auth/session', {
+        const response = await axios.get('http://localhost:5000/users/getSession', {
           withCredentials: true
         });
         
@@ -50,7 +50,7 @@ const InvoiceAddLayer = () => {
     const fetchProveedores = async () => {
       try {
         console.log('Intentando cargar proveedores...');
-        const response = await axios.get('http://localhost:5000/pedidos/proveedores');
+        const response = await axios.get('http://localhost:5000/pedido/proveedores');
         
         if (response.data && Array.isArray(response.data)) {
           setProveedores(response.data);
@@ -298,7 +298,6 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
     fetchProductos();
   }, [proveedorSeleccionado]);
 
-  // Resetear cuando se envía un pedido exitosamente
   useEffect(() => {
     if (pedidoEnviado) {
       setProveedorSeleccionado("");
@@ -322,8 +321,10 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
 
   const calcularSubtotal = () => {
     return productos.reduce((total, producto) => {
-      const precio = producto.precioCompra || producto.precio || 0;
-      return total + (precio * producto.cantidad);
+      // Asegurar que el precio sea un número
+      const precioNumerico = parseFloat(producto.precioCompra || producto.precio || 0);
+      const cantidad = parseInt(producto.cantidad || 0);
+      return total + (precioNumerico * cantidad);
     }, 0);
   };
 
@@ -332,12 +333,11 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
   const impuesto = 0;
   const total = subtotal - descuento + impuesto;
 
-  const productosConCantidad = productos.filter(p => p.cantidad > 0);
   const puedeEnviar = !isSubmitting && 
-                      proveedorSeleccionado && 
-                      productos.length > 0 && 
-                      productosConCantidad.length > 0 && 
-                      total > 0;
+                     proveedorSeleccionado && 
+                     productos.length > 0 && 
+                     productos.some(p => p.cantidad > 0) && 
+                     total > 0;
 
   return (
     <div className='py-28 px-20'>
