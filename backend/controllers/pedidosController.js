@@ -5,28 +5,28 @@ const getPedido = async (req, res) => {
   try {
     const query = `
       SELECT
-        o.ID,
-        o.CREADA_POR,
-        o.FECHACREACION,
-        o.FECHAESTIMAACEPTACION,
-        o.FECHAACEPTACION,
-        o.FECHAESTIMAPAGO,
-        o.FECHAPAGO,
-        o.COMPROBANTEPAGO,
-        o.FECHAESTIMAENTREGA,
-        o.FECHAENTREGA,
-        o.ENTREGAATIEMPO,
-        o.CALIDAD,
-        o.ESTATUS,
-        o.TOTAL,
-        o.METODOPAGO,
-        o.DESCUENTOAPLICADO,
-        o.TIEMPOREPOSICION,
-        o.TIEMPOENTREGA,
-        u.NOMBRE as CREADO_POR_NOMBRE
-      FROM ORDENES o
-      LEFT JOIN USUARIOS u ON o.CREADA_POR = u.CORREO
-      ORDER BY o.FECHACREACION DESC
+        o.Orden_ID as ID,
+        o.Creado_por_ID as CREADA_POR,
+        u.Correo as CORREO_CREADOR,
+        u.Nombre as CREADO_POR_NOMBRE,
+        o.Organizacion,
+        o.FechaCreacion as FECHACREACION,
+        o.FechaAceptacion as FECHAACEPTACION,
+        o.FechaLimitePago as FECHAESTIMAPAGO,
+        o.FechaEstimadaEntrega as FECHAESTIMAENTREGA,
+        o.FechaEntrega as FECHAENTREGA,
+        o.EntregaATiempo as ENTREGAATIEMPO,
+        o.Estado as ESTATUS,
+        o.Total as TOTAL,
+        mp.Nombre as METODOPAGO,
+        o.DescuentoAplicado as DESCUENTOAPLICADO,
+        o.TiempoReposicion as TIEMPOREPOSICION,
+        o.TiempoEntrega as TIEMPOENTREGA,
+        o.TipoOrden
+      FROM Ordenes2 o
+      LEFT JOIN Usuario2 u ON o.Creado_por_ID = u.Usuario_ID
+      LEFT JOIN MetodoPago2 mp ON o.MetodoPago_ID = mp.MetodoPago_ID
+      ORDER BY o.FechaCreacion DESC
     `;
 
     connection.exec(query, [], (err, result) => {
@@ -37,18 +37,16 @@ const getPedido = async (req, res) => {
 
       const formatted = (Array.isArray(result) ? result : []).map(pedido => ({
         id: pedido.ID,
-        creadaPor: pedido.CREADA_POR,
+        creadaPor: pedido.CORREO_CREADOR,
         creadoPorNombre: pedido.CREADO_POR_NOMBRE,
+        organizacion: pedido.Organizacion,
+        tipoOrden: pedido.TipoOrden,
         fechaCreacion: pedido.FECHACREACION,
-        fechaEstimaAceptacion: pedido.FECHAESTIMAACEPTACION,
         fechaAceptacion: pedido.FECHAACEPTACION,
         fechaEstimaPago: pedido.FECHAESTIMAPAGO,
-        fechaPago: pedido.FECHAPAGO,
-        comprobantePago: pedido.COMPROBANTEPAGO,
         fechaEstimaEntrega: pedido.FECHAESTIMAENTREGA,
         fechaEntrega: pedido.FECHAENTREGA,
         entregaATiempo: pedido.ENTREGAATIEMPO,
-        calidad: pedido.CALIDAD,
         estatus: pedido.ESTATUS,
         total: pedido.TOTAL,
         metodoPago: pedido.METODOPAGO,
@@ -65,20 +63,21 @@ const getPedido = async (req, res) => {
   }
 };
 
-// Crear nuevo pedido
+// Crear nuevo pedido a proveedor
 const insertPedido = async (req, res) => {
   try {
     const { 
-      creadaPor, 
+      creadoPorId,
+      organizacion, // Este será el nombre del proveedor
       productos, 
       total, 
-      metodoPago = 'Transferencia', 
+      metodoPagoId = 1, // ID por defecto
       descuentoAplicado = 0,
-      fecha 
+      tipoOrden = 'Compra' // Nuevo campo para distinguir tipos de orden
     } = req.body;
 
     // Validaciones
-    if (!creadaPor || !productos?.length || total === undefined) {
+    if (!creadoPorId || !organizacion || !productos?.length || total === undefined) {
       return res.status(400).json({ error: "Datos incompletos para crear el pedido" });
     }
 
@@ -88,7 +87,7 @@ const insertPedido = async (req, res) => {
 
     // Validar que todos los productos tengan los datos necesarios
     for (const producto of productos) {
-      if (!producto.id || !producto.cantidad || producto.cantidad <= 0) {
+      if (!producto.articuloId || !producto.cantidad || producto.cantidad <= 0) {
         return res.status(400).json({ 
           error: "Todos los productos deben tener ID y cantidad válida" 
         });
@@ -100,28 +99,46 @@ const insertPedido = async (req, res) => {
     try {
       // Insertar encabezado del pedido
       const pedidoResult = await connection.execSync(`
-        INSERT INTO ORDENES (
-          CREADA_POR, FECHACREACION, ESTATUS, TOTAL, METODOPAGO, DESCUENTOAPLICADO
-        ) VALUES (?, COALESCE(?, CURRENT_DATE), 'Pendiente', ?, ?, ?)
-        RETURNING ID
-      `, [creadaPor, fecha, total, metodoPago, descuentoAplicado]);
+        INSERT INTO Ordenes2 (
+          Creado_por_ID, 
+          TipoOrden,
+          Organizacion, 
+          FechaCreacion, 
+          Estado, 
+          Total, 
+          MetodoPago_ID, 
+          DescuentoAplicado
+        ) VALUES (?, ?, ?, CURRENT_DATE, 'Pendiente', ?, ?, ?)
+      `, [creadoPorId, tipoOrden, organizacion, total, metodoPagoId, descuentoAplicado]);
 
-      const pedidoId = pedidoResult[0].ID;
+      // Obtener el ID del pedido insertado
+      const pedidoIdResult = await connection.execSync(`
+        SELECT Orden_ID FROM Ordenes2 
+        WHERE Creado_por_ID = ? AND Total = ? AND FechaCreacion = CURRENT_DATE
+        ORDER BY Orden_ID DESC LIMIT 1
+      `, [creadoPorId, total]);
+
+      const pedidoId = pedidoIdResult[0].Orden_ID;
 
       // Insertar productos del pedido
       for (const producto of productos) {
-        const precioUnitario = producto.precio || producto.precioCompra || producto.PrecioCompra || 0;
+        // Primero necesitamos obtener el Inventario_ID basado en el Articulo_ID
+        const inventarioResult = await connection.execSync(`
+          SELECT Inventario_ID FROM Inventario2 
+          WHERE Articulo_ID = ? LIMIT 1
+        `, [producto.articuloId]);
+
+        if (!inventarioResult || inventarioResult.length === 0) {
+          throw new Error(`No se encontró inventario para el artículo ${producto.articuloId}`);
+        }
+
+        const inventarioId = inventarioResult[0].Inventario_ID;
+        const precioUnitario = producto.precio || producto.precioCompra || 0;
         
         await connection.execSync(`
-          INSERT INTO ORDENESPRODUCTOS (ORDENID, PRODUCTOID, CANTIDAD, PRECIOUNITARIO)
+          INSERT INTO OrdenesProductos2 (Orden_ID, Inventario_ID, Cantidad, PrecioUnitario)
           VALUES (?, ?, ?, ?)
-        `, [pedidoId, producto.id, producto.cantidad, precioUnitario]);
-
-        // Registrar en historial de precios
-        await connection.execSync(`
-          INSERT INTO HISTORIALPRECIOSPRODUCTOS (PRODUCTOID, PRECIOCOMPRA, FECHACAMBIO, MOTIVOCAMBIO)
-          VALUES (?, ?, CURRENT_DATE, 'Pedido #' || ?)
-        `, [producto.id, precioUnitario, pedidoId]);
+        `, [pedidoId, inventarioId, producto.cantidad, precioUnitario]);
       }
 
       await connection.execSync('COMMIT');
@@ -131,7 +148,8 @@ const insertPedido = async (req, res) => {
         id: pedidoId,
         pedidoId: pedidoId,
         totalProductos: productos.length,
-        total: total
+        total: total,
+        organizacion: organizacion
       });
 
     } catch (innerError) {
@@ -160,17 +178,17 @@ const deletePedido = async (req, res) => {
     await connection.execSync('BEGIN');
     
     // Verificar que el pedido existe
-    const [pedido] = await connection.execSync('SELECT ID FROM ORDENES WHERE ID = ?', [id]);
+    const [pedido] = await connection.execSync('SELECT Orden_ID FROM Ordenes2 WHERE Orden_ID = ?', [id]);
     if (!pedido) {
       await connection.execSync('ROLLBACK');
       return res.status(404).json({ error: "Pedido no encontrado" });
     }
     
     // Primero eliminar los productos asociados
-    await connection.execSync('DELETE FROM ORDENESPRODUCTOS WHERE ORDENID = ?', [id]);
+    await connection.execSync('DELETE FROM OrdenesProductos2 WHERE Orden_ID = ?', [id]);
     
     // Luego eliminar el pedido
-    await connection.execSync('DELETE FROM ORDENES WHERE ID = ?', [id]);
+    await connection.execSync('DELETE FROM Ordenes2 WHERE Orden_ID = ?', [id]);
     
     await connection.execSync('COMMIT');
     res.status(200).json({ message: "Pedido eliminado exitosamente" });
@@ -184,7 +202,7 @@ const deletePedido = async (req, res) => {
 // Actualizar pedido
 const updatePedido = async (req, res) => {
   const { id } = req.params;
-  const { estatus, ...datos } = req.body;
+  const { estado, ...datos } = req.body;
 
   if (!id || isNaN(id)) {
     return res.status(400).json({ error: "ID de pedido inválido" });
@@ -192,7 +210,7 @@ const updatePedido = async (req, res) => {
 
   try {
     // No permitir cambiar el estado directamente (usar las funciones específicas)
-    if (estatus) {
+    if (estado) {
       return res.status(400).json({ 
         error: "Use las rutas específicas para cambiar el estado (/aprobar, /entregar)" 
       });
@@ -201,10 +219,19 @@ const updatePedido = async (req, res) => {
     const campos = [];
     const valores = [];
     
+    // Mapeo de campos del frontend a la base de datos
+    const campoMap = {
+      organizacion: 'Organizacion',
+      total: 'Total',
+      descuentoAplicado: 'DescuentoAplicado',
+      tiempoReposicion: 'TiempoReposicion'
+    };
+    
     // Construir dinámicamente la consulta
     for (const [key, value] of Object.entries(datos)) {
       if (value !== undefined && value !== null) {
-        campos.push(`${key} = ?`);
+        const campoDb = campoMap[key] || key;
+        campos.push(`${campoDb} = ?`);
         valores.push(value);
       }
     }
@@ -213,12 +240,8 @@ const updatePedido = async (req, res) => {
       return res.status(400).json({ error: "No hay datos para actualizar" });
     }
 
-    const query = `UPDATE ORDENES SET ${campos.join(', ')} WHERE ID = ?`;
+    const query = `UPDATE Ordenes2 SET ${campos.join(', ')} WHERE Orden_ID = ?`;
     const result = await connection.execSync(query, [...valores, id]);
-    
-    if (result.changes === 0) {
-      return res.status(404).json({ error: "Pedido no encontrado" });
-    }
     
     res.status(200).json({ message: "Pedido actualizado exitosamente" });
   } catch (error) {
@@ -227,17 +250,19 @@ const updatePedido = async (req, res) => {
   }
 };
 
-// Obtener proveedores
+// Obtener proveedores (organizaciones únicas que fabrican productos)
 const getProveedores = async (req, res) => {
   try {
     const query = `
-      SELECT 
-        p.NOMBRE,
-        COUNT(pr.ID) as TOTAL_PRODUCTOS
-      FROM PROVEEDORES p
-      LEFT JOIN PRODUCTOS pr ON p.NOMBRE = pr.PROVEEDOR
-      GROUP BY p.NOMBRE
-      ORDER BY p.NOMBRE
+      SELECT DISTINCT
+        l.Nombre as NOMBRE,
+        COUNT(f.Articulo_ID) as TOTAL_PRODUCTOS
+      FROM Location2 l
+      INNER JOIN Fabricacion2 f ON l.Location_ID = f.Location_ID
+      INNER JOIN Articulo2 a ON f.Articulo_ID = a.Articulo_ID
+      WHERE l.Tipo = 'Proveedor' OR l.Tipo = 'Fabrica'
+      GROUP BY l.Location_ID, l.Nombre
+      ORDER BY l.Nombre
     `;
     
     connection.exec(query, [], (err, result) => {
@@ -270,21 +295,24 @@ const getProductosPorProveedor = async (req, res) => {
   try {
     const query = `
       SELECT 
-        p.ID,
-        p.NOMBRE,
-        p.CATEGORIA,
-        p.STOCKACTUAL,
-        p.PRECIOCOMPRA,
-        p.PRECIOVENTA,
-        p.TEMPORADA,
-        p.FECHAULTIMACOMPRA,
-        p.PROVEEDOR
-      FROM PRODUCTOS p
-      WHERE p.PROVEEDOR = ?
-      ORDER BY p.NOMBRE
+        a.Articulo_ID as ID,
+        a.Nombre as NOMBRE,
+        a.Categoria as CATEGORIA,
+        i.StockActual as STOCKACTUAL,
+        a.PrecioProveedor as PRECIOCOMPRA,
+        a.PrecioVenta as PRECIOVENTA,
+        a.Temporada as TEMPORADA,
+        i.FechaUltimaImportacion as FECHAULTIMACOMPRA,
+        l.Nombre as PROVEEDOR
+      FROM Articulo2 a
+      INNER JOIN Fabricacion2 f ON a.Articulo_ID = f.Articulo_ID
+      INNER JOIN Location2 l ON f.Location_ID = l.Location_ID
+      INNER JOIN Inventario2 i ON a.Articulo_ID = i.Articulo_ID AND l.Location_ID = i.Location_ID
+      WHERE l.Nombre = ?
+      ORDER BY a.Nombre
     `;
     
-    connection.exec(query, [nombreProveedor], (err, result) => {
+    connection.exec(query, [decodeURIComponent(nombreProveedor)], (err, result) => {
       if (err) {
         console.error("Error al obtener productos:", err);
         return res.status(500).json({ error: "Error al obtener productos", detalle: err.message });
@@ -292,6 +320,7 @@ const getProductosPorProveedor = async (req, res) => {
       
       const productosFormateados = (result || []).map(producto => ({
         id: producto.ID,
+        articuloId: producto.ID,
         nombre: producto.NOMBRE,
         categoria: producto.CATEGORIA,
         stockActual: producto.STOCKACTUAL,
@@ -299,7 +328,8 @@ const getProductosPorProveedor = async (req, res) => {
         precioVenta: producto.PRECIOVENTA,
         temporada: producto.TEMPORADA,
         fechaUltimaCompra: producto.FECHAULTIMACOMPRA,
-        proveedor: producto.PROVEEDOR
+        proveedor: producto.PROVEEDOR,
+        precio: producto.PRECIOCOMPRA
       }));
       
       res.status(200).json(productosFormateados);
@@ -320,13 +350,15 @@ const aprobarPedido = async (req, res) => {
 
   try {
     // Verificar que el pedido esté pendiente
-    const [pedido] = await connection.execSync('SELECT ESTATUS, CREADA_POR FROM ORDENES WHERE ID = ?', [id]);
+    const [pedido] = await connection.execSync(`
+      SELECT Estado, Organizacion, Creado_por_ID FROM Ordenes2 WHERE Orden_ID = ?
+    `, [id]);
     
     if (!pedido) {
       return res.status(404).json({ error: "Pedido no encontrado" });
     }
     
-    if (pedido.ESTATUS !== 'Pendiente') {
+    if (pedido.Estado !== 'Pendiente') {
       return res.status(400).json({ error: "Solo se pueden aprobar pedidos en estado Pendiente" });
     }
 
@@ -334,11 +366,11 @@ const aprobarPedido = async (req, res) => {
     
     // Actualizar estado y fechas
     await connection.execSync(`
-      UPDATE ORDENES SET 
-        ESTATUS = 'Aprobado',
-        FECHAACEPTACION = CURRENT_DATE,
-        FECHAESTIMAENTREGA = DATE(CURRENT_DATE, '+7 days')
-      WHERE ID = ?
+      UPDATE Ordenes2 SET 
+        Estado = 'Aprobado',
+        FechaAceptacion = CURRENT_DATE,
+        FechaEstimadaEntrega = ADD_DAYS(CURRENT_DATE, 7)
+      WHERE Orden_ID = ?
     `, [id]);
 
     await connection.execSync('COMMIT');
@@ -351,48 +383,72 @@ const aprobarPedido = async (req, res) => {
   }
 };
 
-// Marcar pedido como entregado
+// Marcar pedido como entregado/enviado (para proveedores)
 const entregarPedido = async (req, res) => {
   const { id } = req.params;
-  const { calidad = 5, entregaATiempo = true } = req.body;
 
   if (!id || isNaN(id)) {
     return res.status(400).json({ error: "ID de pedido inválido" });
   }
 
   try {
-    // Validar calidad (1-5)
-    if (calidad < 1 || calidad > 5) {
-      return res.status(400).json({ error: "La calidad debe ser entre 1 y 5" });
-    }
-
     // Verificar que el pedido esté aprobado
-    const [pedido] = await connection.execSync('SELECT ESTATUS FROM ORDENES WHERE ID = ?', [id]);
+    const [pedido] = await connection.execSync(`
+      SELECT Estado, Organizacion FROM Ordenes2 WHERE Orden_ID = ?
+    `, [id]);
     
     if (!pedido) {
       return res.status(404).json({ error: "Pedido no encontrado" });
     }
     
-    if (pedido.ESTATUS !== 'Aprobado') {
-      return res.status(400).json({ error: "Solo se pueden entregar pedidos en estado Aprobado" });
+    if (pedido.Estado !== 'Aprobado') {
+      return res.status(400).json({ error: "Solo se pueden enviar pedidos en estado Aprobado" });
     }
 
     await connection.execSync('BEGIN');
     
-    // Actualizar estado y fechas
+    // Obtener productos del pedido y reducir stock del proveedor
+    const productos = await connection.execSync(`
+      SELECT 
+        op.Inventario_ID,
+        op.Cantidad,
+        i.Location_ID,
+        i.Articulo_ID
+      FROM OrdenesProductos2 op
+      INNER JOIN Inventario2 i ON op.Inventario_ID = i.Inventario_ID
+      WHERE op.Orden_ID = ?
+    `, [id]);
+
+    // Reducir stock en el inventario del proveedor
+    for (const producto of productos) {
+      await connection.execSync(`
+        UPDATE Inventario2 SET 
+          StockActual = StockActual - ?,
+          Exportacion = Exportacion + ?,
+          FechaUltimaExportacion = CURRENT_DATE
+        WHERE Inventario_ID = ?
+      `, [producto.Cantidad, producto.Cantidad, producto.Inventario_ID]);
+    }
+    
+    // Actualizar estado del pedido
     await connection.execSync(`
-      UPDATE ORDENES SET 
-        ESTATUS = 'Completado',
-        FECHAENTREGA = CURRENT_DATE,
-        CALIDAD = ?,
-        ENTREGAATIEMPO = ?,
-        TIEMPOENTREGA = JULIANDAY(CURRENT_DATE) - JULIANDAY(FECHAACEPTACION)
-      WHERE ID = ?
-    `, [calidad, entregaATiempo, id]);
+      UPDATE Ordenes2 SET 
+        Estado = 'En Reparto',
+        FechaEntrega = CURRENT_DATE,
+        EntregaATiempo = CASE 
+          WHEN FechaEstimadaEntrega >= CURRENT_DATE THEN 1 
+          ELSE 0 
+        END,
+        TiempoEntrega = DAYS_BETWEEN(FechaAceptacion, CURRENT_DATE)
+      WHERE Orden_ID = ?
+    `, [id]);
 
     await connection.execSync('COMMIT');
     
-    res.status(200).json({ message: "Pedido marcado como entregado" });
+    res.status(200).json({ 
+      message: "Pedido marcado como enviado y stock actualizado",
+      totalProductos: productos.length
+    });
   } catch (error) {
     await connection.execSync('ROLLBACK');
     console.error("Error al marcar pedido como entregado:", error);
@@ -410,9 +466,25 @@ const getPedidosProveedor = async (req, res) => {
 
   try {
     connection.exec(`
-      SELECT * FROM ORDENES 
-      WHERE CREADA_POR = ?
-      ORDER BY FECHACREACION DESC
+      SELECT 
+        o.Orden_ID as ID,
+        o.Organizacion,
+        o.FechaCreacion,
+        o.FechaAceptacion,
+        o.FechaEstimadaEntrega,
+        o.FechaEntrega,
+        o.Estado,
+        o.Total,
+        u.Nombre as SolicitadoPor
+      FROM Ordenes2 o
+      INNER JOIN Usuario2 u ON o.Creado_por_ID = u.Usuario_ID
+      WHERE o.Organizacion = (
+        SELECT l.Nombre 
+        FROM Location2 l 
+        INNER JOIN Usuario2 u2 ON l.Location_ID = u2.Location_ID 
+        WHERE u2.Correo = ?
+      )
+      ORDER BY o.FechaCreacion DESC
     `, [correo], (err, result) => {
       if (err) {
         console.error("Error al obtener pedidos del proveedor:", err);
@@ -437,16 +509,17 @@ const getDetallesPedido = async (req, res) => {
   try {
     connection.exec(`
       SELECT 
-        p.ID,
-        p.NOMBRE,
-        p.CATEGORIA,
-        op.CANTIDAD,
-        op.PRECIOUNITARIO,
-        (op.CANTIDAD * op.PRECIOUNITARIO) as TOTAL
-      FROM ORDENESPRODUCTOS op
-      JOIN PRODUCTOS p ON op.PRODUCTOID = p.ID
-      WHERE op.ORDENID = ?
-      ORDER BY p.NOMBRE
+        a.Articulo_ID as ID,
+        a.Nombre as NOMBRE,
+        a.Categoria as CATEGORIA,
+        op.Cantidad as CANTIDAD,
+        op.PrecioUnitario as PRECIOUNITARIO,
+        (op.Cantidad * op.PrecioUnitario) as TOTAL
+      FROM OrdenesProductos2 op
+      INNER JOIN Inventario2 i ON op.Inventario_ID = i.Inventario_ID
+      INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+      WHERE op.Orden_ID = ?
+      ORDER BY a.Nombre
     `, [id], (err, result) => {
       if (err) {
         console.error("Error al obtener detalles del pedido:", err);
@@ -460,7 +533,7 @@ const getDetallesPedido = async (req, res) => {
   }
 };
 
-// Enviar pedido a inventario
+// Recibir pedido y agregar al inventario (para admin)
 const enviarAInventario = async (req, res) => {
   const { id } = req.params;
   
@@ -469,16 +542,18 @@ const enviarAInventario = async (req, res) => {
   }
 
   try {
-    // Verificar que el pedido esté completado
-    const [pedido] = await connection.execSync('SELECT ESTATUS FROM ORDENES WHERE ID = ?', [id]);
+    // Verificar que el pedido esté en reparto
+    const [pedido] = await connection.execSync(`
+      SELECT Estado FROM Ordenes2 WHERE Orden_ID = ?
+    `, [id]);
     
     if (!pedido) {
       return res.status(404).json({ error: "Pedido no encontrado" });
     }
     
-    if (pedido.ESTATUS !== 'Completado') {
+    if (pedido.Estado !== 'En Reparto') {
       return res.status(400).json({ 
-        error: "Solo se pueden enviar al inventario pedidos en estado Completado" 
+        error: "Solo se pueden recibir pedidos en estado En Reparto" 
       });
     }
 
@@ -486,9 +561,15 @@ const enviarAInventario = async (req, res) => {
     
     // Obtener productos del pedido
     const productos = await connection.execSync(`
-      SELECT PRODUCTOID, CANTIDAD, PRECIOUNITARIO 
-      FROM ORDENESPRODUCTOS 
-      WHERE ORDENID = ?
+      SELECT 
+        op.Cantidad,
+        op.PrecioUnitario,
+        i.Articulo_ID,
+        a.Nombre as ArticuloNombre
+      FROM OrdenesProductos2 op
+      INNER JOIN Inventario2 i ON op.Inventario_ID = i.Inventario_ID
+      INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+      WHERE op.Orden_ID = ?
     `, [id]);
 
     if (!productos || productos.length === 0) {
@@ -496,22 +577,56 @@ const enviarAInventario = async (req, res) => {
       return res.status(400).json({ error: "No se encontraron productos en el pedido" });
     }
 
-    // Actualizar inventario para cada producto
-    for (const producto of productos) {
-      await connection.execSync(`
-        UPDATE PRODUCTOS SET 
-          STOCKACTUAL = STOCKACTUAL + ?,
-          PRECIOCOMPRA = ?,
-          FECHAULTIMACOMPRA = CURRENT_DATE
-        WHERE ID = ?
-      `, [producto.CANTIDAD, producto.PRECIOUNITARIO, producto.PRODUCTOID]);
+    // Buscar nuestro location (asumiendo que tenemos un location principal)
+    const [nuestroLocation] = await connection.execSync(`
+      SELECT Location_ID FROM Location2 
+      WHERE Tipo = 'Almacen' OR Tipo = 'Principal' 
+      LIMIT 1
+    `);
+
+    if (!nuestroLocation) {
+      await connection.execSync('ROLLBACK');
+      return res.status(400).json({ error: "No se encontró location principal para recibir inventario" });
     }
 
-    // Marcar pedido como procesado en inventario
+    // Actualizar o crear inventario para cada producto en nuestro almacén
+    for (const producto of productos) {
+      // Verificar si ya existe inventario para este producto en nuestro location
+      const [inventarioExistente] = await connection.execSync(`
+        SELECT Inventario_ID, StockActual FROM Inventario2 
+        WHERE Articulo_ID = ? AND Location_ID = ?
+      `, [producto.Articulo_ID, nuestroLocation.Location_ID]);
+
+      if (inventarioExistente) {
+        // Actualizar inventario existente
+        await connection.execSync(`
+          UPDATE Inventario2 SET 
+            StockActual = StockActual + ?,
+            Importacion = Importacion + ?,
+            FechaUltimaImportacion = CURRENT_DATE
+          WHERE Inventario_ID = ?
+        `, [producto.Cantidad, producto.Cantidad, inventarioExistente.Inventario_ID]);
+      } else {
+        // Crear nuevo registro de inventario
+        await connection.execSync(`
+          INSERT INTO Inventario2 (
+            Articulo_ID, 
+            Location_ID, 
+            StockActual, 
+            Importacion, 
+            StockMinimo, 
+            StockRecomendado, 
+            FechaUltimaImportacion
+          ) VALUES (?, ?, ?, ?, 10, 50, CURRENT_DATE)
+        `, [producto.Articulo_ID, nuestroLocation.Location_ID, producto.Cantidad, producto.Cantidad]);
+      }
+    }
+
+    // Marcar pedido como completado
     await connection.execSync(`
-      UPDATE ORDENES SET 
-        ESTATUS = 'Inventariado'
-      WHERE ID = ?
+      UPDATE Ordenes2 SET 
+        Estado = 'Completado'
+      WHERE Orden_ID = ?
     `, [id]);
 
     await connection.execSync('COMMIT');
@@ -523,110 +638,20 @@ const enviarAInventario = async (req, res) => {
     });
   } catch (error) {
     await connection.execSync('ROLLBACK');
-    console.error("Error al enviar a inventario:", error);
+    console.error("Error al recibir pedido:", error);
     res.status(500).json({ error: "Error al actualizar inventario" });
   }
 };
 
-
+// Mantener compatibilidad con funciones existentes
 const getProveedoresInventario = async (req, res) => {
-  try {
-    const query = `
-      SELECT DISTINCT
-        p.PROVEEDOR as proveedor,
-        p.PROVEEDOR as nombre,
-        COUNT(p.ID) as totalProductos
-      FROM PRODUCTOS p
-      WHERE p.PROVEEDOR IS NOT NULL AND p.PROVEEDOR != ''
-      GROUP BY p.PROVEEDOR
-      ORDER BY p.PROVEEDOR
-    `;
-    
-    connection.exec(query, [], (err, result) => {
-      if (err) {
-        console.error("Error al obtener proveedores:", err);
-        return res.status(500).json({ error: "Error al obtener proveedores", detalle: err.message });
-      }
-      
-      const proveedoresFormateados = (result || []).map(proveedor => ({
-        proveedor: proveedor.proveedor,
-        nombre: proveedor.nombre,
-        totalProductos: proveedor.totalProductos || 0
-      }));
-      
-      res.status(200).json(proveedoresFormateados);
-    });
-  } catch (error) {
-    console.error("Error general:", error);
-    res.status(500).json({ error: "Error del servidor" });
-  }
+  return getProveedores(req, res);
 };
 
-// Obtener productos por proveedor con formato compatible
 const getProductosInventarioPorProveedor = async (req, res) => {
-  const { nombreProveedor } = req.params;
-  
-  if (!nombreProveedor) {
-    return res.status(400).json({ error: "Nombre de proveedor requerido" });
-  }
-
-  try {
-    const query = `
-      SELECT 
-        p.ID,
-        p.NOMBRE,
-        p.CATEGORIA,
-        p.STOCKACTUAL,
-        p.PRECIOCOMPRA,
-        p.PRECIOVENTA,
-        p.TEMPORADA,
-        p.FECHAULTIMACOMPRA,
-        p.PROVEEDOR,
-        p.PRECIOCOMPRA as PrecioCompra,
-        p.PRECIOCOMPRA as precio
-      FROM PRODUCTOS p
-      WHERE p.PROVEEDOR = ?
-      ORDER BY p.NOMBRE
-    `;
-    
-    connection.exec(query, [decodeURIComponent(nombreProveedor)], (err, result) => {
-      if (err) {
-        console.error("Error al obtener productos:", err);
-        return res.status(500).json({ error: "Error al obtener productos", detalle: err.message });
-      }
-      
-      const productosFormateados = (result || []).map(producto => ({
-        ID: producto.ID,
-        id: producto.ID,
-        nombre: producto.NOMBRE,
-        NOMBRE: producto.NOMBRE,
-        categoria: producto.CATEGORIA,
-        CATEGORIA: producto.CATEGORIA,
-        stockActual: producto.STOCKACTUAL,
-        STOCKACTUAL: producto.STOCKACTUAL,
-        precioCompra: producto.PRECIOCOMPRA,
-        PrecioCompra: producto.PRECIOCOMPRA,
-        precio: producto.PRECIOCOMPRA,
-        PRECIOCOMPRA: producto.PRECIOCOMPRA,
-        precioVenta: producto.PRECIOVENTA,
-        PRECIOVENTA: producto.PRECIOVENTA,
-        temporada: producto.TEMPORADA,
-        TEMPORADA: producto.TEMPORADA,
-        fechaUltimaCompra: producto.FECHAULTIMACOMPRA,
-        FECHAULTIMACOMPRA: producto.FECHAULTIMACOMPRA,
-        proveedor: producto.PROVEEDOR,
-        PROVEEDOR: producto.PROVEEDOR
-      }));
-      
-      res.status(200).json(productosFormateados);
-    });
-  } catch (error) {
-    console.error("Error general:", error);
-    res.status(500).json({ error: "Error del servidor" });
-  }
+  return getProductosPorProveedor(req, res);
 };
 
-// Actualiza el module.exports para incluir las nuevas funciones
 module.exports = {
   getPedido,
   insertPedido,

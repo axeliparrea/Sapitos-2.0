@@ -54,12 +54,20 @@ const SignInPage = () => {
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
       });
+      
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Login failed");
       }
 
+      // Verificar que el token y el usuario existen
+      if (!data.token || !data.usuario) {
+        throw new Error("Datos de sesión incompletos");
+      }
+
+      console.log("Login exitoso:", data.usuario);
       navigate("/dashboard");
+      
     } catch (error) {
       console.error("Error:", error);
       alert(error.message || "Login failed");

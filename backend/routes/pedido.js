@@ -19,10 +19,151 @@ const { auth } = require('../middleware/auth');
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     Pedido:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID único del pedido
+ *         creadaPor:
+ *           type: string
+ *           description: Correo del usuario que creó el pedido
+ *         creadoPorNombre:
+ *           type: string
+ *           description: Nombre del usuario que creó el pedido
+ *         organizacion:
+ *           type: string
+ *           description: Nombre del proveedor/organización
+ *         tipoOrden:
+ *           type: string
+ *           description: Tipo de orden (Compra, etc.)
+ *         fechaCreacion:
+ *           type: string
+ *           format: date
+ *           description: Fecha de creación del pedido
+ *         fechaAceptacion:
+ *           type: string
+ *           format: date
+ *           description: Fecha de aceptación del pedido
+ *         fechaEstimaPago:
+ *           type: string
+ *           format: date
+ *           description: Fecha límite de pago
+ *         fechaEstimaEntrega:
+ *           type: string
+ *           format: date
+ *           description: Fecha estimada de entrega
+ *         fechaEntrega:
+ *           type: string
+ *           format: date
+ *           description: Fecha real de entrega
+ *         entregaATiempo:
+ *           type: boolean
+ *           description: Si la entrega fue a tiempo
+ *         estatus:
+ *           type: string
+ *           enum: [Pendiente, Aprobado, En Reparto, Completado]
+ *           description: Estado actual del pedido
+ *         total:
+ *           type: number
+ *           description: Total del pedido
+ *         metodoPago:
+ *           type: string
+ *           description: Método de pago utilizado
+ *         descuentoAplicado:
+ *           type: number
+ *           description: Descuento aplicado al pedido
+ *         tiempoReposicion:
+ *           type: number
+ *           description: Tiempo de reposición en días
+ *         tiempoEntrega:
+ *           type: number
+ *           description: Tiempo real de entrega en días
+ *     
+ *     NuevoPedido:
+ *       type: object
+ *       required:
+ *         - creadoPorId
+ *         - organizacion
+ *         - productos
+ *         - total
+ *       properties:
+ *         creadoPorId:
+ *           type: integer
+ *           description: ID del usuario que crea el pedido
+ *         organizacion:
+ *           type: string
+ *           description: Nombre del proveedor
+ *         productos:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               articuloId:
+ *                 type: integer
+ *               cantidad:
+ *                 type: integer
+ *               precio:
+ *                 type: number
+ *         total:
+ *           type: number
+ *           description: Total del pedido
+ *         metodoPagoId:
+ *           type: integer
+ *           default: 1
+ *         descuentoAplicado:
+ *           type: number
+ *           default: 0
+ *         tipoOrden:
+ *           type: string
+ *           default: "Compra"
+ *     
+ *     Proveedor:
+ *       type: object
+ *       properties:
+ *         nombre:
+ *           type: string
+ *           description: Nombre del proveedor
+ *         totalProductos:
+ *           type: integer
+ *           description: Total de productos que fabrica
+ *     
+ *     ProductoProveedor:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         articuloId:
+ *           type: integer
+ *         nombre:
+ *           type: string
+ *         categoria:
+ *           type: string
+ *         stockActual:
+ *           type: integer
+ *         precioCompra:
+ *           type: number
+ *         precioVenta:
+ *           type: number
+ *         temporada:
+ *           type: string
+ *         fechaUltimaCompra:
+ *           type: string
+ *           format: date
+ *         proveedor:
+ *           type: string
+ *         precio:
+ *           type: number
+ */
+
+/**
+ * @swagger
  * /pedido:
  *   get:
  *     summary: Obtener todos los pedidos
- *     tags: [Pedido]
+ *     tags: [Pedidos]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -33,51 +174,7 @@ const { auth } = require('../middleware/auth');
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   creadaPor:
- *                     type: string
- *                   fechaCreacion:
- *                     type: string
- *                     format: date
- *                   fechaEstimaAceptacion:
- *                     type: string
- *                     format: date
- *                   fechaAceptacion:
- *                     type: string
- *                     format: date
- *                   fechaEstimaPago:
- *                     type: string
- *                     format: date
- *                   fechaPago:
- *                     type: string
- *                     format: date
- *                   comprobantePago:
- *                     type: string
- *                   fechaEstimaEntrega:
- *                     type: string
- *                     format: date
- *                   fechaEntrega:
- *                     type: string
- *                     format: date
- *                   entregaATiempo:
- *                     type: boolean
- *                   calidad:
- *                     type: number
- *                   estatus:
- *                     type: string
- *                   total:
- *                     type: number
- *                   metodoPago:
- *                     type: string
- *                   descuentoAplicado:
- *                     type: number
- *                   tiempoReposicion:
- *                     type: number
- *                   tiempoEntrega:
- *                     type: number
+ *                 $ref: '#/components/schemas/Pedido'
  *       500:
  *         description: Error del servidor
  */
@@ -88,8 +185,8 @@ router.get("/", getPedido);
  * @swagger
  * /pedido:
  *   post:
- *     summary: Insertar un nuevo pedido
- *     tags: [Pedido]
+ *     summary: Crear nuevo pedido a proveedor
+ *     tags: [Pedidos]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -97,34 +194,7 @@ router.get("/", getPedido);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - creadaPor
- *               - productos
- *               - total
- *             properties:
- *               creadaPor:
- *                 type: string
- *               productos:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                     cantidad:
- *                       type: integer
- *                     precio:
- *                       type: number
- *               total:
- *                 type: number
- *               metodoPago:
- *                 type: string
- *               descuentoAplicado:
- *                 type: number
- *               fecha:
- *                 type: string
- *                 format: date
+ *             $ref: '#/components/schemas/NuevoPedido'
  *     responses:
  *       201:
  *         description: Pedido creado exitosamente
@@ -143,8 +213,10 @@ router.get("/", getPedido);
  *                   type: integer
  *                 total:
  *                   type: number
+ *                 organizacion:
+ *                   type: string
  *       400:
- *         description: Datos inválidos
+ *         description: Datos incompletos o inválidos
  *       500:
  *         description: Error del servidor
  */
@@ -153,10 +225,79 @@ router.post("/", insertPedido);
 
 /**
  * @swagger
+ * /pedido/{id}:
+ *   put:
+ *     summary: Actualizar pedido
+ *     tags: [Pedidos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               organizacion:
+ *                 type: string
+ *               total:
+ *                 type: number
+ *               descuentoAplicado:
+ *                 type: number
+ *               tiempoReposicion:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Pedido actualizado exitosamente
+ *       400:
+ *         description: ID inválido o datos incorrectos
+ *       500:
+ *         description: Error del servidor
+ */
+router.put("/:id", updatePedido);
+// router.put("/:id", auth(["admin", "dueno"]), updatePedido);
+
+/**
+ * @swagger
+ * /pedido/{id}:
+ *   delete:
+ *     summary: Eliminar pedido
+ *     tags: [Pedidos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido
+ *     responses:
+ *       200:
+ *         description: Pedido eliminado exitosamente
+ *       400:
+ *         description: ID de pedido inválido
+ *       404:
+ *         description: Pedido no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.delete("/:id", deletePedido);
+// router.delete("/:id", auth(["admin", "dueno"]), deletePedido);
+
+/**
+ * @swagger
  * /pedido/proveedores:
  *   get:
- *     summary: Obtener lista de proveedores con conteo de productos
- *     tags: [Pedido]
+ *     summary: Obtener lista de proveedores
+ *     tags: [Pedidos]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -167,23 +308,19 @@ router.post("/", insertPedido);
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   nombre:
- *                     type: string
- *                   totalProductos:
- *                     type: integer
+ *                 $ref: '#/components/schemas/Proveedor'
  *       500:
  *         description: Error del servidor
  */
 router.get("/proveedores", getProveedores);
+// router.get("/proveedores", auth(["admin", "dueno", "empleado"]), getProveedores);
 
 /**
  * @swagger
- * /pedido/proveedores/{nombreProveedor}:
+ * /pedido/productos/{nombreProveedor}:
  *   get:
- *     summary: Obtener productos de un proveedor específico
- *     tags: [Pedido]
+ *     summary: Obtener productos por proveedor
+ *     tags: [Pedidos]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -192,7 +329,7 @@ router.get("/proveedores", getProveedores);
  *         required: true
  *         schema:
  *           type: string
- *         description: Nombre del proveedor
+ *         description: Nombre del proveedor (URL encoded)
  *     responses:
  *       200:
  *         description: Lista de productos del proveedor
@@ -201,40 +338,21 @@ router.get("/proveedores", getProveedores);
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   nombre:
- *                     type: string
- *                   categoria:
- *                     type: string
- *                   stockActual:
- *                     type: integer
- *                   precioCompra:
- *                     type: number
- *                   precioVenta:
- *                     type: number
- *                   temporada:
- *                     type: string
- *                   fechaUltimaCompra:
- *                     type: string
- *                     format: date
- *                   proveedor:
- *                     type: string
+ *                 $ref: '#/components/schemas/ProductoProveedor'
  *       400:
  *         description: Nombre de proveedor requerido
  *       500:
  *         description: Error del servidor
  */
-router.get("/proveedores/:nombreProveedor", getProductosPorProveedor);
+router.get("/productos/:nombreProveedor", getProductosPorProveedor);
+// router.get("/productos/:nombreProveedor", auth(["admin", "dueno", "empleado"]), getProductosPorProveedor);
 
 /**
  * @swagger
  * /pedido/{id}/aprobar:
  *   put:
- *     summary: Aprobar un pedido
- *     tags: [Pedido]
+ *     summary: Aprobar pedido (para proveedores)
+ *     tags: [Pedidos]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -243,25 +361,26 @@ router.get("/proveedores/:nombreProveedor", getProductosPorProveedor);
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del pedido a aprobar
+ *         description: ID del pedido
  *     responses:
  *       200:
  *         description: Pedido aprobado exitosamente
  *       400:
- *         description: Solo se pueden aprobar pedidos en estado Pendiente
+ *         description: ID inválido o pedido no puede ser aprobado
  *       404:
  *         description: Pedido no encontrado
  *       500:
  *         description: Error del servidor
  */
 router.put("/:id/aprobar", aprobarPedido);
+// router.put("/:id/aprobar", auth(["proveedor", "admin"]), aprobarPedido);
 
 /**
  * @swagger
  * /pedido/{id}/entregar:
  *   put:
- *     summary: Marcar pedido como entregado
- *     tags: [Pedido]
+ *     summary: Marcar pedido como entregado/enviado (para proveedores)
+ *     tags: [Pedidos]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -270,39 +389,35 @@ router.put("/:id/aprobar", aprobarPedido);
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del pedido a entregar
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               calidad:
- *                 type: integer
- *                 minimum: 1
- *                 maximum: 5
- *                 default: 5
- *               entregaATiempo:
- *                 type: boolean
- *                 default: true
+ *         description: ID del pedido
  *     responses:
  *       200:
- *         description: Pedido marcado como entregado
+ *         description: Pedido marcado como enviado y stock actualizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 totalProductos:
+ *                   type: integer
  *       400:
- *         description: Solo se pueden entregar pedidos en estado Aprobado
+ *         description: ID inválido o pedido no puede ser enviado
  *       404:
  *         description: Pedido no encontrado
  *       500:
  *         description: Error del servidor
  */
 router.put("/:id/entregar", entregarPedido);
+// router.put("/:id/entregar", auth(["proveedor", "admin"]), entregarPedido);
 
 /**
  * @swagger
  * /pedido/{id}/inventario:
  *   put:
- *     summary: Enviar productos del pedido al inventario
- *     tags: [Pedido]
+ *     summary: Recibir pedido y agregar al inventario (para admin)
+ *     tags: [Pedidos]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -311,25 +426,37 @@ router.put("/:id/entregar", entregarPedido);
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del pedido a enviar al inventario
+ *         description: ID del pedido
  *     responses:
  *       200:
  *         description: Productos agregados al inventario exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 totalProductos:
+ *                   type: integer
+ *                 pedidoId:
+ *                   type: integer
  *       400:
- *         description: Solo se pueden enviar al inventario pedidos en estado Completado
+ *         description: ID inválido o pedido no puede ser recibido
  *       404:
  *         description: Pedido no encontrado
  *       500:
  *         description: Error del servidor
  */
 router.put("/:id/inventario", enviarAInventario);
+// router.put("/:id/inventario", auth(["admin", "dueno"]), enviarAInventario);
 
 /**
  * @swagger
  * /pedido/proveedor/{correo}:
  *   get:
  *     summary: Obtener pedidos de un proveedor específico
- *     tags: [Pedido]
+ *     tags: [Pedidos]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -342,19 +469,49 @@ router.put("/:id/inventario", enviarAInventario);
  *     responses:
  *       200:
  *         description: Lista de pedidos del proveedor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   ID:
+ *                     type: integer
+ *                   Organizacion:
+ *                     type: string
+ *                   FechaCreacion:
+ *                     type: string
+ *                     format: date
+ *                   FechaAceptacion:
+ *                     type: string
+ *                     format: date
+ *                   FechaEstimadaEntrega:
+ *                     type: string
+ *                     format: date
+ *                   FechaEntrega:     
+ *                     type: string
+ *                     format: date
+ *                   Estado:
+ *                     type: string
+ *                   Total:
+ *                     type: number
+ *                   SolicitadoPor:
+ *                     type: string
  *       400:
  *         description: Correo del proveedor requerido
  *       500:
  *         description: Error del servidor
  */
 router.get("/proveedor/:correo", getPedidosProveedor);
+// router.get("/proveedor/:correo", auth(["proveedor", "admin"]), getPedidosProveedor);
 
 /**
  * @swagger
  * /pedido/{id}/detalles:
  *   get:
- *     summary: Obtener detalles de un pedido específico
- *     tags: [Pedido]
+ *     summary: Obtener detalles de un pedido
+ *     tags: [Pedidos]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -392,150 +549,61 @@ router.get("/proveedor/:correo", getPedidosProveedor);
  *         description: Error del servidor
  */
 router.get("/:id/detalles", getDetallesPedido);
+// router.get("/:id/detalles", auth(["admin", "dueno", "empleado", "proveedor"]), getDetallesPedido);
 
-// Eliminar pedido por ID
 /**
  * @swagger
- * /pedido/{id}:
- *   delete:
- *     summary: Eliminar un pedido por ID
- *     tags: [Pedido]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID del pedido a eliminar
- *     responses:
- *       200:
- *         description: Pedido eliminado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *       404:
- *         description: Pedido no encontrado
- *       500:
- *         description: Error del servidor
- */
-router.delete("/:id", deletePedido);
-
-// Actualizar pedido por ID
-/**
- * @swagger
- * /pedido/{id}:
- *   put:
- *     summary: Actualizar un pedido por ID
- *     tags: [Pedido]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID del pedido a actualizar
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               creadaPor:
- *                 type: string
- *               fechaCreacion:
- *                 type: string
- *                 format: date
- *               fechaEstimaAceptacion:
- *                 type: string
- *                 format: date
- *               fechaAceptacion:
- *                 type: string
- *                 format: date
- *               fechaEstimaPago:
- *                 type: string
- *                 format: date
- *               fechaPago:
- *                 type: string
- *                 format: date
- *               comprobantePago:
- *                 type: string
- *               fechaEstimaEntrega:
- *                 type: string
- *                 format: date
- *               fechaEntrega:
- *                 type: string
- *                 format: date
- *               entregaATiempo:
- *                 type: boolean
- *               calidad:
- *                 type: number
- *               total:
- *                 type: number
- *               metodoPago:
- *                 type: string
- *               descuentoAplicado:
- *                 type: number
- *               tiempoReposicion:
- *                 type: number
- *               tiempoEntrega:
- *                 type: number
- *     responses:
- *       200:
- *         description: Pedido actualizado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *       400:
- *         description: Datos inválidos
- *       404:
- *         description: Pedido no encontrado
- *       500:
- *         description: Error del servidor
- */
-router.put("/:id", updatePedido);
-
-// Rutas adicionales para compatibilidad con el frontend
-/**
- * @swagger
- * /pedido/inventory/proveedor:
+ * /pedido/inventario/proveedores:
  *   get:
- *     summary: Obtener proveedores para inventario (compatibilidad frontend)
- *     tags: [Pedido]
+ *     summary: Obtener proveedores para inventario (alias de /proveedores)
+ *     tags: [Pedidos]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de proveedores
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Proveedor'
+ *       500:
+ *         description: Error del servidor
  */
-router.get("/inventory/proveedor", getProveedoresInventario);
+router.get("/inventario/proveedores", getProveedoresInventario);
+// router.get("/inventario/proveedores", auth(["admin", "dueno", "empleado"]), getProveedoresInventario);
 
 /**
  * @swagger
- * /pedido/inventory/proveedores/{nombreProveedor}:
+ * /pedido/inventario/productos/{nombreProveedor}:
  *   get:
- *     summary: Obtener productos de proveedor para inventario (compatibilidad frontend)
- *     tags: [Pedido]
+ *     summary: Obtener productos por proveedor para inventario (alias de /productos/{nombreProveedor})
+ *     tags: [Pedidos]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: nombreProveedor
  *         required: true
  *         schema:
  *           type: string
+ *         description: Nombre del proveedor (URL encoded)
  *     responses:
  *       200:
  *         description: Lista de productos del proveedor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ProductoProveedor'
+ *       400:
+ *         description: Nombre de proveedor requerido
+ *       500:
+ *         description: Error del servidor
  */
-router.get("/inventory/proveedores/:nombreProveedor", getProductosInventarioPorProveedor);
+router.get("/inventario/productos/:nombreProveedor", getProductosInventarioPorProveedor);
+// router.get("/inventario/productos/:nombreProveedor", auth(["admin", "dueno", "empleado"]), getProductosInventarioPorProveedor);
 
 module.exports = router;

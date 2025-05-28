@@ -2,7 +2,30 @@ const { connection } = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// Registro de usuario (compatible con ambos sistemas)
+const getSession = async (req, res) => {
+  const token = req.cookies.token || req.cookies.Auth;
+  
+  if (!token) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    res.json({
+      usuario: {
+        id: decoded.id || decoded.USUARIO_ID,
+        nombre: decoded.nombre || decoded.NOMBRE,
+        rol: decoded.rol || decoded.ROL,
+        correo: decoded.correo || decoded.CORREO,
+        username: decoded.username || decoded.USERNAME
+      }
+    });
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+};
+
 const registerUser = async (req, res) => {
   const { correo, nombre, contrasena, rol, username, rfc, location_id } = req.body;
 
@@ -109,9 +132,10 @@ const loginUser = (req, res) => {
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: false,
-        sameSite: "Lax",
+        secure: process.env.NODE_ENV === "production", 
+        sameSite: "strict",
         maxAge: 24 * 60 * 60 * 1000,
+        path: "/",
       });
 
       res.cookie("Auth", token, {
@@ -259,34 +283,6 @@ const updateUserRecord = async (correo, nombre, rolId, contrasena, username, rfc
   } catch (error) {
     console.error("Error actualizando:", error);
     res.status(500).json({ error: "Error servidor" });
-  }
-};
-
-const getSession = async (req, res) => {
-  let token = req.cookies.token;
-  if (!token) {
-    token = req.cookies.Auth;
-  }
-  
-  if (!token) return res.status(401).json({ error: "Not authenticated" });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    const sessionData = {
-      token,
-      usuario: {
-        id: decoded.id || decoded.USUARIO_ID,
-        nombre: decoded.nombre || decoded.NOMBRE,
-        rol: decoded.rol || decoded.ROL,
-        correo: decoded.correo || decoded.CORREO,
-        username: decoded.username || decoded.USERNAME
-      }
-    };
-    
-    return res.json(sessionData);
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid token" });
   }
 };
 

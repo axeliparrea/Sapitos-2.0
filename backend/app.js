@@ -7,6 +7,7 @@ const { swaggerUi, specs } = require("./docs/swagger");
 const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
+const pedidosHRoutes = require("./routes/pedidosH.js");
 
 const app = express();
 
@@ -34,5 +35,6 @@ app.use("/inventory", inventoryRoutes);
 // pedidos routes
 app.use("/pedido", pedidoRoutes);
 app.use("/proveedores", pedidoRoutes);
+app.use("/pedidosH", pedidosHRoutes);
 
 module.exports = app;
