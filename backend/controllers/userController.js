@@ -62,9 +62,9 @@ const registerUser = async (req, res) => {
 
 
 const loginUser = (req, res) => {
-  const { correoOUsuario, contrasena } = req.body;
+  const { correo, contrasena } = req.body;
   
-  if (!correoOUsuario || !contrasena) {
+  if (!correo || !contrasena) {
     return res.status(400).json({ error: "Correo/Usuario y contraseña son requeridos" });
   }
   
@@ -72,7 +72,7 @@ const loginUser = (req, res) => {
                 LEFT JOIN Rol2 r ON u.Rol_ID = r.Rol_ID 
                 WHERE u.Correo = ? OR u.Username = ?`;
   
-  connection.exec(query, [correoOUsuario, correoOUsuario], async (err, rows) => {
+  connection.exec(query, [correo, correo], async (err, rows) => {
     if (err) {
       console.error("Database error:", err);
       return res.status(500).json({ error: "Error del servidor" });
@@ -160,8 +160,7 @@ const getUsers = async (req, res) => {
         correo: usuario.CORREO,
         nombre: usuario.NOMBRE,
         username: usuario.USERNAME,
-        organizacion: 'DEFAULT',
-        rol: usuario.ROLNombre || 'USER',
+        rol: usuario.ROLNombre ,
         rfc: usuario.RFC,
         fechaEmpiezo: usuario.FECHAEMPIEZO,
         locationId: usuario.LOCATION_ID,
