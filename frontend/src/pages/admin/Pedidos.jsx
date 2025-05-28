@@ -5,10 +5,11 @@ const Pedidos = () => {
   return (
     <>
       <MasterLayout role="admin">
-        <InvoiceListLayer/>
+        <div id="pedidosAdmin"> {/* ID agregado aquí */}
+          <InvoiceListLayer />
+        </div>
       </MasterLayout>
     </>
   );
 };
-
 export default Pedidos;

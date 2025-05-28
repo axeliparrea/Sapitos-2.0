@@ -74,7 +74,7 @@ const GeneratedContent = () => {
       <div className='card h-100'>
         <div className='card-body'>
           <div className='d-flex align-items-center flex-wrap gap-2 justify-content-between'>
-            <h6 className='mb-2 fw-bold text-lg mb-0'>Productos por Categoría</h6>
+            <h6 id="tituloGrafico" className='mb-2 fw-bold text-lg mb-0'>Productos por Categoría</h6>
           </div>
           <ul className='d-flex flex-wrap align-items-center mt-3 gap-3'>
             <li className='d-flex align-items-center gap-2'>
@@ -88,12 +88,12 @@ const GeneratedContent = () => {
               <span className='w-12-px h-12-px rounded-circle bg-yellow' />
               <span className='text-secondary-light text-sm fw-semibold'>
                 Categorías:
-                <span className='text-primary-light fw-bold'>{chartData.metrics.totalCategorias}</span>
+                <span id="totalCategorias" className='text-primary-light fw-bold'>{chartData.metrics.totalCategorias}</span>
               </span>
             </li>
           </ul>
           <div className='mt-40'>
-            <div className='margin-16-minus'>
+            <div id="graficoCategorias" className='margin-16-minus'>
               <ReactApexChart
                 options={chartData.paymentStatusChartOptions}
                 series={chartData.paymentStatusChartSeries}

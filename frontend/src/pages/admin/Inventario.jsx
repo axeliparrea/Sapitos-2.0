@@ -5,8 +5,10 @@ const Inventario = () => {
   return (
     <>
       <MasterLayout role="admin">
-        <h1>Inventario</h1>
-        <Inventory />
+        <div id="inventarioAdmin"> {/* ID agregado para pruebas */}
+          <h1>Inventario</h1>
+          <Inventory />
+        </div>
       </MasterLayout>
     </>
   );

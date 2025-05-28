@@ -106,6 +106,7 @@ const SignInPage = () => {
               </span>
               <input
                 type='email'
+                id='username'
                 className='form-control h-56-px bg-neutral-50 radius-12'
                 placeholder='Correo electrónico'
                 value={email}
@@ -120,8 +121,8 @@ const SignInPage = () => {
                 </span>
                 <input
                   type='password'
+                  id='password'
                   className='form-control h-56-px bg-neutral-50 radius-12'
-                  id='your-password'
                   placeholder='Contraseña'
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -130,7 +131,7 @@ const SignInPage = () => {
               </div>
             </div>
             
-            <button type='submit'
+            <button id='loginButton' type='submit'
               className='btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32'>
               Iniciar sesión
             </button>
