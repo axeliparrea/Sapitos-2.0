@@ -11,14 +11,16 @@ const Inventory = () => {
   
   // Estados del filtro 
   const [filters, setFilters] = useState({
-    proveedor: [],
     categoria: [],
+    location: [],
+    temporada: [],
     stockStatus: [] 
   });
   const [showFilters, setShowFilters] = useState(false);
   const [filterOptions, setFilterOptions] = useState({
-    proveedores: [],
-    categorias: []
+    categorias: [],
+    locations: [],
+    temporadas: []
   });
 
   useEffect(() => {
@@ -31,12 +33,14 @@ const Inventory = () => {
         
         // Extraer opciones de filtro únicas
         if (Array.isArray(response.data)) {
-          const proveedores = [...new Set(response.data.map(item => item.proveedor).filter(Boolean))];
           const categorias = [...new Set(response.data.map(item => item.categoria).filter(Boolean))];
+          const locations = [...new Set(response.data.map(item => item.locationNombre).filter(Boolean))];
+          const temporadas = [...new Set(response.data.map(item => item.temporada).filter(Boolean))];
           
           setFilterOptions({
-            proveedores,
-            categorias
+            categorias,
+            locations,
+            temporadas
           });
         }
         
@@ -54,7 +58,7 @@ const Inventory = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allIds = filteredItems.map(item => item.id);
+      const allIds = filteredItems.map(item => item.inventarioId);
       setSelectedItems(allIds);
     } else {
       setSelectedItems([]);
@@ -87,8 +91,9 @@ const Inventory = () => {
 
   const clearFilters = () => {
     setFilters({
-      proveedor: [],
       categoria: [],
+      location: [],
+      temporada: [],
       stockStatus: []
     });
   };
@@ -97,24 +102,30 @@ const Inventory = () => {
     ? inventory.filter(item => {
         const matchesSearch = 
           item.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (item.id?.toString() || '').includes(searchTerm) ||
-          item.proveedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.categoria?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        // proveedor
-        const matchesProveedor = filters.proveedor.length === 0 || 
-          filters.proveedor.includes(item.proveedor);
+          (item.inventarioId?.toString() || '').includes(searchTerm) ||
+          (item.articuloId?.toString() || '').includes(searchTerm) ||
+          item.categoria?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.locationNombre?.toLowerCase().includes(searchTerm.toLowerCase());
         
         // categoría
         const matchesCategoria = filters.categoria.length === 0 || 
           filters.categoria.includes(item.categoria);
         
+        // ubicación
+        const matchesLocation = filters.location.length === 0 || 
+          filters.location.includes(item.locationNombre);
+        
+        // temporada
+        const matchesTemporada = filters.temporada.length === 0 || 
+          filters.temporada.includes(item.temporada);
+        
         // estado de stock
         const matchesStockStatus = filters.stockStatus.length === 0 || 
           (filters.stockStatus.includes('bajo') && item.stockActual <= item.stockMinimo) ||
-          (filters.stockStatus.includes('normal') && item.stockActual > item.stockMinimo);
+          (filters.stockStatus.includes('normal') && item.stockActual > item.stockMinimo && item.stockActual <= item.stockRecomendado) ||
+          (filters.stockStatus.includes('alto') && item.stockActual > item.stockRecomendado);
         
-        return matchesSearch && matchesProveedor && matchesCategoria && matchesStockStatus;
+        return matchesSearch && matchesCategoria && matchesLocation && matchesTemporada && matchesStockStatus;
       })
     : [];
 
@@ -133,18 +144,31 @@ const Inventory = () => {
   if (error) return <div className="alert alert-danger">{error}</div>;
 
   const exportToCSV = () => {
-    const headers = ['ID', 'Nombre', 'Proveedor', 'Categoría', 'Stock Actual', 'Stock Mínimo', 'Precio Compra', 'Precio Venta', 'Última Compra', 'Última Venta'];
+    const headers = [
+      'ID Inventario', 'ID Artículo', 'Nombre', 'Categoría', 'Ubicación', 'Tipo Ubicación',
+      'Stock Actual', 'Stock Mínimo', 'Stock Recomendado', 'Stock Seguridad',
+      'Precio Proveedor', 'Precio Venta', 'Temporada', 'Margen Ganancia',
+      'Tiempo Reposición', 'Demanda Promedio', 'Última Importación', 'Última Exportación'
+    ];
     const rows = filteredItems.map(item => [
-      item.id,
+      item.inventarioId,
+      item.articuloId,
       item.nombre,
-      item.proveedor,
       item.categoria,
+      item.locationNombre,
+      item.locationTipo,
       item.stockActual,
       item.stockMinimo,
-      item.precioCompra,
+      item.stockRecomendado,
+      item.stockSeguridad,
+      item.precioProveedor,
       item.precioVenta,
-      formatDate(item.fechaUltimaCompra),
-      formatDate(item.fechaUltimaVenta),
+      item.temporada,
+      item.margenGanancia,
+      item.tiempoReposicion,
+      item.demandaPromedio,
+      formatDate(item.fechaUltimaImportacion),
+      formatDate(item.fechaUltimaExportacion),
     ]);
   
     const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
@@ -165,13 +189,15 @@ const Inventory = () => {
             <i className="bi bi-search"></i>
           </InputGroup.Text>
           <Form.Control
-            placeholder="Buscar por nombre, ID, proveedor o categoría..."
+            id="buscadorInventario" 
+            placeholder="Buscar por nombre, ID, categoría o ubicación..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </InputGroup>
         <div>
           <Button 
+            id="btnExportarCSV"
             variant="success" 
             onClick={exportToCSV}
             className="me-5 p-3"
@@ -180,6 +206,7 @@ const Inventory = () => {
           </Button>
           
           <Button 
+            id="btnFiltrarInventario" 
             variant={activeFilterCount > 0 ? "primary" : "outline-secondary"} 
             onClick={() => setShowFilters(!showFilters)}
             className="position-relative p-3"
@@ -192,7 +219,6 @@ const Inventory = () => {
             )}
           </Button>
         </div>
-
       </div>
 
       {/* Panel de filtros */}
@@ -200,31 +226,14 @@ const Inventory = () => {
         <div className="filter-panel p-4 mb-3 border rounded shadow-sm bg-light">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="m-0 text-primary">Filtros</h5>
-            <Button variant="link" size="sm" onClick={clearFilters} className="text-danger">
+            <Button id="btnLimpiarFiltros" variant="link" size="sm" onClick={clearFilters} className="text-danger">
               Limpiar filtros
             </Button>
           </div>
           
           <div className="row">
-            {/* Filtro de Proveedores */}
-            <div className="col-md-4 mb-3">
-              <h6 className="fw-bold text-muted">Proveedor</h6>
-              <div className="filter-options" style={{maxHeight: '250px', overflowY: 'auto', paddingRight: '10px'}}>
-                {filterOptions.proveedores.map(proveedor => (
-                  <Form.Check 
-                    key={proveedor}
-                    type="checkbox"
-                    id={`filter-prov-${proveedor}`}
-                    label={proveedor}
-                    checked={filters.proveedor.includes(proveedor)}
-                    onChange={() => toggleFilter('proveedor', proveedor)}
-                  />
-                ))}
-              </div>
-            </div>
-            
             {/* Filtro de Categorías */}
-            <div className="col-md-4 mb-3">
+            <div className="col-md-3 mb-3">
               <h6 className="fw-bold text-muted">Categoría</h6>
               <div className="filter-options" style={{maxHeight: '250px', overflowY: 'auto', paddingRight: '10px'}}>
                 {filterOptions.categorias.map(categoria => (
@@ -240,13 +249,47 @@ const Inventory = () => {
               </div>
             </div>
             
+            {/* Filtro de Ubicaciones */}
+            <div className="col-md-3 mb-3">
+              <h6 className="fw-bold text-muted">Ubicación</h6>
+              <div className="filter-options" style={{maxHeight: '250px', overflowY: 'auto', paddingRight: '10px'}}>
+                {filterOptions.locations.map(location => (
+                  <Form.Check 
+                    key={location}
+                    type="checkbox"
+                    id={`filter-loc-${location}`}
+                    label={location}
+                    checked={filters.location.includes(location)}
+                    onChange={() => toggleFilter('location', location)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Filtro de Temporadas */}
+            <div className="col-md-3 mb-3">
+              <h6 className="fw-bold text-muted">Temporada</h6>
+              <div className="filter-options" style={{maxHeight: '250px', overflowY: 'auto', paddingRight: '10px'}}>
+                {filterOptions.temporadas.map(temporada => (
+                  <Form.Check 
+                    key={temporada}
+                    type="checkbox"
+                    id={`filter-temp-${temporada}`}
+                    label={temporada}
+                    checked={filters.temporada.includes(temporada)}
+                    onChange={() => toggleFilter('temporada', temporada)}
+                  />
+                ))}
+              </div>
+            </div>
+            
             {/* Filtro de Estado de Stock */}
-            <div className="col-md-4 mb-3">
+            <div className="col-md-3 mb-3">
               <h6 className="fw-bold text-muted">Estado de Stock</h6>
               <Form.Check 
                 type="checkbox"
                 id="filter-stock-bajo"
-                label="Bajo stock (menor o igual al mínimo)"
+                label="Bajo stock (≤ mínimo)"
                 checked={filters.stockStatus.includes('bajo')}
                 onChange={() => toggleFilter('stockStatus', 'bajo')}
               />
@@ -257,11 +300,17 @@ const Inventory = () => {
                 checked={filters.stockStatus.includes('normal')}
                 onChange={() => toggleFilter('stockStatus', 'normal')}
               />
+              <Form.Check 
+                type="checkbox"
+                id="filter-stock-alto"
+                label="Stock alto (> recomendado)"
+                checked={filters.stockStatus.includes('alto')}
+                onChange={() => toggleFilter('stockStatus', 'alto')}
+              />
             </div>
           </div>
         </div>
       )}
-
 
       <Table responsive bordered hover>
         <thead className="table-light">
@@ -273,29 +322,9 @@ const Inventory = () => {
                 checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
               />
             </th>
-            <th>#</th>
+            <th>ID Inv.</th>
+            <th>ID Art.</th>
             <th>Nombre</th>
-            <th>
-              Proveedor
-              <Dropdown className="d-inline-block ms-1">
-                <Dropdown.Toggle variant="light" size="sm" id="dropdown-proveedor" style={{padding: '0 5px'}}>
-                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  {filterOptions.proveedores.map(proveedor => (
-                    <Dropdown.Item key={proveedor} onClick={() => toggleFilter('proveedor', proveedor)}>
-                      <Form.Check 
-                        type="checkbox"
-                        checked={filters.proveedor.includes(proveedor)}
-                        label={proveedor}
-                        onChange={() => {}}
-                        onClick={e => e.stopPropagation()}
-                      />
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Menu>
-              </Dropdown>
-            </th>
             <th>
               Categoría
               <Dropdown className="d-inline-block ms-1">
@@ -309,6 +338,27 @@ const Inventory = () => {
                         type="checkbox"
                         checked={filters.categoria.includes(categoria)}
                         label={categoria}
+                        onChange={() => {}}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </th>
+            <th>
+              Ubicación
+              <Dropdown className="d-inline-block ms-1">
+                <Dropdown.Toggle variant="light" size="sm" id="dropdown-location" style={{padding: '0 5px'}}>
+                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {filterOptions.locations.map(location => (
+                    <Dropdown.Item key={location} onClick={() => toggleFilter('location', location)}>
+                      <Form.Check 
+                        type="checkbox"
+                        checked={filters.location.includes(location)}
+                        label={location}
                         onChange={() => {}}
                         onClick={e => e.stopPropagation()}
                       />
@@ -342,42 +392,80 @@ const Inventory = () => {
                       onClick={e => e.stopPropagation()}
                     />
                   </Dropdown.Item>
+                  <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'alto')}>
+                    <Form.Check 
+                      type="checkbox"
+                      checked={filters.stockStatus.includes('alto')}
+                      label="Stock alto"
+                      onChange={() => {}}
+                      onClick={e => e.stopPropagation()}
+                    />
+                  </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             </th>
-            <th>Stock Mínimo</th>
-            <th>Precio Compra</th>
+            <th>Stock Mín.</th>
+            <th>Stock Rec.</th>
+            <th>Precio Prov.</th>
             <th>Precio Venta</th>
-            <th>Última Compra</th>
-            <th>Última Venta</th>
+            <th>Temporada</th>
+            <th>Margen %</th>
+            <th>Última Import.</th>
+            <th>Última Export.</th>
           </tr>
         </thead>
         <tbody>
           {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
-              <tr key={item.id} className={item.stockActual <= item.stockMinimo ? "table-danger" : ""}>
-                <td>
-                  <Form.Check
-                    type="checkbox"
-                    checked={selectedItems.includes(item.id)}
-                    onChange={() => handleSelectItem(item.id)}
-                  />
-                </td>
-                <td>{item.id}</td>
-                <td>{item.nombre}</td>
-                <td>{item.proveedor}</td>
-                <td>{item.categoria}</td>
-                <td>{item.stockActual}</td>
-                <td>{item.stockMinimo}</td>
-                <td>${parseFloat(item.precioCompra)?.toFixed(2)}</td>
-                <td>${parseFloat(item.precioVenta)?.toFixed(2)}</td>
-                <td>{formatDate(item.fechaUltimaCompra)}</td>
-                <td>{formatDate(item.fechaUltimaVenta)}</td>
-              </tr>
-            ))
+            filteredItems.map((item) => {
+              let stockStatus = 'normal';
+              let rowClass = '';
+              
+              if (item.stockActual <= item.stockMinimo) {
+                stockStatus = 'bajo';
+                rowClass = 'table-danger';
+              } else if (item.stockActual > item.stockRecomendado) {
+                stockStatus = 'alto';
+                rowClass = 'table-success';
+              }
+              
+              return (
+                <tr key={item.inventarioId} className={rowClass}>
+                  <td>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectedItems.includes(item.inventarioId)}
+                      onChange={() => handleSelectItem(item.inventarioId)}
+                    />
+                  </td>
+                  <td>{item.inventarioId}</td>
+                  <td>{item.articuloId}</td>
+                  <td>{item.nombre}</td>
+                  <td>{item.categoria}</td>
+                  <td>
+                    {item.locationNombre}
+                    {item.locationTipo && (
+                      <small className="text-muted d-block">({item.locationTipo})</small>
+                    )}
+                  </td>
+                  <td>
+                    <span className={`badge ${stockStatus === 'bajo' ? 'bg-danger' : stockStatus === 'alto' ? 'bg-success' : 'bg-secondary'}`}>
+                      {item.stockActual}
+                    </span>
+                  </td>
+                  <td>{item.stockMinimo}</td>
+                  <td>{item.stockRecomendado}</td>
+                  <td>${parseFloat(item.precioProveedor || 0)?.toFixed(2)}</td>
+                  <td>${parseFloat(item.precioVenta || 0)?.toFixed(2)}</td>
+                  <td>{item.temporada || '-'}</td>
+                  <td>{item.margenGanancia ? `${parseFloat(item.margenGanancia).toFixed(1)}%` : '-'}</td>
+                  <td>{formatDate(item.fechaUltimaImportacion)}</td>
+                  <td>{formatDate(item.fechaUltimaExportacion)}</td>
+                </tr>
+              );
+            })
           ) : (
             <tr>
-              <td colSpan="11" className="text-center">No se encontraron items</td>
+              <td colSpan="15" className="text-center">No se encontraron items</td>
             </tr>
           )}
         </tbody>
@@ -399,8 +487,6 @@ const Inventory = () => {
           )}
         </div>
       </div>
-
-     
     </div>
   );
 };

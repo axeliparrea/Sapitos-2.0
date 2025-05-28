@@ -25,12 +25,12 @@ import Pedidos from "./pages/admin/Pedidos"
 import UsuariosShec from "./pages/admin/UsuariosShec";
 import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
+import EditUserLayer from "./components/EditUser";
 import InvoiceProveedor from "./components/InvoiceProveedor";
 
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
   const [loading, setLoading] = useState(true); // Loading state
-
   useEffect(() => {
     const fetchSession = async () => {
       try {
@@ -44,18 +44,17 @@ const App = () => {
         }
 
         const data = await cookieResponse.json();
-        //console.log("Session Data:", data);
+        console.log("Session Data:", data);
 
-        const token = data.token;
-        if (!token) {
-          setLoading(false);
-          return;
+        // Check if we have user data with role
+        if (data.usuario && data.usuario.rol) {
+          setRole(data.usuario.rol);
+        } else if (data.token) {
+          // Decode token as fallback
+          const decoded = jwtDecode(data.token);
+          console.log("Decoded JWT:", decoded);
+          setRole(decoded.rol || decoded.ROL);
         }
-
-        // Decode token
-        const decoded = jwtDecode(token);
-        //console.log("Decoded JWT:", decoded);
-        setRole(decoded.ROL); 
       } catch (error) {
         console.error("Error fetching session:", error);
       }
@@ -143,6 +142,13 @@ const App = () => {
             role === "admin" ? <AddUserLayer /> :
             <Navigate to="/" />
           } 
+        />
+        <Route 
+          path="/editar-usuario/:userId" 
+          element={
+            role === "admin" ? <EditUserLayer /> :
+            <Navigate to="/" />
+          }
         />
 
         <Route 

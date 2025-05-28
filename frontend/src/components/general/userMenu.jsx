@@ -25,6 +25,7 @@ const UserMenu = ({ name = "Usuario", role = "Invitado", profileImage = "assets/
       <div className="d-flex flex-wrap align-items-center gap-3">
         <div className="dropdown">
           <button
+            id="userbutton"
             className="d-flex justify-content-center align-items-center rounded-circle"
             type="button"
             data-bs-toggle="dropdown"
@@ -41,13 +42,14 @@ const UserMenu = ({ name = "Usuario", role = "Invitado", profileImage = "assets/
                 <h6 className="text-lg text-primary-light fw-semibold mb-2">{name}</h6>
                 <span className="text-secondary-light fw-medium text-sm">{role}</span>
               </div>
-              <button type="button" className="hover-text-danger" onClick={onClose}>
+              <button  id="tache" type="button" className="hover-text-danger" onClick={onClose}>
                 <Icon icon="radix-icons:cross-1" className="icon text-xl" />
               </button>
             </div>
             <ul className="to-top-list">
               <li>
                 <Link
+                  id="userMenuProfile"
                   className="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3"
                   to="#"
                 >
@@ -56,6 +58,7 @@ const UserMenu = ({ name = "Usuario", role = "Invitado", profileImage = "assets/
               </li>
               <li>
                 <button
+                  id="logoutButton"
                   className="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3 w-100 border-0 bg-transparent"
                   onClick={handleLogout}
                 >
