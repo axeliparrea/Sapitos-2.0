@@ -26,7 +26,7 @@ import UsuariosShec from "./pages/admin/UsuariosShec";
 import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
-
+import InvoiceProveedor from "./components/InvoiceProveedor";
 
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
@@ -97,7 +97,7 @@ const App = () => {
         <Route 
           path="/ordenes-proveedores" 
           element={
-            role === "dueno" ? <OrdenesProveedoresDueno/> :
+            role === "dueno" ? <InvoiceProveedor/> :
             <Navigate to="/"/>
             }
           />
