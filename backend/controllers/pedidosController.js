@@ -63,105 +63,193 @@ const getPedido = async (req, res) => {
   }
 };
 
-// Crear nuevo pedido a proveedor
 const insertPedido = async (req, res) => {
   try {
     const { 
       creadoPorId,
-      organizacion, // Este será el nombre del proveedor
-      productos, 
-      total, 
-      metodoPagoId = 1, // ID por defecto
+      organizacion,
+      productos,
+      total,
+      metodoPagoId = 1,
       descuentoAplicado = 0,
-      tipoOrden = 'Compra' // Nuevo campo para distinguir tipos de orden
+      tipoOrden = 'Compra'
     } = req.body;
 
-    // Validaciones
+    // Validaciones básicas
     if (!creadoPorId || !organizacion || !productos?.length || total === undefined) {
-      return res.status(400).json({ error: "Datos incompletos para crear el pedido" });
+      return res.status(400).json({ 
+        error: "Datos incompletos para crear el pedido",
+        detalles: {
+          creadoPorId: !creadoPorId ? "Faltante" : "OK",
+          organizacion: !organizacion ? "Faltante" : "OK", 
+          productos: !productos?.length ? "Faltante o vacío" : "OK",
+          total: total === undefined ? "Faltante" : "OK"
+        }
+      });
     }
 
-    if (!Array.isArray(productos) || productos.length === 0) {
-      return res.status(400).json({ error: "Debe incluir al menos un producto" });
+    console.log("Datos recibidos para pedido:", {
+      creadoPorId,
+      organizacion,
+      productos: productos.length,
+      total,
+      metodoPagoId,
+      descuentoAplicado,
+      tipoOrden
+    });
+
+    // Paso 1: Insertar la orden principal
+    const insertOrdenQuery = `
+      INSERT INTO Ordenes2 (
+        Creado_por_ID, 
+        TipoOrden,
+        Organizacion, 
+        FechaCreacion, 
+        Estado, 
+        Total, 
+        MetodoPago_ID, 
+        DescuentoAplicado
+      ) VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'Pendiente', ?, ?, ?)
+    `;
+
+    const insertOrdenPromise = new Promise((resolve, reject) => {
+      connection.exec(insertOrdenQuery, 
+        [creadoPorId, tipoOrden, organizacion, total, metodoPagoId, descuentoAplicado], 
+        (err, result) => {
+          if (err) {
+            console.error("Error al insertar orden:", err);
+            reject(err);
+          } else {
+            // Obtener el ID de la orden recién creada en SAP HANA
+            connection.exec("SELECT CURRENT_IDENTITY_VALUE() AS ordenId FROM DUMMY", [], (err2, result2) => {
+              if (err2) {
+                console.error("Error al obtener ID de orden:", err2);
+                reject(err2);
+              } else {
+                const ordenId = result2[0]?.ORDENID || result2[0]?.ordenId;
+                console.log("Orden creada con ID:", ordenId);
+                resolve(ordenId);
+              }
+            });
+          }
+        }
+      );
+    });
+
+    const ordenId = await insertOrdenPromise;
+
+    if (!ordenId) {
+      throw new Error("No se pudo obtener el ID de la orden creada");
     }
 
-    // Validar que todos los productos tengan los datos necesarios
-    for (const producto of productos) {
-      if (!producto.articuloId || !producto.cantidad || producto.cantidad <= 0) {
-        return res.status(400).json({ 
-          error: "Todos los productos deben tener ID y cantidad válida" 
+    // Paso 2: Procesar cada producto
+    let productosInsertados = 0;
+    const erroresProductos = [];
+
+    for (let i = 0; i < productos.length; i++) {
+      const producto = productos[i];
+      
+      try {
+        console.log(`Procesando producto ${i + 1}:`, producto);
+
+        // Buscar inventario para este producto y proveedor
+        const buscarInventarioQuery = `
+          SELECT i.Inventario_ID 
+          FROM Inventario2 i
+          INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+          INNER JOIN Location2 l ON i.Location_ID = l.Location_ID
+          WHERE a.Articulo_ID = ? AND l.Nombre = ?
+          LIMIT 1
+        `;
+
+        const inventarioResult = await new Promise((resolve, reject) => {
+          connection.exec(buscarInventarioQuery, [producto.articuloId, organizacion], (err, result) => {
+            if (err) {
+              console.error(`Error al buscar inventario para producto ${producto.articuloId}:`, err);
+              reject(err);
+            } else {
+              resolve(result);
+            }
+          });
         });
-      }
-    }
-
-    await connection.execSync('BEGIN');
-
-    try {
-      // Insertar encabezado del pedido
-      const pedidoResult = await connection.execSync(`
-        INSERT INTO Ordenes2 (
-          Creado_por_ID, 
-          TipoOrden,
-          Organizacion, 
-          FechaCreacion, 
-          Estado, 
-          Total, 
-          MetodoPago_ID, 
-          DescuentoAplicado
-        ) VALUES (?, ?, ?, CURRENT_DATE, 'Pendiente', ?, ?, ?)
-      `, [creadoPorId, tipoOrden, organizacion, total, metodoPagoId, descuentoAplicado]);
-
-      // Obtener el ID del pedido insertado
-      const pedidoIdResult = await connection.execSync(`
-        SELECT Orden_ID FROM Ordenes2 
-        WHERE Creado_por_ID = ? AND Total = ? AND FechaCreacion = CURRENT_DATE
-        ORDER BY Orden_ID DESC LIMIT 1
-      `, [creadoPorId, total]);
-
-      const pedidoId = pedidoIdResult[0].Orden_ID;
-
-      // Insertar productos del pedido
-      for (const producto of productos) {
-        // Primero necesitamos obtener el Inventario_ID basado en el Articulo_ID
-        const inventarioResult = await connection.execSync(`
-          SELECT Inventario_ID FROM Inventario2 
-          WHERE Articulo_ID = ? LIMIT 1
-        `, [producto.articuloId]);
 
         if (!inventarioResult || inventarioResult.length === 0) {
-          throw new Error(`No se encontró inventario para el artículo ${producto.articuloId}`);
+          erroresProductos.push(`No se encontró inventario para el artículo ${producto.articuloId} en ${organizacion}`);
+          continue;
         }
 
         const inventarioId = inventarioResult[0].Inventario_ID;
-        const precioUnitario = producto.precio || producto.precioCompra || 0;
-        
-        await connection.execSync(`
-          INSERT INTO OrdenesProductos2 (Orden_ID, Inventario_ID, Cantidad, PrecioUnitario)
-          VALUES (?, ?, ?, ?)
-        `, [pedidoId, inventarioId, producto.cantidad, precioUnitario]);
+        console.log(`Inventario encontrado para producto ${producto.articuloId}: ${inventarioId}`);
+
+        // Insertar producto en la orden
+        const insertProductoQuery = `
+          INSERT INTO OrdenesProductos2 (
+            Orden_ID, 
+            Inventario_ID, 
+            Cantidad, 
+            PrecioUnitario
+          ) VALUES (?, ?, ?, ?)
+        `;
+
+        await new Promise((resolve, reject) => {
+          connection.exec(insertProductoQuery, 
+            [ordenId, inventarioId, producto.cantidad, producto.precio], 
+            (err, result) => {
+              if (err) {
+                console.error(`Error al insertar producto ${producto.articuloId}:`, err);
+                reject(err);
+              } else {
+                console.log(`Producto ${producto.articuloId} insertado exitosamente`);
+                productosInsertados++;
+                resolve(result);
+              }
+            }
+          );
+        });
+
+      } catch (error) {
+        console.error(`Error procesando producto ${producto.articuloId}:`, error);
+        erroresProductos.push(`Error en producto ${producto.articuloId}: ${error.message}`);
       }
-
-      await connection.execSync('COMMIT');
-      
-      res.status(201).json({ 
-        message: "Pedido creado exitosamente",
-        id: pedidoId,
-        pedidoId: pedidoId,
-        totalProductos: productos.length,
-        total: total,
-        organizacion: organizacion
-      });
-
-    } catch (innerError) {
-      await connection.execSync('ROLLBACK');
-      throw innerError;
     }
 
+    // Verificar si se insertaron productos
+    if (productosInsertados === 0) {
+      // Si no se insertó ningún producto, eliminar la orden
+      await new Promise((resolve) => {
+        connection.exec("DELETE FROM Ordenes2 WHERE Orden_ID = ?", [ordenId], () => {
+          resolve();
+        });
+      });
+
+      return res.status(400).json({
+        error: "No se pudo insertar ningún producto",
+        detalles: erroresProductos
+      });
+    }
+
+    // Respuesta exitosa
+    const response = {
+      message: "Pedido creado exitosamente",
+      ordenId: ordenId,
+      total: total,
+      productosInsertados,
+      totalProductos: productos.length
+    };
+
+    if (erroresProductos.length > 0) {
+      response.advertencias = erroresProductos;
+    }
+
+    console.log("Pedido creado exitosamente:", response);
+    res.status(201).json(response);
+
   } catch (error) {
-    console.error("Error al crear pedido:", error);
+    console.error("Error general al crear pedido:", error);
     res.status(500).json({ 
-      error: "Error al crear el pedido", 
-      detalle: error.message 
+      error: "Error al crear el pedido",
+      detalle: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
