@@ -24,35 +24,37 @@ const Roles = () => {
   }, []);
 
   return (
-    <Container className="py-5">
-      <h2 className="text-primary mb-4">Lista de Roles</h2>
+    <Container className="py-5 d-flex justify-content-center">
+      <div style={{ width: "400px" }}>
+        <h4 className="text-primary mb-4 text-center">Lista de Roles</h4>
 
-      {loading && (
-        <div className="text-center py-4">
-          <Spinner animation="border" variant="primary" />
-        </div>
-      )}
+        {loading && (
+          <div className="text-center py-4">
+            <Spinner animation="border" variant="primary" />
+          </div>
+        )}
 
-      {error && <Alert variant="danger">{error}</Alert>}
+        {error && <Alert variant="danger">{error}</Alert>}
 
-      {!loading && !error && (
-        <Table striped bordered hover>
-          <thead>
-            <tr>
-              <th>ROL_ID</th>
-              <th>Nombre del Rol</th>
-            </tr>
-          </thead>
-          <tbody>
-            {roles.map((rol) => (
-              <tr key={rol.ROL_ID}>
-                <td>{rol.ROL_ID}</td>
-                <td>{rol.NOMBRE}</td>
+        {!loading && !error && (
+          <Table striped bordered hover size="sm" className="table-sm">
+            <thead>
+              <tr>
+                <th>ROL_ID</th>
+                <th>Nombre del Rol</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
+            </thead>
+            <tbody>
+              {roles.map((rol) => (
+                <tr key={rol.ROL_ID}>
+                  <td>{rol.ROL_ID}</td>
+                  <td>{rol.NOMBRE}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </div>
     </Container>
   );
 };

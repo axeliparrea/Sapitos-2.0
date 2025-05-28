@@ -12,6 +12,7 @@ const rol2Routes = require("./routes/rol2");
 const location2Routes = require("./routes/location2");
 const usuario2Routes = require("./routes/usuario2");
 const articulo2Routes = require("./routes/articulo2");
+const inventario2Routes = require("./routes/inventario2");
 
 
 const app = express();
@@ -54,6 +55,9 @@ app.use("/usuario2", usuario2Routes);
 
 // articulo2 routes
 app.use("/articulo2", articulo2Routes);
+
+// inventario2 routes
+app.use("/inventario2", inventario2Routes);
 
 
 module.exports = app;

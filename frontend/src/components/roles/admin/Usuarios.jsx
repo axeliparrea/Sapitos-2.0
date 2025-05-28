@@ -7,6 +7,8 @@ import {
   FaSearch, FaTimes, FaUserPlus
 } from "react-icons/fa";
 
+import Roles from "./Roles";
+
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [locations, setLocations] = useState({});
@@ -133,10 +135,14 @@ const Usuarios = () => {
       <Container>
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h1 className="text-primary">Gestión de Usuarios</h1>
+          <Roles />
+        </div>
+        <div className="d-flex justify-content-end mb-3">
           <Button variant="success" onClick={() => setShowModal(true)}>
             <FaUserPlus className="me-2" /> Agregar Usuario
           </Button>
         </div>
+
 
         <InputGroup className="mb-3">
           <InputGroup.Text className="bg-white">

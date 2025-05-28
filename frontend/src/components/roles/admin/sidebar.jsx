@@ -47,7 +47,9 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
             <SidebarButton to='/inventario' icon='hugeicons:invoice-03' label='Inventario' />
             <SidebarButton to='/usuarios' icon='solar:user-linear' label='Usuarios' />
             <SidebarButton to='/pedidos' icon='solar:user-linear' label='Pedidos' />
+            {/* 
             <SidebarButton to='/roles' icon='mdi:shield-account-outline' label='Roles' />
+            */}
             <SidebarButton to='/location' icon='mdi:location' label='Location' />
             <SidebarButton to='/articulos' icon='mdi:package-variant' label='Artículos' />
 
