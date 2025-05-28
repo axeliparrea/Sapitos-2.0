@@ -45,7 +45,6 @@ const InvoiceAddLayer = () => {
   const { session, loading: sessionLoading } = useUserSession();
   const navigate = useNavigate();
 
-  // Cargar proveedores al montar el componente
   useEffect(() => {
     const fetchProveedores = async () => {
       try {
@@ -82,9 +81,8 @@ const InvoiceAddLayer = () => {
       return;
     }
 
-    // Filtrar productos con cantidad mayor a 0
     const productosParaEnviar = productos.filter(p => p.cantidad > 0);
-    
+      
     if (productosParaEnviar.length === 0) {
       setError("Debe agregar al menos un producto con cantidad mayor a 0");
       return;
@@ -96,35 +94,45 @@ const InvoiceAddLayer = () => {
     try {
       const productosFormateados = productosParaEnviar.map(producto => ({
         articuloId: producto.id || producto.articuloId,
-        cantidad: producto.cantidad,
-        precio: producto.precioCompra || producto.precio,
-        precioCompra: producto.precioCompra || producto.precio
+        cantidad: parseInt(producto.cantidad),
+        precio: parseFloat(producto.precioCompra || producto.precio)
       }));
 
-      // Preparar datos según el formato esperado por el backend
+      // Updated payload structure to match Ordenes2 table
       const pedidoData = {
-        creadoPorId: session.userId,
-        organizacion: proveedorSeleccionado, // Nombre del proveedor
-        productos: productosFormateados,
-        total: total,
-        metodoPagoId: 1, // ID por defecto para transferencia
+        creadoPorId: parseInt(session.userId),
+        tipoOrden: 'Compra',
+        organizacion: proveedorSeleccionado,
+        fechaCreacion: new Date().toISOString().split('T')[0],
+        estado: 'Pendiente',
+        total: parseFloat(total),
+        metodoPagoId: 1,
         descuentoAplicado: 0,
-        tipoOrden: 'Compra'
+        productos: productosFormateados
       };
 
       console.log('Enviando pedido:', pedidoData);
 
       const response = await axios.post("http://localhost:5000/pedido", pedidoData);
 
-      setPedidoID(response.data.pedidoId || response.data.id);
-      setPedidoEnviado(true);
+      if (response.data && response.data.ordenId) {
+        setPedidoID(response.data.ordenId);
+        setPedidoEnviado(true);
 
-      setTimeout(() => {
-        navigate("/pedidos");
-      }, 2500);
+        setTimeout(() => {
+          navigate("/pedidos");
+        }, 2500);
+      } else {
+        throw new Error("No se recibió el ID del pedido");
+      }
+
     } catch (err) {
       console.error("Error al enviar pedido:", err);
-      setError(err.response?.data?.error || "Error al enviar el pedido");
+      const errorMessage = err.response?.data?.error || 
+                          err.response?.data?.message || 
+                          err.message || 
+                          "Error al enviar el pedido";
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -260,11 +268,6 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
   const [loading, setLoading] = useState(false);
   const [errorProductos, setErrorProductos] = useState(null);
 
-  // Debug: Mostrar información de proveedores
-  useEffect(() => {
-    console.log('Proveedores recibidos en TablaProductos:', proveedores);
-  }, [proveedores]);
-
   useEffect(() => {
     const fetchProductos = async () => {
       if (!proveedorSeleccionado) {
@@ -276,18 +279,15 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
       setErrorProductos(null);
       
       try {
-        console.log('Cargando productos para proveedor:', proveedorSeleccionado);
         const response = await axios.get(
           `http://localhost:5000/pedido/productos/${encodeURIComponent(proveedorSeleccionado)}`
         );
-        const productosConCantidad = (response.data || []).map(prod => ({
+        const productosData = (response.data || []).map(prod => ({
           ...prod,
           cantidad: 0,
         }));
-        setProductos(productosConCantidad);
-        console.log('Productos cargados:', productosConCantidad.length);
+        setProductos(productosData);
       } catch (error) {
-        console.error("Error al obtener productos:", error);
         setErrorProductos("Error al cargar los productos del proveedor");
         setProductos([]);
       } finally {
@@ -307,7 +307,6 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
 
   const handleProveedorChange = (e) => {
     const nuevoProveedor = e.target.value;
-    console.log('Proveedor seleccionado:', nuevoProveedor);
     setProveedorSeleccionado(nuevoProveedor);
     setProductos([]);
   };
@@ -321,7 +320,6 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
 
   const calcularSubtotal = () => {
     return productos.reduce((total, producto) => {
-      // Asegurar que el precio sea un número
       const precioNumerico = parseFloat(producto.precioCompra || producto.precio || 0);
       const cantidad = parseInt(producto.cantidad || 0);
       return total + (precioNumerico * cantidad);
@@ -333,10 +331,11 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
   const impuesto = 0;
   const total = subtotal - descuento + impuesto;
 
+  const productosSeleccionados = productos.filter(p => p.cantidad > 0);
   const puedeEnviar = !isSubmitting && 
                      proveedorSeleccionado && 
                      productos.length > 0 && 
-                     productos.some(p => p.cantidad > 0) && 
+                     productosSeleccionados.length > 0 && 
                      total > 0;
 
   return (
@@ -372,7 +371,6 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
         </div>
       </div>
 
-      {/* Mostrar error de productos si existe */}
       {errorProductos && (
         <div className='alert alert-warning text-sm mb-4'>
           <Icon icon='mdi:alert-circle-outline' className='me-2 text-lg' />
@@ -380,7 +378,6 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
         </div>
       )}
 
-      {/* Mostrar loading de productos */}
       {loading && (
         <div className='text-center py-4'>
           <Icon icon='mdi:loading' className='text-lg animate-spin me-2' />
@@ -388,13 +385,12 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
         </div>
       )}
 
-      {/* Resumen de productos seleccionados */}
-      {productosConCantidad.length > 0 && (
+      {productosSeleccionados.length > 0 && (
         <div className='mt-3 p-3 bg-light rounded'>
           <div className='row'>
             <div className='col-sm-6'>
               <small className='text-muted'>
-                <strong>Productos seleccionados:</strong> {productosConCantidad.length}
+                <strong>Productos seleccionados:</strong> {productosSeleccionados.length}
               </small>
             </div>
             <div className='col-sm-6 text-end'>
@@ -406,7 +402,6 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
         </div>
       )}
 
-      {/* Tabla de productos */}
       {productos.length > 0 && (
         <div className='table-responsive mt-4'>
           <table className='table table-striped'>
@@ -422,11 +417,12 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
             </thead>
             <tbody>
               {productos.map((producto, index) => {
-                const precio = producto.precioCompra || producto.precio || 0;
-                const subtotalProducto = precio * producto.cantidad;
+                const precioNumerico = parseFloat(producto.precioCompra || producto.precio || 0);
+                const cantidad = parseInt(producto.cantidad || 0);
+                const subtotalProducto = precioNumerico * cantidad;
                 
                 return (
-                  <tr key={index} className={producto.cantidad > 0 ? 'table-success' : ''}>
+                  <tr key={index} className={cantidad > 0 ? 'table-success' : ''}>
                     <td>
                       <div>
                         <strong>{producto.nombre || 'Sin nombre'}</strong>
@@ -444,14 +440,14 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
                       </span>
                     </td>
                     <td>
-                      <strong>${precio.toFixed(2)}</strong>
+                      <strong>${precioNumerico.toFixed(2)}</strong>
                     </td>
                     <td>
                       <input
                         type='number'
                         min='0'
                         max={producto.stockActual || 999}
-                        value={producto.cantidad}
+                        value={cantidad}
                         onChange={(e) => handleCantidadChange(index, e.target.value)}
                         className='form-control'
                         style={{ width: '80px' }}
@@ -468,7 +464,6 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
         </div>
       )}
 
-      {/* Resumen de totales y botón de enviar */}
       {productos.length > 0 && (
         <div className='mt-4'>
           <div className='row justify-content-end'>
@@ -514,7 +509,7 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
                     <small className='text-muted d-block mt-2'>
                       {!proveedorSeleccionado && 'Selecciona un proveedor. '}
                       {productos.length === 0 && 'Carga productos. '}
-                      {productosConCantidad.length === 0 && productos.length > 0 && 'Selecciona al menos un producto.'}
+                      {productosSeleccionados.length === 0 && productos.length > 0 && 'Selecciona al menos un producto.'}
                     </small>
                   )}
                 </div>
@@ -524,7 +519,6 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
         </div>
       )}
 
-      {/* Mensaje cuando no hay productos */}
       {proveedorSeleccionado && !loading && productos.length === 0 && !errorProductos && (
         <div className='text-center py-5'>
           <Icon icon='mdi:package-variant' className='text-muted text-3xl mb-3' />
