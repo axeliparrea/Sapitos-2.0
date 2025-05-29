@@ -5,10 +5,11 @@ const UsuariosPagina = () => {
   return (
     <>
       <MasterLayout role="admin">
-        <Usuarios />
+        <div id="usuariosAdmin"> {/* ID agregado aquí */}
+          <Usuarios />
+        </div>
       </MasterLayout>
     </>
   );
 };
-
 export default UsuariosPagina;

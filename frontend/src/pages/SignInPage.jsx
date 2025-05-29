@@ -13,9 +13,7 @@ const SignInPage = () => {
 
   useEffect(() => {
     if (hasCheckedSession.current) return; 
-    hasCheckedSession.current = true;
-
-    const checkSession = async () => {
+    hasCheckedSession.current = true;    const checkSession = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/users/getSession`, {
           credentials: "include",
@@ -24,15 +22,24 @@ const SignInPage = () => {
         if (!response.ok) return;
 
         const data = await response.json();
-        const token = data.token;
-        if (!token) return;
+        console.log("Session data:", data);
+        
+        // Determinar el rol del usuario
+        let userRole;
+        if (data.usuario && data.usuario.rol) {
+          userRole = data.usuario.rol;
+        } else if (data.token) {
+          const decoded = jwtDecode(data.token);
+          console.log("Usuario ya autenticado:", decoded);
+          userRole = decoded.rol || decoded.ROL;
+        } else {
+          return; // No hay información válida de sesión
+        }
 
-        const decoded = jwtDecode(token);
-        //console.log("Usuario ya autenticado:", decoded);
-
-        const userRole = decoded.ROL;
         if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {
           navigate("/dashboard");
+        } else {
+          console.log("Rol no reconocido:", userRole); 
         }
       } catch (error) {
         console.error("No se pudo verificar la sesión:", error);
@@ -52,12 +59,24 @@ const SignInPage = () => {
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
       });
+      
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Login failed");
       }
 
-      window.location.reload(); 
+      // Verificar que el token y el usuario existen
+      if (!data.token || !data.usuario) {
+        throw new Error("Datos de sesión incompletos");
+      }
+
+      console.log("Login exitoso:", data.usuario);
+      
+      // Pequeño retraso para asegurar que las cookies se guarden
+      setTimeout(() => {
+        window.location.href = "/dashboard";  // Usar redirección directa en lugar de navigate
+      }, 100);
+      
     } catch (error) {
       console.error("Error:", error);
       alert(error.message || "Login failed");
@@ -89,6 +108,7 @@ const SignInPage = () => {
               </span>
               <input
                 type='email'
+                id='username'
                 className='form-control h-56-px bg-neutral-50 radius-12'
                 placeholder='Correo electrónico'
                 value={email}
@@ -103,8 +123,8 @@ const SignInPage = () => {
                 </span>
                 <input
                   type='password'
+                  id='password'
                   className='form-control h-56-px bg-neutral-50 radius-12'
-                  id='your-password'
                   placeholder='Contraseña'
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -113,7 +133,7 @@ const SignInPage = () => {
               </div>
             </div>
             
-            <button type='submit'
+            <button id='loginButton' type='submit'
               className='btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32'>
               Iniciar sesión
             </button>

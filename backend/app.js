@@ -7,6 +7,7 @@ const { swaggerUi, specs } = require("./docs/swagger");
 const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
+const pedidosHRoutes = require("./routes/pedidosH.js");
 
 const app = express();
 
@@ -28,7 +29,7 @@ app.use(express.json());
 // login, register, and logout routes
 app.use("/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs)); 
-app.use("users/getUsers", userRoutes); 
+app.use("/users/getUsers", userRoutes); 
 
 
 // inventory routes
@@ -37,6 +38,7 @@ app.use("/inventory", inventoryRoutes);
 
 // pedidos routes
 app.use("/pedido", pedidoRoutes);
-
+app.use("/proveedores", pedidoRoutes);
+app.use("/pedidosH", pedidosHRoutes);
 
 module.exports = app;

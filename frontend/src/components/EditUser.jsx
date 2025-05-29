@@ -180,7 +180,7 @@ const EditUserLayer = () => {
                         <input
                           type="text"
                           className="form-control radius-8"
-                          id="name"
+                          id="nombreInput"
                           name="nombre"
                           placeholder="Ingrese el nombre completo"
                           value={usuario.nombre}
@@ -195,8 +195,8 @@ const EditUserLayer = () => {
                         </label>
                         <input
                           type="email"
+                          id="emailInput"
                           className="form-control radius-8"
-                          id="email"
                           name="correo"
                           placeholder="Ingrese el correo electrónico"
                           value={usuario.correo}
@@ -212,7 +212,7 @@ const EditUserLayer = () => {
                         <input
                           type="password"
                           className="form-control radius-8"
-                          id="contrasena"
+                          id="contrasenaInput"
                           name="contrasena"
                           placeholder={userId ? "Dejar en blanco para mantener la actual" : "Ingrese la contraseña"}
                           value={usuario.contrasena}
@@ -228,7 +228,7 @@ const EditUserLayer = () => {
                         <input
                           type="text"
                           className="form-control radius-8"
-                          id="organizacion"
+                          id="organizacionInput"
                           name="organizacion"
                           placeholder="Nombre de la organización"
                           value={usuario.organizacion}
@@ -242,7 +242,7 @@ const EditUserLayer = () => {
                         </label>
                         <select
                           className="form-control radius-8 form-select"
-                          id="rol"
+                          id="rolSelect"
                           name="rol"
                           value={usuario.rol}
                           onChange={handleInputChange}
@@ -257,6 +257,7 @@ const EditUserLayer = () => {
 
                       <div className="d-flex align-items-center justify-content-center gap-3">
                         <button
+                          id="cancelarBtn"
                           type="button"
                           className="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-56 py-11 radius-8"
                           onClick={() => navigate("/usuarios")}
@@ -265,6 +266,7 @@ const EditUserLayer = () => {
                         </button>
 
                         <button
+                          id="actualizarBtn"
                           type="submit"
                           className="btn btn-primary border border-primary-600 text-md px-56 py-12 radius-8 d-flex align-items-center justify-content-center gap-2"
                           disabled={loading}

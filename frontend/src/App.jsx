@@ -17,7 +17,8 @@ import HomeCliente from "./pages/cliente/Home";
 import InventarioCliente from "./pages/cliente/Inventario"
 
 import HomeProveedor from "./pages/proveedor/Home";
-import OrdenesProveedor from "./pages/proveedor/Home";
+import InvoiceListProveedorPage from "./pages/proveedor/InvoiceListProveedorPage";
+import InvoiceProveedorPage from "./pages/proveedor/InvoiceProveedorPage";
 
 import Pedidos from "./pages/admin/Pedidos"
 
@@ -45,18 +46,17 @@ const App = () => {
         }
 
         const data = await cookieResponse.json();
-        //console.log("Session Data:", data);
+        console.log("Session Data:", data);
 
-        const token = data.token;
-        if (!token) {
-          setLoading(false);
-          return;
+        // Check if we have user data with role
+        if (data.usuario && data.usuario.rol) {
+          setRole(data.usuario.rol);
+        } else if (data.token) {
+          // Decode token as fallback
+          const decoded = jwtDecode(data.token);
+          console.log("Decoded JWT:", decoded);
+          setRole(decoded.rol || decoded.ROL);
         }
-
-        // Decode token
-        const decoded = jwtDecode(token);
-        //console.log("Decoded JWT:", decoded);
-        setRole(decoded.ROL); 
       } catch (error) {
         console.error("Error fetching session:", error);
       }
@@ -99,7 +99,7 @@ const App = () => {
         <Route 
           path="/ordenes-proveedores" 
           element={
-            role === "dueno" ? <OrdenesProveedoresDueno/> :
+            role === "dueno" ? <InvoiceProveedorPage/> :
             <Navigate to="/"/>
             }
           />
@@ -120,7 +120,21 @@ const App = () => {
         <Route 
           path="/ordenes" 
           element={
-            role === "proveedor" ? <OrdenesProveedor/> :
+            role === "proveedor" ? <InvoiceProveedorPage/> :
+            <Navigate to="/"/>
+            }
+          />
+        <Route 
+          path="/ordenes-aceptadas" 
+          element={
+            role === "proveedor" ? <InvoiceListProveedorPage aceptadas={true}/> :
+            <Navigate to="/"/>
+            }
+          />
+        <Route 
+          path="/ordenes/:id" 
+          element={
+            role === "proveedor" ? <InvoiceProveedorPage/> :
             <Navigate to="/"/>
             }
           />

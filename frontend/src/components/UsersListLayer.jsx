@@ -86,6 +86,7 @@ const UsersListLayer = () => {
           <form className="navbar-search">
             <input
               type="text"
+              id="buscadorUsuarios"
               className="bg-base h-40-px w-auto"
               placeholder="Buscar usuarios..."
               value={terminoBusqueda}
@@ -94,7 +95,7 @@ const UsersListLayer = () => {
             <Icon icon="ion:search-outline" className="icon" />
           </form>
         </div>
-        <Link to="/agregar-usuario" className="btn btn-primary btn-sm">
+        <Link to="/agregar-usuario" id="agregarUsuarioBtn"  className="btn btn-primary btn-sm">
           <Icon icon="ic:baseline-plus" className="icon text-xl" /> Agregar Usuario
         </Link>
       </div>
@@ -129,6 +130,7 @@ const UsersListLayer = () => {
                           <div className="d-flex align-items-center gap-10 justify-content-center">
                             {/* Botón Editar */}
                             <button
+                              id={`editarUsuario-${index}`} 
                               type="button"
                               onClick={() => navigate(`/editar-usuario/${usuario.correo || usuario.CORREO}`)}
                               className="bg-success-focus bg-hover-success-200 text-success-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -138,6 +140,7 @@ const UsersListLayer = () => {
 
                             {/* Botón Eliminar */}
                             <button
+                              id={`eliminarUsuario-${index}`}
                               type="button"
                               onClick={() => eliminarUsuario(usuario.correo)}
                               className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
@@ -166,6 +169,7 @@ const UsersListLayer = () => {
                 {Array.from({ length: totalPaginas }, (_, idx) => (
                   <li key={idx} className="page-item">
                     <button
+                      id={`paginacion-${idx + 1}`}
                       type="button"
                       onClick={() => cambiarPagina(idx + 1)}
                       className={`page-link ${paginaActual === idx + 1 ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-secondary-light'} fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md`}

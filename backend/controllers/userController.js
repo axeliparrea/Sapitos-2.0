@@ -2,115 +2,176 @@ const { connection } = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+const getSession = async (req, res) => {
+  const token = req.cookies.token || req.cookies.Auth;
+  
+  if (!token) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    res.json({
+      token: token,
+      usuario: {
+        id: decoded.id || decoded.USUARIO_ID,
+        nombre: decoded.nombre || decoded.NOMBRE,
+        rol: decoded.rol || decoded.ROL,
+        correo: decoded.correo || decoded.CORREO,
+        username: decoded.username || decoded.USERNAME
+      }
+    });
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+};
+
 const registerUser = async (req, res) => {
-  const { correo, nombre, organizacion, contrasena, rol, diasordenprom, valorordenprom } = req.body;
+  const { correo, nombre, contrasena, rol, username, rfc, location_id } = req.body;
 
   if (!correo || !nombre || !contrasena) {
-    return res.status(400).json({ error: "All fields are required" });
+    return res.status(400).json({ error: "Todos los campos obligatorios" });
   }
 
   try {
     const contrasenaHash = await bcrypt.hash(contrasena, 10);
+
+    let rolId = null;
+
+    if (rol) {
+      // Usar Promise para esperar el resultado de exec
+      rolId = await new Promise((resolve, reject) => {
+        const rolQuery = "SELECT Rol_ID FROM Rol2 WHERE Nombre = ?";
+        connection.exec(rolQuery, [rol], (err, rolResult) => {
+          if (err) {
+            return reject(err);
+          }
+          if (rolResult && rolResult.length > 0) {
+            return resolve(rolResult[0].ROL_ID);
+          }
+          return resolve(null); // si no encontró el rol
+        });
+      });
+    }
+
     const query = `
-      INSERT INTO DBADMIN.Usuarios 
-      (Correo, Nombre, Organizacion, contrasena, Rol, DiasOrdenProm, ValorOrdenProm)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Usuario2 
+      (Nombre, Rol_ID, Clave, Location_ID, FechaEmpiezo, RFC, Correo, Username)
+      VALUES (?, ?, ?, ?, CURRENT_DATE, ?, ?, ?)
     `;
-    const params = [correo, nombre, organizacion, contrasenaHash, rol, diasordenprom, valorordenprom];
+
+    const params = [
+      nombre,
+      rolId, // puede ser null
+      contrasenaHash,
+      location_id || null,
+      rfc || null,
+      correo,
+      username || null,
+    ];
 
     connection.exec(query, params, (err) => {
       if (err) {
         console.error("Insert Error:", err);
-        return res.status(500).json({ error: "Server error" });
+        return res.status(500).json({ error: "Error en el servidor" });
       }
-      res.status(201).json({ message: "User registered successfully" });
+      res.status(201).json({ message: "Usuario registrado exitosamente" });
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    console.error("Error general:", error);
+    res.status(500).json({ error: "Error en el servidor" });
   }
 };
 
-const loginUser = async (req, res) => {
+
+const loginUser = (req, res) => {
   const { correo, contrasena } = req.body;
-
+  
   if (!correo || !contrasena) {
-    return res.status(400).json({ error: "All fields are required" });
+    return res.status(400).json({ error: "Correo/Usuario y contraseña son requeridos" });
   }
-  try {
-    const query = "SELECT correo, nombre, organizacion, contrasena, rol FROM DBADMIN.Usuarios WHERE correo = ?";
-    const params = [correo];
+  
+  const query = `SELECT u.*, r.Nombre as RolNombre FROM Usuario2 u 
+                LEFT JOIN Rol2 r ON u.Rol_ID = r.Rol_ID 
+                WHERE u.Correo = ? OR u.Username = ?`;
+  
+  connection.exec(query, [correo, correo], async (err, rows) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Error del servidor" });
+    }
+    
+    console.log("Query result:", rows); 
+    
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
 
-    connection.exec(query, params, async (err, result) => {
-      if (err) {
-        console.error("Query Error:", err);
-        return res.status(500).json({ error: "Server error" });
+    const usuario = rows[0];
+    console.log("Usuario encontrado:", usuario); 
+    
+    try {
+      const passwordCorrecta = await bcrypt.compare(contrasena, usuario.CLAVE);
+      if (!passwordCorrecta) {
+        return res.status(401).json({ error: "Contraseña incorrecta" });
       }
-      if (!result || result.length === 0) {
-        return res.status(404).json({ error: "Email or password incorrect" });
-      }      
 
-      const user = result[0];
-      const contrasenaMatch = await bcrypt.compare(contrasena, user.CONTRASENA);
-      
-      if (!contrasenaMatch) {
-        return res.status(401).json({ error: "Email or password incorrect" });
-      }
-      
-      // Generate JWT
-      const token = jwt.sign(
-        {
-          CORREO: user.CORREO,
-          ROL: user.ROL,
-          ORGANIZACION: user.ORGANIZACION
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-      );
-      
-      // Secure auth token in HttpOnly cookie
+      const payload = {
+        id: usuario.USUARIO_ID,
+        nombre: usuario.NOMBRE,
+        rol: usuario.ROLNOMBRE || usuario.ROL_ID, 
+        correo: usuario.CORREO,
+        username: usuario.USERNAME,
+        USUARIO_ID: usuario.USUARIO_ID, 
+        ROL: usuario.ROLNOMBRE 
+      };
+
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+      });
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", 
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+        path: "/",
+      });
+
       res.cookie("Auth", token, {
         httpOnly: true,
-        secure: false, // Set to true in production (HTTPS required)
+        secure: false,
         sameSite: "Lax",
-        maxAge: 3600000 // 1 hour
+        maxAge: 24 * 60 * 60 * 1000,
       });
-      
-      res.cookie("UserData", JSON.stringify({
-        CORREO: user.CORREO,
-        ROL: user.ROL,
-        ORGANIZACION: user.ORGANIZACION,
-        NOMBRE: user.NOMBRE // added for clarity
-      }), {
-        httpOnly: false,
-        secure: false, // true in prod
-        sameSite: "Lax",
-        maxAge: 3600000
-      });
-      
 
-      //console.log("Logged in")
-      return res.json({ message: "Login successful" });
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Server error" });
-  }
+      res.json({ 
+        message: "Login exitoso", 
+        token, 
+        usuario: payload 
+      });
+    } catch (error) {
+      console.error("Error comparing password:", error);
+      return res.status(500).json({ error: "Error del servidor" });
+    }
+  });
 };
-
 
 const getUsers = async (req, res) => {
   try {
     const query = `
       SELECT
-        CORREO,
-        NOMBRE,
-        ORGANIZACION,
-        CONTRASENA,
-        ROL,
-        DIASORDENPROM,
-        VALORORDENPROM
-      FROM DBADMIN.Usuarios
+        u.Usuario_ID,
+        u.Nombre,
+        u.Correo,
+        u.Username,
+        u.RFC,
+        u.FechaEmpiezo,
+        u.Location_ID,
+        r.Nombre as RolNombre
+      FROM Usuario2 u
+      LEFT JOIN Rol2 r ON u.Rol_ID = r.Rol_ID
     `;
 
     connection.exec(query, [], (err, result) => {
@@ -119,20 +180,17 @@ const getUsers = async (req, res) => {
         return res.status(500).json({ error: "Error al obtener los usuarios" });
       }
 
-      // Verifica si el resultado es un array
-      if (!Array.isArray(result)) {
-        return res.status(500).json({ error: "El formato de los datos es incorrecto" });
-      }
-
-      // Mapea el resultado en el formato deseado
       const formatted = result.map(usuario => ({
-        id: usuario.CORREO,  // Si el correo es único, lo puedes usar como ID
+        id: usuario.USUARIO_ID,
         correo: usuario.CORREO,
         nombre: usuario.NOMBRE,
-        organizacion: usuario.ORGANIZACION,
-        rol: usuario.ROL,
-        diasOrdenProm: usuario.DIASORDENPROM,
-        valorOrdenProm: usuario.VALORORDENPROM
+        username: usuario.USERNAME,
+        rol: usuario.ROLNombre ,
+        rfc: usuario.RFC,
+        fechaEmpiezo: usuario.FECHAEMPIEZO,
+        locationId: usuario.LOCATION_ID,
+        diasOrdenProm: null,
+        valorOrdenProm: null
       }));
       
       res.status(200).json(formatted);
@@ -143,8 +201,6 @@ const getUsers = async (req, res) => {
   }
 };
 
-
-//Agregado para usurios / admin
 const deleteUser = async (req, res) => {
   const { correo } = req.body;
   
@@ -153,10 +209,10 @@ const deleteUser = async (req, res) => {
   }
   
   try {
-    const query = "DELETE FROM DBADMIN.Usuarios WHERE Correo = ?";
+    const query = "DELETE FROM Usuario2 WHERE Correo = ?";
     connection.exec(query, [correo], (err, result) => {
       if (err) {
-        console.error("Error eliminando usario:", err);
+        console.error("Error eliminando usuario:", err);
         return res.status(500).json({ error: "Error servidor" });
       }
       res.status(200).json({ message: "Borrado exito" });
@@ -168,30 +224,51 @@ const deleteUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-  const { correo, nombre, organizacion, rol, contrasena, imagen } = req.body;
+  const { correo, nombre, rol, contrasena, username, rfc, location_id } = req.body;
   
   if (!correo) {
     return res.status(400).json({ error: "Email is required" });
   }
   
   try {
-    let query = `
-      UPDATE DBADMIN.Usuarios 
-      SET Nombre = ?, Organizacion = ?, Rol = ?
-    `;
-    let params = [nombre, organizacion, rol];
+    if (rol) {
+      const rolQuery = "SELECT Rol_ID FROM Rol2 WHERE Nombre = ?";
+      connection.exec(rolQuery, [rol], async (err, rolResult) => {
+        if (err) {
+          console.error("Error getting role:", err);
+          return res.status(500).json({ error: "Error servidor" });
+        }
+        
+        let rolId = null;
+        if (rolResult && rolResult.length > 0) {
+          rolId = rolResult[0].ROL_ID;
+        }
+        
+        await updateUserRecord(correo, nombre, rolId, contrasena, username, rfc, location_id, res);
+      });
+    } else {
+      await updateUserRecord(correo, nombre, null, contrasena, username, rfc, location_id, res);
+    }
+  } catch (error) {
+    console.error("Error actualizando:", error);
+    res.status(500).json({ error: "Error servidor" });
+  }
+};
+
+const updateUserRecord = async (correo, nombre, rolId, contrasena, username, rfc, location_id, res) => {
+  try {
+    let query = `UPDATE Usuario2 SET Nombre = ?, Username = ?, RFC = ?, Location_ID = ?`;
+    let params = [nombre, username, rfc, location_id];
     
-    // Si se proporciona contraseña, hash y actualiza
-    if (contrasena) {
-      const contrasenaHash = await bcrypt.hash(contrasena, 10);
-      query += `, Contrasena = ?`;
-      params.push(contrasenaHash);
+    if (rolId !== null) {
+      query += `, Rol_ID = ?`;
+      params.push(rolId);
     }
     
-    // Si se proporciona imagen
-    if (imagen) {
-      query += `, Imagen = ?`;
-      params.push(imagen);
+    if (contrasena) {
+      const contrasenaHash = await bcrypt.hash(contrasena, 10);
+      query += `, Clave = ?`;
+      params.push(contrasenaHash);
     }
     
     query += ` WHERE Correo = ?`;
@@ -210,24 +287,31 @@ const updateUser = async (req, res) => {
   }
 };
 
-const getSession = async (req, res) => {
-  const token = req.cookies.Auth;  // Read the cookie
-  if (!token) return res.status(401).json({ error: "Not authenticated" });
-
-  return res.json({ token });
-}
-
 const logoutUser = async (req, res) => {
+  res.clearCookie("token", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
   res.clearCookie("Auth", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
   res.status(200).json({ message: "Sesión cerrada" });
 };
-
 
 const getUserByEmail = async (req, res) => {
   const { correo } = req.params;
   
   try {
-    const query = "SELECT * FROM DBADMIN.Usuarios WHERE correo = ?";
+    const query = `
+      SELECT 
+        u.Usuario_ID,
+        u.Nombre,
+        u.Correo,
+        u.Username,
+        u.RFC,
+        u.FechaEmpiezo,
+        u.Location_ID,
+        r.Nombre as RolNombre
+      FROM Usuario2 u
+      LEFT JOIN Rol2 r ON u.Rol_ID = r.Rol_ID
+      WHERE u.Correo = ?
+    `;
+    
     connection.exec(query, [correo], (err, result) => {
       if (err) {
         console.error("Error al obtener usuario:", err);
@@ -238,14 +322,18 @@ const getUserByEmail = async (req, res) => {
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
       
-      // Formatea el resultado
       const usuario = {
+        id: result[0].USUARIO_ID,
         correo: result[0].CORREO,
         nombre: result[0].NOMBRE,
-        organizacion: result[0].ORGANIZACION,
-        rol: result[0].ROL,
-        diasOrdenProm: result[0].DIASORDENPROM,
-        valorOrdenProm: result[0].VALORORDENPROM
+        username: result[0].USERNAME,
+        organizacion: 'DEFAULT',
+        rol: result[0].ROLNombre || 'USER',
+        rfc: result[0].RFC,
+        fechaEmpiezo: result[0].FECHAEMPIEZO,
+        locationId: result[0].LOCATION_ID,
+        diasOrdenProm: null,
+        valorOrdenProm: null
       };
       
       res.status(200).json(usuario);
@@ -256,5 +344,13 @@ const getUserByEmail = async (req, res) => {
   }
 };
 
-
-module.exports = { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser,getUserByEmail };
+module.exports = { 
+  registerUser, 
+  loginUser, 
+  getUsers, 
+  getSession, 
+  logoutUser, 
+  deleteUser, 
+  updateUser, 
+  getUserByEmail 
+};
