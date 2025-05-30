@@ -7,42 +7,44 @@ import { jwtDecode } from "jwt-decode";
 const SignInPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const hasCheckedSession = useRef(false)
   const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
-    if (hasCheckedSession.current) return; 
-    hasCheckedSession.current = true;    const checkSession = async () => {
+    if (hasCheckedSession.current) return;
+    hasCheckedSession.current = true;
+    
+    const checkSession = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/users/getSession`, {
           credentials: "include",
         });
 
-        if (!response.ok) return;
+        if (!response.ok) {
+          setLoading(false);
+          return;
+        }
 
         const data = await response.json();
-        console.log("Session data:", data);
-        
-        // Determinar el rol del usuario
         let userRole;
+        
         if (data.usuario && data.usuario.rol) {
           userRole = data.usuario.rol;
         } else if (data.token) {
           const decoded = jwtDecode(data.token);
-          console.log("Usuario ya autenticado:", decoded);
           userRole = decoded.rol || decoded.ROL;
-        } else {
-          return; // No hay información válida de sesión
         }
 
-        if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {
-          navigate("/dashboard");
-        } else {
-          console.log("Rol no reconocido:", userRole); 
+        if (userRole && ["admin", "dueno", "cliente", "proveedor"].includes(userRole)) {
+          localStorage.setItem('userRole', userRole);
+          window.location.href = "/dashboard";
         }
       } catch (error) {
-        console.error("No se pudo verificar la sesión:", error);
+        console.error('Error checking session:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -51,6 +53,7 @@ const SignInPage = () => {
 
   const handleLogin = async (event) => {
     event.preventDefault();
+    setLoading(true);
 
     try {
       const response = await fetch(`${API_BASE_URL}/users/login`, {
@@ -65,23 +68,36 @@ const SignInPage = () => {
         throw new Error(data.error || "Login failed");
       }
 
-      // Verificar que el token y el usuario existen
       if (!data.token || !data.usuario) {
         throw new Error("Datos de sesión incompletos");
       }
 
-      console.log("Login exitoso:", data.usuario);
+      // Almacenar el token en localStorage para persistencia
+      localStorage.setItem('userRole', data.usuario.rol);
       
-      // Pequeño retraso para asegurar que las cookies se guarden
-      setTimeout(() => {
-        window.location.href = "/dashboard";  // Usar redirección directa en lugar de navigate
-      }, 100);
+      // Usar window.location.href en lugar de navigate para forzar un refresh completo
+      navigate("/dashboard");
       
     } catch (error) {
-      console.error("Error:", error);
+      setLoading(false);
       alert(error.message || "Login failed");
     }
   };
+
+  if (loading) {
+    return (
+      <section className='auth bg-base d-flex flex-wrap'>
+        <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center w-100'>
+          <div className='max-w-464-px mx-auto w-100 text-center'>
+            <Icon icon="mdi:loading" className="text-primary text-3xl animate-spin mb-3" />
+            <p>Verificando sesión...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+
 
   return (
     <section className='auth bg-base d-flex flex-wrap'>

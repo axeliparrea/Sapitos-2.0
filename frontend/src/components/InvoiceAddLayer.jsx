@@ -6,11 +6,12 @@ import axios from "axios";
 const useUserSession = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/users/getSession', {
+        const response = await fetch(`${API_BASE_URL}/users/getSession`, {
           withCredentials: true
         });
         
@@ -49,7 +50,7 @@ const InvoiceAddLayer = () => {
     const fetchProveedores = async () => {
       try {
         console.log('Intentando cargar proveedores...');
-        const response = await axios.get('http://localhost:5000/pedido/proveedores');
+        const response = await axios.get(`${API_BASE_URL}/pedido/proveedores`);
         
         if (response.data && Array.isArray(response.data)) {
           setProveedores(response.data);
@@ -120,7 +121,7 @@ const InvoiceAddLayer = () => {
       setError(null);
 
       try {
-        const response = await axios.post("http://localhost:5000/pedido", pedidoData);
+        const response = await axios.post(`${API_BASE_URL}/pedido`, pedidoData);
         
         if (response.data?.ordenId) {
           setPedidoID(response.data.ordenId);
@@ -279,7 +280,7 @@ const TablaProductos = ({ onEnviarPedido, isSubmitting, proveedores, pedidoEnvia
       
       try {
         const response = await axios.get(
-          `http://localhost:5000/pedido/productos/${encodeURIComponent(proveedorSeleccionado)}`
+          `${API_BASE_URL}/pedido/productos/${encodeURIComponent(proveedorSeleccionado)}`
         );
         const productosData = (response.data || []).map(prod => ({
           ...prod,
