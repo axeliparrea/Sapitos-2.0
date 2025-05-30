@@ -1,6 +1,5 @@
 const { connection } = require("../config/db");
 
-// Obtener todos los pedidos
 const getPedido = async (req, res) => {
   try {
     const query = `

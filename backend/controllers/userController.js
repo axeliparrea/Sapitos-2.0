@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const getSession = async (req, res) => {
-  const token = req.cookies.token || req.cookies.Auth;
+  const token = req.cookies.Auth;
   
   if (!token) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -124,26 +124,19 @@ const loginUser = (req, res) => {
         correo: usuario.CORREO,
         username: usuario.USERNAME,
         USUARIO_ID: usuario.USUARIO_ID, 
-        ROL: usuario.ROLNOMBRE 
+        ROL: usuario.ROLNOMBRE,
+        locationId: usuario.LOCATION_ID,
       };
 
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || "1d",
-      });
-
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production", 
-        sameSite: "strict",
-        maxAge: 24 * 60 * 60 * 1000,
-        path: "/",
-      });
-
+      });      // Establecer una única cookie de autenticación
       res.cookie("Auth", token, {
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "Lax",
         maxAge: 24 * 60 * 60 * 1000,
+        path: "/"
       });
 
       res.json({ 
@@ -288,8 +281,12 @@ const updateUserRecord = async (correo, nombre, rolId, contrasena, username, rfc
 };
 
 const logoutUser = async (req, res) => {
-  res.clearCookie("token", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
-  res.clearCookie("Auth", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
+  res.clearCookie("Auth", { 
+    path: "/", 
+    httpOnly: true, 
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax" 
+  });
   res.status(200).json({ message: "Sesión cerrada" });
 };
 

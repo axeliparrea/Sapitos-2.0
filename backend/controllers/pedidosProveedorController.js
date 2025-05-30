@@ -1,56 +1,80 @@
 const { connection } = require("../config/db");
 
-const getHistorialProveedor = (req, res) => {
-  const { nombre } = req.params;
-  const query = `
-    SELECT 
-      o.Orden_ID,
-      o.FechaCreacion,
-      o.FechaEntrega,
-      o.Estado,
-      a.Nombre AS producto,
-      op.Cantidad,
-      op.PrecioUnitario,
-      (op.Cantidad * op.PrecioUnitario) AS totalLinea
-    FROM Ordenes2 o
-    INNER JOIN OrdenesProductos2 op ON o.Orden_ID = op.Orden_ID
-    INNER JOIN Inventario2 i ON op.Inventario_ID = i.Inventario_ID
-    INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
-    WHERE o.Organizacion = ?
-      AND o.Estado IN ('Aprobado', 'En Reparto', 'Completado')
-    ORDER BY o.FechaCreacion DESC
-  `;
-  connection.exec(query, [nombre], (err, result) => {
-    if (err) return res.status(500).json({ error: "Error al obtener historial" });
-    res.status(200).json(result || []);
-  });
+const getPedidosPendientesProveedor = async (req, res) => {
+  const { locationId } = req.params;
+  
+  if (!locationId) {
+    return res.status(400).json({ error: "ID de ubicación requerido" });
+  }
+
+  try {
+    const query = `
+      SELECT 
+        o.ORDEN_ID as id,
+        o.FECHACREACION as fecha,
+        u.Nombre as solicitadoPor,
+        o.TOTAL as total,
+        o.ESTADO as estado,
+        o.FECHAESTIMADAENTREGA as fechaEstimada
+      FROM Ordenes2 o
+      INNER JOIN Usuario2 u ON o.CREADO_POR_ID = u.Usuario_ID 
+      WHERE o.ESTADO = 'Pendiente' AND o.ORGANIZACION = ?
+      ORDER BY o.FECHACREACION DESC
+    `;
+
+    connection.exec(query, [locationId], (err, result) => {
+      if (err) {
+        console.error("Error al obtener pedidos pendientes:", err);
+        return res.status(500).json({ error: "Error al obtener pedidos" });
+      }
+      res.status(200).json(result || []);
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
 };
 
-// Propuestas pendientes
-const getPendientesProveedor = (req, res) => {
-  const { nombre } = req.params;
-  const query = `
-    SELECT 
-      o.Orden_ID,
-      o.FechaCreacion,
-      u.Nombre AS solicitadoPor,
-      a.Nombre AS producto,
-      op.Cantidad,
-      op.PrecioUnitario,
-      (op.Cantidad * op.PrecioUnitario) AS totalLinea
-    FROM Ordenes2 o
-    INNER JOIN OrdenesProductos2 op ON o.Orden_ID = op.Orden_ID
-    INNER JOIN Inventario2 i ON op.Inventario_ID = i.Inventario_ID
-    INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
-    INNER JOIN Usuario2 u ON o.Creado_por_ID = u.Usuario_ID
-    WHERE o.Organizacion = ?
-      AND o.Estado = 'Pendiente'
-    ORDER BY o.FechaCreacion DESC
-  `;
-  connection.exec(query, [nombre], (err, result) => {
-    if (err) return res.status(500).json({ error: "Error al obtener pendientes" });
-    res.status(200).json(result || []);
-  });
+const getInventarioProveedor = async (req, res) => {
+  const { locationId } = req.params;
+  
+  if (!locationId) {
+    return res.status(400).json({ error: "ID de ubicación requerido" });
+  }
+  
+  try {
+    const query = `
+      SELECT 
+        i.Inventario_ID as id,
+        a.Nombre as nombre,
+        a.Categoria as categoria,
+        i.StockActual as stockActual,
+        i.StockMinimo as stockMinimo,
+        a.PrecioProveedor as precioProveedor,
+        a.PrecioVenta as precioVenta,
+        i.FechaUltimaImportacion as ultimaCompra,
+        i.MargenGanancia as margen
+      FROM Inventario2 i
+      INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+      WHERE i.LOCATION_ID = ?
+      ORDER BY a.Nombre
+    `;
+
+    // Fixed: Changed from connection.exec() to connection.query()
+    connection.exec(query, [locationId], (err, result) => {
+      if (err) {
+        console.error("Error al obtener inventario:", err);
+        return res.status(500).json({ error: "Error al obtener inventario" });
+      }
+      res.status(200).json(result || []);
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
 };
 
-module.exports = { getHistorialProveedor, getPendientesProveedor };
+module.exports = {
+  getPedidosPendientesProveedor,
+  getInventarioProveedor,
+};

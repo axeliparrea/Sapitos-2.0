@@ -3,8 +3,9 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
+import getCookie from "../utils/cookies"; 
 
-const InvoiceListProveedor = ({ aceptadas }) => {
+const InvoiceListProveedor = () => {
   const [pedidos, setPedidos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -16,43 +17,75 @@ const InvoiceListProveedor = ({ aceptadas }) => {
   const fetchPedidos = async () => {
     try {
       setLoading(true);
-      const endpoint = aceptadas ? 'accepted' : 'pending';
-      const response = await axios.get(`http://localhost:5000/orders/${endpoint}`, {
-        withCredentials: true
-      });
       
-      if (!Array.isArray(response.data)) {
-        console.error("La respuesta no es un array:", response.data);
-        const data = response.data.formatted || response.data.pedidos || [];
-        
-        const formattedPedidos = data.map((pedido, index) => ({
-          numero: String(index + 1).padStart(2, '0'),
-          id: `#${pedido._id}`,
-          cliente: pedido.clientName,
-          fecha: formatDate(pedido.date),
-          total: pedido.total,
-          estatus: pedido.status
-        }));
-        
-        setPedidos(formattedPedidos);
-      } else {
-        const formattedPedidos = response.data.map((pedido, index) => ({
-          numero: String(index + 1).padStart(2, '0'),
-          id: `#${pedido._id}`,
-          cliente: pedido.clientName,
-          fecha: formatDate(pedido.date),
-          total: pedido.total,
-          estatus: pedido.status
-        }));
-        
-        setPedidos(formattedPedidos);
+      const userData = getCookie('UserData');
+      
+      if (!userData) {
+        throw new Error("Datos de usuario no encontrados");
       }
+      
+      if (!userData.token) {
+        throw new Error("Token no encontrado");
+      }
+
+      // Obtener locationId desde userData (ajusta según tu estructura de datos)
+      const locationId = userData.locationId || userData.LOCATION_ID || userData.organizacion_id;
+      
+      if (!locationId) {
+        throw new Error("Location ID no encontrado");
+      }
+
+      const response = await axios.get(
+        `http://localhost:5000/proveedor/pedidos/${locationId}/historial`,
+        {
+          headers: { 
+            'Authorization': `Bearer ${userData.token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log("Respuesta del servidor:", response.data);
+      
+      // CORREGIR - usar response.data en lugar de data (que no estaba definido)
+      const data = response.data;
+      
+      const formattedPedidos = data.map((pedido, index) => ({
+        numero: String(index + 1).padStart(2, '0'),
+        id: `#${pedido.id}`,
+        solicitadoPor: pedido.solicitadoPor,
+        fecha: formatDate(pedido.fecha),
+        fechaEntrega: pedido.fechaEntrega ? formatDate(pedido.fechaEntrega) : '-',
+        total: pedido.total,
+        estatus: pedido.estado
+      }));
+      
+      setPedidos(formattedPedidos);
+      
     } catch (error) {
       console.error("Error al obtener los pedidos:", error);
+      
+      // Manejo mejorado de errores
+      let errorMessage = "No se pudieron cargar los pedidos";
+      
+      if (error.response?.status === 401) {
+        errorMessage = "Sesión expirada. Por favor, inicia sesión nuevamente.";
+        // Limpiar cookie inválida
+        document.cookie = 'UserData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        // Opcional: redirigir al login
+        // window.location.href = '/login';
+      } else if (error.message.includes("Location ID")) {
+        errorMessage = "No se pudo identificar la ubicación del proveedor";
+      } else if (error.message.includes("Token") || error.message.includes("usuario")) {
+        errorMessage = "Error de autenticación. Por favor, inicia sesión nuevamente.";
+        // Limpiar cookie inválida
+        document.cookie = 'UserData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      }
+      
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "No se pudieron cargar los pedidos"
+        text: errorMessage
       });
     } finally {
       setLoading(false);
@@ -61,20 +94,18 @@ const InvoiceListProveedor = ({ aceptadas }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
-    
     const date = new Date(dateString);
     const day = date.getDate();
     const month = date.getMonth();
     const year = date.getFullYear();
-    
     const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-    
     return `${day} ${months[month]} ${year}`;
   };
 
   const pedidosFiltrados = pedidos.filter(pedido => {
-    return pedido.cliente.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           pedido.id.includes(searchTerm);
+    const searchLower = searchTerm.toLowerCase();
+    return pedido.solicitadoPor.toLowerCase().includes(searchLower) || 
+           pedido.id.toLowerCase().includes(searchLower);
   });
 
   return (
@@ -82,14 +113,14 @@ const InvoiceListProveedor = ({ aceptadas }) => {
       <div className='card-header d-flex flex-wrap align-items-center justify-content-between gap-3'>
         <div className='d-flex flex-wrap align-items-center gap-3'>
           <div className='d-flex align-items-center gap-2'>
-            <span>{aceptadas ? 'Órdenes Aceptadas' : 'Órdenes Pendientes'}</span>
+            <span>Historial de Pedidos</span>
           </div>
           <div className='icon-field'>
             <input
               type='text'
               name='search'
               className='form-control form-control-sm w-auto'
-              placeholder='Buscar por cliente o ID'
+              placeholder='Buscar por solicitante o ID'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -113,8 +144,9 @@ const InvoiceListProveedor = ({ aceptadas }) => {
               <tr>
                 <th>Número</th>
                 <th>ID</th>
-                <th>Cliente</th>
-                <th>Fecha</th>
+                <th>Solicitado Por</th>
+                <th>Fecha Solicitud</th>
+                <th>Fecha Entrega</th>
                 <th>Total</th>
                 <th>Estado</th>
               </tr>
@@ -122,15 +154,28 @@ const InvoiceListProveedor = ({ aceptadas }) => {
             <tbody>
               {pedidosFiltrados.length > 0 ? (
                 pedidosFiltrados.map((pedido, idx) => (
-                  <tr key={idx}>
+                  <tr key={`pedido-${pedido.id}-${idx}`}>
                     <td>{pedido.numero}</td>
-                    <td><Link to={`/ordenes/${pedido.id.replace("#", "")}`} className='text-primary-600'>{pedido.id}</Link></td>
-                    <td><h6 className='text-md mb-0 fw-medium'>{pedido.cliente}</h6></td>
+                    <td>
+                      <Link 
+                        to={`/pedidos/${pedido.id.replace("#", "")}`} 
+                        className='text-primary-600'
+                      >
+                        {pedido.id}
+                      </Link>
+                    </td>
+                    <td>
+                      <h6 className='text-md mb-0 fw-medium'>
+                        {pedido.solicitadoPor}
+                      </h6>
+                    </td>
                     <td>{pedido.fecha}</td>
+                    <td>{pedido.fechaEntrega}</td>
                     <td>${pedido.total}</td>
                     <td>
                       <span className={`px-24 py-4 rounded-pill fw-medium text-sm ${
-                        pedido.estatus === 'Aceptado' ? 'bg-success-focus text-success-main' : 
+                        pedido.estatus === 'Completado' ? 'bg-success-focus text-success-main' : 
+                        pedido.estatus === 'Rechazado' ? 'bg-danger-focus text-danger-main' :
                         'bg-warning-focus text-warning-main'
                       }`}>
                         {pedido.estatus}
@@ -140,8 +185,11 @@ const InvoiceListProveedor = ({ aceptadas }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-4">
-                    No hay órdenes {aceptadas ? 'aceptadas' : 'pendientes'} disponibles
+                  <td colSpan="7" className="text-center py-4">
+                    {searchTerm ? 
+                      `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
+                      "No hay pedidos en el historial"
+                    }
                   </td>
                 </tr>
               )}

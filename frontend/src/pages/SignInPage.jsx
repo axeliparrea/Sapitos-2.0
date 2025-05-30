@@ -8,11 +8,13 @@ const SignInPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const hasCheckedSession = useRef(false)
+  const hasCheckedSession = useRef(false);
 
   useEffect(() => {
-    if (hasCheckedSession.current) return; 
-    hasCheckedSession.current = true;    const checkSession = async () => {
+    if (hasCheckedSession.current) return;
+    hasCheckedSession.current = true;
+    
+    const checkSession = async () => {
       try {
         const response = await fetch("http://localhost:5000/users/getSession", {
           credentials: "include",
@@ -23,7 +25,6 @@ const SignInPage = () => {
         const data = await response.json();
         console.log("Session data:", data);
         
-        // Determinar el rol del usuario
         let userRole;
         if (data.usuario && data.usuario.rol) {
           userRole = data.usuario.rol;
@@ -32,13 +33,13 @@ const SignInPage = () => {
           console.log("Usuario ya autenticado:", decoded);
           userRole = decoded.rol || decoded.ROL;
         } else {
-          return; // No hay información válida de sesión
+          return;
         }
 
-        if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {
+        if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor") {
           navigate("/dashboard");
         } else {
-          console.log("Rol no reconocido:", userRole); 
+          console.log("Rol no reconocido:", userRole);
         }
       } catch (error) {
         console.error("No se pudo verificar la sesión:", error);
@@ -46,7 +47,8 @@ const SignInPage = () => {
     };
 
     checkSession();
-  }, [navigate]); 
+  }, [navigate]);
+
   const handleLogin = async (event) => {
     event.preventDefault();
 
@@ -59,25 +61,20 @@ const SignInPage = () => {
       });
       
       const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error(data.error || "Error en el inicio de sesión");
       }
 
-      // Verificar que el token y el usuario existen
-      if (!data.token || !data.usuario) {
+      if (!data.usuario) {
         throw new Error("Datos de sesión incompletos");
       }
-
+      
       console.log("Login exitoso:", data.usuario);
-      
-      // Pequeño retraso para asegurar que las cookies se guarden
-      setTimeout(() => {
-        window.location.href = "/dashboard";  // Usar redirección directa en lugar de navigate
-      }, 100);
-      
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error:", error);
-      alert(error.message || "Login failed");
+      alert(error.message || "Error en el inicio de sesión");
     }
   };
 
@@ -131,11 +128,13 @@ const SignInPage = () => {
               </div>
             </div>
             
-            <button id='loginButton' type='submit'
-              className='btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32'>
+            <button 
+              id='loginButton' 
+              type='submit'
+              className='btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32'
+            >
               Iniciar sesión
             </button>
-    
           </form>
         </div>
       </div>

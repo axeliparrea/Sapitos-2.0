@@ -8,6 +8,7 @@ const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
 const pedidosHRoutes = require("./routes/pedidosH.js");
+const pedidosProveedorRoutes = require("./routes/pedidosProveedor.js");
 
 const app = express();
 
@@ -36,5 +37,6 @@ app.use("/inventory", inventoryRoutes);
 app.use("/pedido", pedidoRoutes);
 app.use("/proveedores", pedidoRoutes);
 app.use("/pedidosH", pedidosHRoutes);
+app.use("/proveedor", pedidosProveedorRoutes);
 
 module.exports = app;

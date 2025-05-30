@@ -16,20 +16,24 @@ const InvoiceProveedor = () => {
   const fetchPedidos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:5000/pedido");
-
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data.formatted || response.data.pedidos || [];
-
-      const formattedPedidos = data.map((pedido, index) => ({
+      const token = localStorage.getItem('token');
+      console.log(JSON.parse(atob(token.split('.')[1])));
+      if (!token) throw new Error("Token no encontrado");
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const locationId = payload.locationId;
+      if (!locationId) throw new Error("Location ID no encontrado en el token");
+      const response = await axios.get(`http://localhost:5000/proveedor/pedidos-pendientes/${locationId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      const formattedPedidos = response.data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),
         id: `#${pedido.id}`,
-        proveedor: pedido.creadaPor,
-        fecha: formatDate(pedido.fechaCreacion),
-        cantidad: pedido.total
+        solicitadoPor: pedido.solicitadoPor,
+        fecha: formatDate(pedido.fecha),
+        cantidad: pedido.total,
+        estatus: pedido.estado
       }));
-
       setPedidos(formattedPedidos);
     } catch (error) {
       console.error("Error al obtener los pedidos:", error);
@@ -76,7 +80,7 @@ const InvoiceProveedor = () => {
   };
 
   const pedidosFiltrados = pedidos.filter(pedido =>
-    pedido.proveedor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pedido.solicitadoPor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     pedido.id.includes(searchTerm)
   );
 
@@ -84,13 +88,13 @@ const InvoiceProveedor = () => {
     <div className='card'>
       <div className='card-header d-flex flex-wrap align-items-center justify-content-between gap-3'>
         <div className='d-flex flex-wrap align-items-center gap-3'>
-          <span>Pedidos</span>
+          <span>Pedidos Pendientes</span>
           <div className='icon-field'>
             <input
               type='text'
               name='search'
               className='form-control form-control-sm w-auto'
-              placeholder='Buscar'
+              placeholder='Buscar por solicitante o ID'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -99,11 +103,7 @@ const InvoiceProveedor = () => {
             </span>
           </div>
         </div>
-        <Link to='/crearpedido' className='btn btn-sm btn-primary-600'>
-          <i className='ri-add-line' /> Crear Pedido
-        </Link>
       </div>
-
       <div className='card-body'>
         {loading ? (
           <div className="text-center py-4">
@@ -117,10 +117,9 @@ const InvoiceProveedor = () => {
               <tr>
                 <th>Número</th>
                 <th>ID</th>
-                <th>Proveedor</th>
+                <th>Solicitado Por</th>
                 <th>Fecha</th>
                 <th>Cantidad</th>
-                <th>Ver</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -129,45 +128,19 @@ const InvoiceProveedor = () => {
                 pedidosFiltrados.map((pedido, idx) => (
                   <tr key={idx}>
                     <td>{pedido.numero}</td>
-                    <td>
-                      <Link to={`/pedido/${pedido.id.replace("#", "")}`} className='text-primary-600'>
-                        {pedido.id}
-                      </Link>
-                    </td>
-                    <td><h6 className='text-md mb-0 fw-medium'>{pedido.proveedor}</h6></td>
+                    <td>{pedido.id}</td>
+                    <td>{pedido.solicitadoPor}</td>
                     <td>{pedido.fecha}</td>
                     <td>{pedido.cantidad}</td>
                     <td>
-                      <Link
-                        to={`/pedido/${pedido.id.replace("#", "")}`}
-                        className='w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                      >
-                        <Icon icon='iconamoon:eye-light' />
-                      </Link>
-                    </td>
-                    <td>
-                      <div className="d-flex gap-2">
-                        <button
-                          className='btn btn-sm btn-success'
-                          title="Aceptar"
-                          onClick={() => handleActualizarEstatus(pedido.id, "Completado")}
-                        >
-                          Aceptar
-                        </button>
-                        <button
-                          className='btn btn-sm btn-danger'
-                          title="Rechazar"
-                          onClick={() => handleActualizarEstatus(pedido.id, "Rechazado")}
-                        >
-                          Rechazar
-                        </button>
-                      </div>
+                      <button className="btn btn-success btn-sm" onClick={() => handleActualizarEstatus(pedido.id, "Completado")}>Aceptar</button>
+                      <button className="btn btn-danger btn-sm ms-2" onClick={() => handleActualizarEstatus(pedido.id, "Rechazado")}>Rechazar</button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center py-3">No se encontraron pedidos</td>
+                  <td colSpan="6" className="text-center py-4">No hay pedidos pendientes</td>
                 </tr>
               )}
             </tbody>
