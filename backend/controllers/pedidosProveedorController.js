@@ -86,17 +86,17 @@ const getPedidosPendientesProveedor = async (req, res) => {
       
       // Formatear la respuesta
       const pedidosFormateados = (result || []).map(pedido => ({
-        id: pedido.id,
-        numero: pedido.id,
-        fecha: pedido.fecha,
-        solicitadoPor: pedido.solicitadoPor,
-        correoSolicitante: pedido.correoSolicitante,
-        total: pedido.total,
-        estado: pedido.estado,
-        fechaEstimada: pedido.fechaEstimada,
-        organizacion: pedido.organizacion,
-        tipoOrden: pedido.tipoOrden,
-        descuento: pedido.descuento || 0
+        id: pedido.ID,
+        numero: pedido.ID,
+        fecha: pedido.FECHA,
+        solicitadoPor: pedido.SOLICITADOPOR,
+        correoSolicitante: pedido.CORREOSOLICITANTE,
+        total: pedido.TOTAL,
+        estado: pedido.ESTADO,
+        fechaEstimada: pedido.FECHAESTIMADA,
+        organizacion: pedido.ORGANIZACION,
+        tipoOrden: pedido.TIPOORDEN,
+        descuento: pedido.DESCUENTO || 0
       }));
       
       console.log(`✅ Pedidos formateados para ${nombreOrganizacion}:`, pedidosFormateados.length);
