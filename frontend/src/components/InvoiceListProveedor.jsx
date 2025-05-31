@@ -19,6 +19,7 @@ const InvoiceListProveedor = () => {
       setLoading(true);
       
       const userData = getCookie('UserData');
+      console.log("Datos del usuario:", userData);
       
       if (!userData) {
         throw new Error("Datos de usuario no encontrados");
@@ -28,15 +29,16 @@ const InvoiceListProveedor = () => {
         throw new Error("Token no encontrado");
       }
 
-      // Obtener locationId desde userData (ajusta según tu estructura de datos)
+      // Obtener locationId desde userData
       const locationId = userData.locationId || userData.LOCATION_ID || userData.organizacion_id;
       
       if (!locationId) {
         throw new Error("Location ID no encontrado");
       }
 
+      // CORREGIDO: Usar axios en lugar de fetch
       const response = await axios.get(
-        `http://localhost:5000/proveedor/pedidos/${locationId}/historial`,
+        `http://localhost:5000/proveedor/inventario/${locationId}`,
         {
           headers: { 
             'Authorization': `Bearer ${userData.token}`,
@@ -47,17 +49,16 @@ const InvoiceListProveedor = () => {
       
       console.log("Respuesta del servidor:", response.data);
       
-      // CORREGIR - usar response.data en lugar de data (que no estaba definido)
-      const data = response.data;
+      const data = response.data || [];
       
       const formattedPedidos = data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),
         id: `#${pedido.id}`,
-        solicitadoPor: pedido.solicitadoPor,
-        fecha: formatDate(pedido.fecha),
+        solicitadoPor: pedido.solicitadoPor || pedido.nombre || "N/A",
+        fecha: formatDate(pedido.fecha || pedido.ultimaCompra),
         fechaEntrega: pedido.fechaEntrega ? formatDate(pedido.fechaEntrega) : '-',
-        total: pedido.total,
-        estatus: pedido.estado
+        total: pedido.total || pedido.precioProveedor || 0,
+        estatus: pedido.estado || "Activo"
       }));
       
       setPedidos(formattedPedidos);
@@ -65,20 +66,15 @@ const InvoiceListProveedor = () => {
     } catch (error) {
       console.error("Error al obtener los pedidos:", error);
       
-      // Manejo mejorado de errores
       let errorMessage = "No se pudieron cargar los pedidos";
       
       if (error.response?.status === 401) {
         errorMessage = "Sesión expirada. Por favor, inicia sesión nuevamente.";
-        // Limpiar cookie inválida
         document.cookie = 'UserData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        // Opcional: redirigir al login
-        // window.location.href = '/login';
       } else if (error.message.includes("Location ID")) {
         errorMessage = "No se pudo identificar la ubicación del proveedor";
       } else if (error.message.includes("Token") || error.message.includes("usuario")) {
         errorMessage = "Error de autenticación. Por favor, inicia sesión nuevamente.";
-        // Limpiar cookie inválida
         document.cookie = 'UserData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       }
       
@@ -87,6 +83,8 @@ const InvoiceListProveedor = () => {
         title: "Error",
         text: errorMessage
       });
+      
+      setPedidos([]);
     } finally {
       setLoading(false);
     }
@@ -102,11 +100,12 @@ const InvoiceListProveedor = () => {
     return `${day} ${months[month]} ${year}`;
   };
 
-  const pedidosFiltrados = pedidos.filter(pedido => {
+  // CORREGIDO: Verificar que pedidos existe y es array antes de filtrar
+  const pedidosFiltrados = Array.isArray(pedidos) ? pedidos.filter(pedido => {
     const searchLower = searchTerm.toLowerCase();
-    return pedido.solicitadoPor.toLowerCase().includes(searchLower) || 
-           pedido.id.toLowerCase().includes(searchLower);
-  });
+    return (pedido.solicitadoPor || "").toLowerCase().includes(searchLower) || 
+           (pedido.id || "").toLowerCase().includes(searchLower);
+  }) : [];
 
   return (
     <div className='card'>

@@ -16,32 +16,74 @@ const InvoiceProveedor = () => {
   const fetchPedidos = async () => {
     try {
       setLoading(true);
+      
       const token = localStorage.getItem('token');
-      console.log(JSON.parse(atob(token.split('.')[1])));
-      if (!token) throw new Error("Token no encontrado");
+      
+      if (!token) {
+        throw new Error("Token no encontrado");
+      }
+
+      console.log("Token payload:", JSON.parse(atob(token.split('.')[1])));
+      
       const payload = JSON.parse(atob(token.split('.')[1]));
       const locationId = payload.locationId;
-      if (!locationId) throw new Error("Location ID no encontrado en el token");
-      const response = await axios.get(`http://localhost:5000/proveedor/pedidos-pendientes/${locationId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true
-      });
-      const formattedPedidos = response.data.map((pedido, index) => ({
+      
+      if (!locationId) {
+        throw new Error("Location ID no encontrado en el token");
+      }
+
+      const response = await axios.get(
+        `http://localhost:5000/proveedor/pedidos/${locationId}`, 
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          withCredentials: true
+        }
+      );
+
+      console.log("Respuesta del servidor:", response.data);
+
+      // CORREGIDO: Verificar que response.data existe y es array
+      const data = response.data || [];
+      
+      const formattedPedidos = data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),
         id: `#${pedido.id}`,
-        solicitadoPor: pedido.solicitadoPor,
+        solicitadoPor: pedido.solicitadoPor || "N/A",
         fecha: formatDate(pedido.fecha),
-        cantidad: pedido.total,
-        estatus: pedido.estado
+        cantidad: pedido.total || 0,
+        estatus: pedido.estado || "Pendiente"
       }));
+      
       setPedidos(formattedPedidos);
+      
     } catch (error) {
       console.error("Error al obtener los pedidos:", error);
+      
+      let errorMessage = "No se pudieron cargar los pedidos";
+      
+      if (error.response?.status === 404) {
+        errorMessage = "Endpoint no encontrado. Verifica que el servidor esté configurado correctamente.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Sesión expirada. Por favor, inicia sesión nuevamente.";
+        localStorage.removeItem('token');
+      } else if (error.message.includes("Token")) {
+        errorMessage = "Error de autenticación. Por favor, inicia sesión nuevamente.";
+        localStorage.removeItem('token');
+      } else if (error.message.includes("Location ID")) {
+        errorMessage = "No se pudo identificar la ubicación del proveedor";
+      }
+      
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "No se pudieron cargar los pedidos"
+        text: errorMessage
       });
+      
+      // IMPORTANTE: Establecer array vacío en caso de error
+      setPedidos([]);
     } finally {
       setLoading(false);
     }
@@ -63,11 +105,13 @@ const InvoiceProveedor = () => {
       await axios.put(`http://localhost:5000/pedido/${pedidoId}`, {
         estatus: nuevoEstatus
       });
+      
       Swal.fire({
         icon: "success",
         title: "Actualizado",
         text: `El pedido ha sido ${nuevoEstatus === "Completado" ? "aceptado" : "rechazado"}`
       });
+      
       fetchPedidos();
     } catch (error) {
       console.error("Error al actualizar el pedido:", error);
@@ -79,10 +123,11 @@ const InvoiceProveedor = () => {
     }
   };
 
-  const pedidosFiltrados = pedidos.filter(pedido =>
-    pedido.solicitadoPor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pedido.id.includes(searchTerm)
-  );
+  // CORREGIDO: Verificar que pedidos existe y es array antes de filtrar
+  const pedidosFiltrados = Array.isArray(pedidos) ? pedidos.filter(pedido =>
+    (pedido.solicitadoPor || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (pedido.id || "").includes(searchTerm)
+  ) : [];
 
   return (
     <div className='card'>
@@ -104,6 +149,7 @@ const InvoiceProveedor = () => {
           </div>
         </div>
       </div>
+      
       <div className='card-body'>
         {loading ? (
           <div className="text-center py-4">
@@ -126,21 +172,36 @@ const InvoiceProveedor = () => {
             <tbody>
               {pedidosFiltrados.length > 0 ? (
                 pedidosFiltrados.map((pedido, idx) => (
-                  <tr key={idx}>
+                  <tr key={`pedido-${pedido.id}-${idx}`}>
                     <td>{pedido.numero}</td>
                     <td>{pedido.id}</td>
                     <td>{pedido.solicitadoPor}</td>
                     <td>{pedido.fecha}</td>
                     <td>{pedido.cantidad}</td>
                     <td>
-                      <button className="btn btn-success btn-sm" onClick={() => handleActualizarEstatus(pedido.id, "Completado")}>Aceptar</button>
-                      <button className="btn btn-danger btn-sm ms-2" onClick={() => handleActualizarEstatus(pedido.id, "Rechazado")}>Rechazar</button>
+                      <button 
+                        className="btn btn-success btn-sm" 
+                        onClick={() => handleActualizarEstatus(pedido.id, "Completado")}
+                      >
+                        Aceptar
+                      </button>
+                      <button 
+                        className="btn btn-danger btn-sm ms-2" 
+                        onClick={() => handleActualizarEstatus(pedido.id, "Rechazado")}
+                      >
+                        Rechazar
+                      </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-4">No hay pedidos pendientes</td>
+                  <td colSpan="6" className="text-center py-4">
+                    {searchTerm ? 
+                      `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
+                      "No hay pedidos pendientes"
+                    }
+                  </td>
                 </tr>
               )}
             </tbody>

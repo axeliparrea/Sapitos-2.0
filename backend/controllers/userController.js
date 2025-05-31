@@ -125,7 +125,7 @@ const loginUser = (req, res) => {
         username: usuario.USERNAME,
         USUARIO_ID: usuario.USUARIO_ID, 
         ROL: usuario.ROLNOMBRE,
-        locationId: usuario.LOCATION_ID,
+        LOCATION_ID: usuario.LOCATION_ID
       };
 
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -142,7 +142,10 @@ const loginUser = (req, res) => {
       res.json({ 
         message: "Login exitoso", 
         token, 
-        usuario: payload 
+        usuario: {
+          ...payload,
+          token: token
+        }
       });
     } catch (error) {
       console.error("Error comparing password:", error);

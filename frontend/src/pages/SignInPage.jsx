@@ -69,6 +69,8 @@ const SignInPage = () => {
       if (!data.usuario) {
         throw new Error("Datos de sesión incompletos");
       }
+
+      document.cookie = `UserData=${encodeURIComponent(JSON.stringify(data.usuario))}; path=/`;
       
       console.log("Login exitoso:", data.usuario);
       navigate("/dashboard");
