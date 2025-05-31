@@ -52,7 +52,6 @@ const getPedidosPendientesProveedor = async (req, res) => {
     
     console.log("Organizaciones con pedidos pendientes:", organizacionesDisponibles.map(org => `"${org.Organizacion}"`));
 
-    // Paso 3: Buscar pedidos (con logging detallado)
     const query = `
       SELECT 
         o.Orden_ID as id,
@@ -67,24 +66,16 @@ const getPedidosPendientesProveedor = async (req, res) => {
         o.DescuentoAplicado as descuento
       FROM Ordenes2 o
       INNER JOIN Usuario2 u ON o.Creado_por_ID = u.Usuario_ID 
-      WHERE o.Estado = 'Pendiente' AND o.Organizacion = ?
+      WHERE o.Estado IN ('Pendiente', 'Aprobado', 'En Reparto') AND o.Organizacion = ?
       ORDER BY o.FechaCreacion DESC
     `;
-
-    console.log(`Paso 3: Ejecutando consulta de pedidos para: "${nombreOrganizacion}"`);
-    console.log("Query SQL:", query);
-    console.log("Parámetros:", [nombreOrganizacion]);
 
     connection.exec(query, [nombreOrganizacion], (err, result) => {
       if (err) {
         console.error("❌ Error al obtener pedidos pendientes:", err);
         return res.status(500).json({ error: "Error al obtener pedidos" });
       }
-      
-      console.log(`📊 Resultado crudo de la consulta:`, result);
-      console.log(`📈 Número de pedidos encontrados: ${(result || []).length}`);
-      
-      // Formatear la respuesta
+ 
       const pedidosFormateados = (result || []).map(pedido => ({
         id: pedido.ID,
         numero: pedido.ID,
@@ -174,11 +165,11 @@ const aceptarPedido = async (req, res) => {
         return res.status(400).json({ error: "Solo se pueden aceptar pedidos en estado Pendiente" });
       }
 
-      // CAMBIO: Actualizar estado a 'Aprobado' en lugar de 'Completado'
+      // CAMBIO: Actualizar estado a 'En Reparto' en lugar de 'Aprobado'
       // Esto sigue el flujo: Pendiente -> Aprobado -> En Reparto -> Completado
       const updateQuery = `
         UPDATE Ordenes2 SET 
-          Estado = 'Aprobado',
+          Estado = 'En Reparto',
           FechaAceptacion = CURRENT_DATE,
           FechaEstimadaEntrega = ADD_DAYS(CURRENT_DATE, 7)
         WHERE Orden_ID = ?
@@ -192,7 +183,7 @@ const aceptarPedido = async (req, res) => {
         
         res.status(200).json({ 
           message: "Pedido aceptado exitosamente",
-          nuevoEstado: "Aprobado",
+          nuevoEstado: "En Reparto",
           fechaEstimadaEntrega: "7 días desde hoy"
         });
       });
