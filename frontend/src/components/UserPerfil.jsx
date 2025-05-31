@@ -82,10 +82,37 @@ const UserPerfil = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setSelectedImageFile(file);
+      const img = new window.Image();
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImage(e.target.result);
+      reader.onload = (event) => {
+        img.onload = () => {
+          // Definir tamaño máximo
+          const maxDim = 300;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height *= maxDim / width));
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width *= maxDim / height));
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          // Comprimir a JPEG calidad 0.7
+          canvas.toBlob((blob) => {
+            setSelectedImageFile(blob);
+            setProfileImage(URL.createObjectURL(blob));
+          }, 'image/jpeg', 0.7);
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -197,25 +224,31 @@ const UserPerfil = () => {
       <div className="card-body">
         <div className="mb-4">
           <label className="form-label">Imagen de perfil</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', width: 120, height: 120, margin: '0 auto' }}>
             <img 
               src={profileImage || "/assets/images/user.png"} 
               alt="Perfil" 
-              className="rounded-circle"
-              style={{ width: 64, height: 64, objectFit: 'cover' }}
+              className="rounded-circle border"
+              style={{ width: 120, height: 120, objectFit: 'cover', display: 'block' }}
             />
             {isEditing && (
-              <input 
-                type="file" 
-                accept="image/*"
-                onChange={handleImageChange}
-                className="form-control" 
-                style={{ width: 'auto' }}
-              />
+              <>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="form-control"
+                  style={{ position: 'absolute', width: 120, height: 120, opacity: 0, cursor: 'pointer', top: 0, left: 0 }}
+                  title="Cambiar imagen"
+                />
+                <div style={{ position: 'absolute', top: 0, left: 0, width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  <i className="ri-edit-2-fill" style={{ fontSize: 32, color: '#fff', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', padding: 8 }}></i>
+                </div>
+              </>
             )}
           </div>
           {!isEditing && (
-            <small className="form-text text-muted">Haz clic en "Editar Perfil" para cambiar tu imagen.</small>
+            <small className="form-text text-muted d-block text-center">Haz clic en "Editar Perfil" para cambiar tu imagen.</small>
           )}
         </div>
         

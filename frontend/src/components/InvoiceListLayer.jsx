@@ -23,10 +23,12 @@ const InvoiceListLayer = () => {
         console.error("La respuesta no es un array:", response.data);
         const data = response.data.formatted || response.data.pedidos || [];
         
-        const formattedPedidos = data.map((pedido, index) => ({
+        const formattedPedidos = response.data.map((pedido, index) => ({
           numero: String(index + 1).padStart(2, '0'),
           id: `#${pedido.id}`,
-          proveedor: pedido.creadaPor,
+          proveedor: pedido.organizacion, 
+          solicitadoPor: pedido.creadoPorNombre, 
+          email: pedido.creadaPor, 
           fecha: formatDate(pedido.fechaCreacion),
           cantidad: pedido.total,
           estatus: pedido.estatus

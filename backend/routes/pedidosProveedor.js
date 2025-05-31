@@ -1,7 +1,11 @@
 const express = require("express");
 const { 
   getPedidosPendientesProveedor,
-  getInventarioProveedor
+  getInventarioProveedor,
+  aceptarPedido,
+  rechazarPedido,
+  getDetallePedido,
+  enviarPedido 
 } = require('../controllers/pedidosProveedorController');
 const router = express.Router();
 
@@ -97,7 +101,7 @@ const router = express.Router();
  *       500:
  *         description: Error del servidor
  */
-router.get("/pedidos/:locationId",  getPedidosPendientesProveedor);
+router.get("/pedidos/:locationId", getPedidosPendientesProveedor);
 
 /**
  * @swagger
@@ -130,6 +134,146 @@ router.get("/pedidos/:locationId",  getPedidosPendientesProveedor);
  *       500:
  *         description: Error del servidor
  */
-router.get("/inventario/:locationId",  getInventarioProveedor);
+router.get("/inventario/:locationId", getInventarioProveedor);
+
+/**
+ * @swagger
+ * /proveedor/pedido/{id}/aprobar:
+ *   put:
+ *     summary: Aceptar un pedido pendiente
+ *     tags: [Proveedor]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido a aceptar
+ *     responses:
+ *       200:
+ *         description: Pedido aceptado exitosamente
+ *       400:
+ *         description: ID de pedido inválido o pedido no está pendiente
+ *       404:
+ *         description: Pedido no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.put("/pedido/:id/aprobar", aceptarPedido);
+
+/**
+ * @swagger
+ * /proveedor/pedido/{id}/rechazar:
+ *   put:
+ *     summary: Rechazar un pedido pendiente
+ *     tags: [Proveedor]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido a rechazar
+ *     responses:
+ *       200:
+ *         description: Pedido rechazado exitosamente
+ *       400:
+ *         description: ID de pedido inválido o pedido no está pendiente
+ *       404:
+ *         description: Pedido no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.put("/pedido/:id/rechazar", rechazarPedido);
+
+/**
+ * @swagger
+ * /proveedor/pedido/{id}/detalle:
+ *   get:
+ *     summary: Obtener detalles de un pedido específico
+ *     tags: [Proveedor]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido
+ *     responses:
+ *       200:
+ *         description: Detalles del pedido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   articuloId:
+ *                     type: integer
+ *                   nombre:
+ *                     type: string
+ *                   categoria:
+ *                     type: string
+ *                   cantidad:
+ *                     type: integer
+ *                   precioUnitario:
+ *                     type: number
+ *                   subtotal:
+ *                     type: number
+ *                   stockDisponible:
+ *                     type: integer
+ *       400:
+ *         description: ID de pedido inválido
+ *       404:
+ *         description: Pedido no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/pedido/:id/detalle", getDetallePedido);
+
+/**
+ * @swagger
+ * /proveedor/pedido/{id}/enviar:
+ *   put:
+ *     summary: Marcar pedido como enviado/en reparto
+ *     tags: [Proveedor]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido a enviar
+ *     responses:
+ *       200:
+ *         description: Pedido marcado como enviado y stock actualizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 productosEnviados:
+ *                   type: integer
+ *                 nuevoEstado:
+ *                   type: string
+ *       400:
+ *         description: ID inválido, pedido no está aprobado o stock insuficiente
+ *       404:
+ *         description: Pedido no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.put("/pedido/:id/enviar", enviarPedido);
 
 module.exports = router;

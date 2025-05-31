@@ -96,8 +96,6 @@ const insertPedido = async (req, res) => {
       descuentoAplicado,
       tipoOrden
     });
-
-    // Paso 1: Insertar la orden principal
     const insertOrdenQuery = `
       INSERT INTO Ordenes2 (
         Creado_por_ID, 
@@ -119,7 +117,6 @@ const insertPedido = async (req, res) => {
             console.error("Error al insertar orden:", err);
             reject(err);
           } else {
-            // Obtener el ID de la orden recién creada en SAP HANA
             connection.exec("SELECT CURRENT_IDENTITY_VALUE() AS ordenId FROM DUMMY", [], (err2, result2) => {
               if (err2) {
                 console.error("Error al obtener ID de orden:", err2);
@@ -141,7 +138,6 @@ const insertPedido = async (req, res) => {
       throw new Error("No se pudo obtener el ID de la orden creada");
     }
 
-    // Paso 2: Procesar cada producto
     let productosInsertados = 0;
     const erroresProductos = [];
 
@@ -151,7 +147,6 @@ const insertPedido = async (req, res) => {
       try {
         console.log(`Procesando producto ${i + 1}:`, producto);
 
-        // Buscar inventario para este producto y proveedor
         const buscarInventarioQuery = `
           SELECT i.Inventario_ID 
           FROM Inventario2 i
@@ -180,7 +175,6 @@ const insertPedido = async (req, res) => {
         const inventarioId = inventarioResult[0].Inventario_ID;
         console.log(`Inventario encontrado para producto ${producto.articuloId}: ${inventarioId}`);
 
-        // Insertar producto en la orden
         const insertProductoQuery = `
           INSERT INTO OrdenesProductos2 (
             Orden_ID, 
@@ -211,10 +205,7 @@ const insertPedido = async (req, res) => {
         erroresProductos.push(`Error en producto ${producto.articuloId}: ${error.message}`);
       }
     }
-
-    // Verificar si se insertaron productos
     if (productosInsertados === 0) {
-      // Si no se insertó ningún producto, eliminar la orden
       await new Promise((resolve) => {
         connection.exec("DELETE FROM Ordenes2 WHERE Orden_ID = ?", [ordenId], () => {
           resolve();
@@ -227,7 +218,6 @@ const insertPedido = async (req, res) => {
       });
     }
 
-    // Respuesta exitosa
     const response = {
       message: "Pedido creado exitosamente",
       ordenId: ordenId,
@@ -253,7 +243,6 @@ const insertPedido = async (req, res) => {
   }
 };
 
-// Eliminar pedido
 const deletePedido = async (req, res) => {
   const { id } = req.params;
   
@@ -286,7 +275,6 @@ const deletePedido = async (req, res) => {
   }
 };
 
-// Actualizar pedido
 const updatePedido = async (req, res) => {
   const { id } = req.params;
   const { estado, ...datos } = req.body;
@@ -296,7 +284,6 @@ const updatePedido = async (req, res) => {
   }
 
   try {
-    // No permitir cambiar el estado directamente (usar las funciones específicas)
     if (estado) {
       return res.status(400).json({ 
         error: "Use las rutas específicas para cambiar el estado (/aprobar, /entregar)" 
@@ -306,7 +293,6 @@ const updatePedido = async (req, res) => {
     const campos = [];
     const valores = [];
     
-    // Mapeo de campos del frontend a la base de datos
     const campoMap = {
       organizacion: 'Organizacion',
       total: 'Total',
@@ -314,7 +300,6 @@ const updatePedido = async (req, res) => {
       tiempoReposicion: 'TiempoReposicion'
     };
     
-    // Construir dinámicamente la consulta
     for (const [key, value] of Object.entries(datos)) {
       if (value !== undefined && value !== null) {
         const campoDb = campoMap[key] || key;
@@ -337,7 +322,6 @@ const updatePedido = async (req, res) => {
   }
 };
 
-// Obtener proveedores (organizaciones únicas que fabrican productos)
 const getProveedores = async (req, res) => {
   try {
     const query = `
@@ -371,7 +355,6 @@ const getProveedores = async (req, res) => {
   }
 };
 
-// Obtener productos por proveedor
 const getProductosPorProveedor = async (req, res) => {
   const { nombreProveedor } = req.params;
   
