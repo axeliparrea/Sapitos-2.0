@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -8,6 +7,8 @@ const InvoiceProveedor = () => {
   const [pedidos, setPedidos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedPedido, setSelectedPedido] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     fetchPedidos();
@@ -49,12 +50,17 @@ const InvoiceProveedor = () => {
       
       const formattedPedidos = data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),
-        id: `#${pedido.id}`,
+        id: pedido.id,
+        displayId: `#${pedido.id}`,
         solicitadoPor: pedido.solicitadoPor || "N/A",
+        correoSolicitante: pedido.correoSolicitante || "",
         fecha: formatDate(pedido.fecha),
         cantidad: pedido.total || 0,
         estatus: pedido.estado || "Pendiente",
-        organizacion: pedido.organizacion || "N/A"
+        organizacion: pedido.organizacion || "N/A",
+        fechaEstimada: pedido.fechaEstimada,
+        tipoOrden: pedido.tipoOrden,
+        descuento: pedido.descuento || 0
       }));
       
       console.log("Pedidos formateados:", formattedPedidos);
@@ -103,18 +109,16 @@ const InvoiceProveedor = () => {
   };
 
   const handleActualizarEstatus = async (id, nuevoEstatus) => {
-    const pedidoId = id.replace("#", "");
-    
     try {
       // Mostrar confirmación antes de proceder
       const result = await Swal.fire({
         title: '¿Estás seguro?',
-        text: `¿Deseas ${nuevoEstatus === "Completado" ? "aceptar" : "rechazar"} este pedido?`,
+        text: `¿Deseas ${nuevoEstatus === "Aprobado" ? "aceptar" : "rechazar"} este pedido?`,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: nuevoEstatus === "Completado" ? '#28a745' : '#dc3545',
+        confirmButtonColor: nuevoEstatus === "Aprobado" ? '#28a745' : '#dc3545',
         cancelButtonColor: '#6c757d',
-        confirmButtonText: `Sí, ${nuevoEstatus === "Completado" ? "aceptar" : "rechazar"}`,
+        confirmButtonText: `Sí, ${nuevoEstatus === "Aprobado" ? "aceptar" : "rechazar"}`,
         cancelButtonText: 'Cancelar'
       });
 
@@ -122,11 +126,12 @@ const InvoiceProveedor = () => {
         return;
       }
 
-      const endpoint = nuevoEstatus === "Completado" 
-        ? `http://localhost:5000/proveedor/inventario/${pedidoId}/aprobar` 
-        : `http://localhost:5000/proveedor/inventario/${pedidoId}/rechazar`;
+      // ENDPOINTS CORREGIDOS para coincidir con las rutas del backend
+      const endpoint = nuevoEstatus === "Aprobado" 
+        ? `http://localhost:5000/proveedor/pedido/${id}/aprobar` 
+        : `http://localhost:5000/proveedor/pedido/${id}/rechazar`;
       
-      console.log("Actualizando pedido:", pedidoId, "a estado:", nuevoEstatus);
+      console.log("Actualizando pedido:", id, "a estado:", nuevoEstatus);
       console.log("Endpoint:", endpoint);
       
       const response = await axios.put(endpoint, {}, {
@@ -141,7 +146,7 @@ const InvoiceProveedor = () => {
       Swal.fire({
         icon: "success",
         title: "Actualizado",
-        text: `El pedido ha sido ${nuevoEstatus === "Completado" ? "aceptado" : "rechazado"} exitosamente`
+        text: `El pedido ha sido ${nuevoEstatus === "Aprobado" ? "aceptado" : "rechazado"} exitosamente`
       });
       
       // Recargar la lista de pedidos
@@ -162,23 +167,183 @@ const InvoiceProveedor = () => {
       });
     }
   };
-  
+
+  const handleEnviarPedido = async (id) => {
+    try {
+      const result = await Swal.fire({
+        title: '¿Enviar pedido?',
+        text: 'Esto marcará el pedido como "En Reparto" y actualizará el inventario',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#17a2b8',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, enviar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      const response = await axios.put(
+        `http://localhost:5000/proveedor/pedido/${id}/enviar`, 
+        {}, 
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      Swal.fire({
+        icon: "success",
+        title: "Pedido Enviado",
+        text: response.data.message
+      });
+      
+      fetchPedidos();
+      
+    } catch (error) {
+      console.error("Error al enviar el pedido:", error);
+      
+      const errorMessage = error.response?.data?.error || 
+                          "No se pudo enviar el pedido";
+      
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: errorMessage
+      });
+    }
+  };
+
+  const handleVerDetalles = async (id) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/proveedor/pedido/${id}/detalle`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      setSelectedPedido({
+        id,
+        detalles: response.data
+      });
+      setShowDetails(true);
+      
+    } catch (error) {
+      console.error("Error al obtener detalles:", error);
+      
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudieron cargar los detalles del pedido"
+      });
+    }
+  };
+
   const pedidosFiltrados = Array.isArray(pedidos) ? pedidos.filter(pedido =>
     (pedido.solicitadoPor || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (pedido.id || "").includes(searchTerm)
+    (pedido.displayId || "").includes(searchTerm) ||
+    (pedido.organizacion || "").toLowerCase().includes(searchTerm.toLowerCase())
   ) : [];
+
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'Pendiente': return 'bg-warning text-dark';
+      case 'Aprobado': return 'bg-info';
+      case 'En Reparto': return 'bg-primary';
+      case 'Completado': return 'bg-success';
+      case 'Rechazado': return 'bg-danger';
+      default: return 'bg-secondary';
+    }
+  };
+
+  const getActionButtons = (pedido) => {
+    switch (pedido.estatus) {
+      case 'Pendiente':
+        return (
+          <div className="d-flex gap-2">
+            <button 
+              className="btn btn-success btn-sm" 
+              onClick={() => handleActualizarEstatus(pedido.id, "Aprobado")}
+            >
+              <Icon icon='mdi:check' className="me-1" />
+              Aceptar
+            </button>
+            <button 
+              className="btn btn-danger btn-sm" 
+              onClick={() => handleActualizarEstatus(pedido.id, "Rechazado")}
+            >
+              <Icon icon='mdi:close' className="me-1" />
+              Rechazar
+            </button>
+            <button 
+              className="btn btn-outline-primary btn-sm" 
+              onClick={() => handleVerDetalles(pedido.id)}
+            >
+              <Icon icon='mdi:eye' className="me-1" />
+              Ver
+            </button>
+          </div>
+        );
+      
+      case 'Aprobado':
+        return (
+          <div className="d-flex gap-2">
+            <button 
+              className="btn btn-info btn-sm" 
+              onClick={() => handleEnviarPedido(pedido.id)}
+            >
+              <Icon icon='mdi:truck' className="me-1" />
+              Enviar
+            </button>
+            <button 
+              className="btn btn-outline-primary btn-sm" 
+              onClick={() => handleVerDetalles(pedido.id)}
+            >
+              <Icon icon='mdi:eye' className="me-1" />
+              Ver
+            </button>
+          </div>
+        );
+      
+      default:
+        return (
+          <div className="d-flex gap-2">
+            <span className="text-muted small">
+              {pedido.estatus === 'Completado' ? 'Completado' : 
+               pedido.estatus === 'En Reparto' ? 'En Reparto' : 
+               pedido.estatus}
+            </span>
+            <button 
+              className="btn btn-outline-primary btn-sm" 
+              onClick={() => handleVerDetalles(pedido.id)}
+            >
+              <Icon icon='mdi:eye' className="me-1" />
+              Ver
+            </button>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className='card'>
       <div className='card-header d-flex flex-wrap align-items-center justify-content-between gap-3'>
         <div className='d-flex flex-wrap align-items-center gap-3'>
-          <span>Pedidos Pendientes</span>
+          <span>Gestión de Pedidos</span>
           <div className='icon-field'>
             <input
               type='text'
               name='search'
               className='form-control form-control-sm w-auto'
-              placeholder='Buscar por solicitante o ID'
+              placeholder='Buscar por solicitante, ID u organización'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -213,6 +378,7 @@ const InvoiceProveedor = () => {
                   <th>Número</th>
                   <th>ID</th>
                   <th>Solicitado Por</th>
+                  <th>Organización</th>
                   <th>Fecha</th>
                   <th>Total</th>
                   <th>Estado</th>
@@ -224,52 +390,34 @@ const InvoiceProveedor = () => {
                   pedidosFiltrados.map((pedido, idx) => (
                     <tr key={`pedido-${pedido.id}-${idx}`}>
                       <td>{pedido.numero}</td>
-                      <td>{pedido.id}</td>
-                      <td>{pedido.solicitadoPor}</td>
+                      <td>{pedido.displayId}</td>
+                      <td>
+                        <div>
+                          <div className="fw-medium">{pedido.solicitadoPor}</div>
+                          {pedido.correoSolicitante && (
+                            <small className="text-muted">{pedido.correoSolicitante}</small>
+                          )}
+                        </div>
+                      </td>
+                      <td>{pedido.organizacion}</td>
                       <td>{pedido.fecha}</td>
                       <td>${parseFloat(pedido.cantidad).toFixed(2)}</td>
                       <td>
-                        <span className={`badge ${
-                          pedido.estatus === 'Pendiente' ? 'bg-warning' :
-                          pedido.estatus === 'Completado' ? 'bg-success' :
-                          'bg-danger'
-                        }`}>
+                        <span className={`badge ${getStatusBadgeClass(pedido.estatus)}`}>
                           {pedido.estatus}
                         </span>
                       </td>
                       <td>
-                        {pedido.estatus === 'Pendiente' && (
-                          <>
-                            <button 
-                              className="btn btn-success btn-sm me-2" 
-                              onClick={() => handleActualizarEstatus(pedido.id, "Completado")}
-                            >
-                              <Icon icon='mdi:check' className="me-1" />
-                              Aceptar
-                            </button>
-                            <button 
-                              className="btn btn-danger btn-sm" 
-                              onClick={() => handleActualizarEstatus(pedido.id, "Rechazado")}
-                            >
-                              <Icon icon='mdi:close' className="me-1" />
-                              Rechazar
-                            </button>
-                          </>
-                        )}
-                        {pedido.estatus !== 'Pendiente' && (
-                          <span className="text-muted">
-                            {pedido.estatus === 'Completado' ? 'Aceptado' : 'Rechazado'}
-                          </span>
-                        )}
+                        {getActionButtons(pedido)}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="text-center py-4">
+                    <td colSpan="8" className="text-center py-4">
                       {searchTerm ? 
                         `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
-                        "No hay pedidos pendientes"
+                        "No hay pedidos disponibles"
                       }
                     </td>
                   </tr>
@@ -279,6 +427,86 @@ const InvoiceProveedor = () => {
           </div>
         )}
       </div>
+
+      {/* Modal para mostrar detalles */}
+      {showDetails && selectedPedido && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  Detalles del Pedido #{selectedPedido.id}
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setShowDetails(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                {selectedPedido.detalles.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Producto</th>
+                          <th>Categoría</th>
+                          <th>Cantidad</th>
+                          <th>Precio Unit.</th>
+                          <th>Subtotal</th>
+                          <th>Stock Disponible</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedPedido.detalles.map((detalle, idx) => (
+                          <tr key={idx}>
+                            <td>{detalle.nombre}</td>
+                            <td>{detalle.categoria}</td>
+                            <td>{detalle.cantidad}</td>
+                            <td>${parseFloat(detalle.precioUnitario).toFixed(2)}</td>
+                            <td>${parseFloat(detalle.subtotal).toFixed(2)}</td>
+                            <td>
+                              <span className={`badge ${
+                                detalle.stockDisponible >= detalle.cantidad 
+                                  ? 'bg-success' 
+                                  : 'bg-warning text-dark'
+                              }`}>
+                                {detalle.stockDisponible}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <th colSpan="4">Total:</th>
+                          <th>
+                            ${selectedPedido.detalles.reduce((total, det) => 
+                              total + parseFloat(det.subtotal), 0
+                            ).toFixed(2)}
+                          </th>
+                          <th></th>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                ) : (
+                  <p>No se encontraron detalles para este pedido.</p>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowDetails(false)}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

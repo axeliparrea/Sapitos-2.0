@@ -3,30 +3,56 @@ const { connection } = require("../config/db");
 const getPedidosPendientesProveedor = async (req, res) => {
   const { locationId } = req.params;
   
+  console.log(`=== DEBUG: Iniciando consulta para locationId: ${locationId} ===`);
+  
   if (!locationId) {
     return res.status(400).json({ error: "ID de ubicación requerido" });
   }
 
   try {
-    // Primero obtener el nombre de la organización/proveedor
+    // Paso 1: Buscar el proveedor
+    console.log(`Paso 1: Buscando proveedor en Location2 con ID: ${locationId}`);
+    
     const [location] = await new Promise((resolve, reject) => {
       connection.exec(
-        'SELECT Nombre FROM Location2 WHERE Location_ID = ?', 
+        'SELECT Nombre AS "Nombre" FROM Location2 WHERE Location_ID = ?', 
         [locationId],
         (err, result) => {
-          if (err) return reject(err);
+          if (err) {
+            console.error("Error en consulta Location2:", err);
+            return reject(err);
+          }
+          console.log("Resultado Location2:", result);
           resolve(result);
         }
       );
     });
 
-    if (!location || !location[0]) {
+    if (!location) {
+      console.log("❌ Proveedor no encontrado en Location2");
       return res.status(404).json({ error: "Proveedor no encontrado" });
     }
 
-    const nombreOrganizacion = location[0].Nombre;
+    const nombreOrganizacion = location.Nombre;
+    console.log(`✅ Proveedor encontrado: "${nombreOrganizacion}" (longitud: ${nombreOrganizacion.length})`);
 
-    // Consulta CORREGIDA - usar los mismos nombres de columna que en pedidosController.js
+    // Paso 2: Verificar organizaciones disponibles
+    console.log("Paso 2: Verificando organizaciones con pedidos pendientes...");
+    
+    const organizacionesDisponibles = await new Promise((resolve, reject) => {
+      connection.exec(
+        'SELECT DISTINCT Organizacion FROM Ordenes2 WHERE Estado = ?',
+        ['Pendiente'],
+        (err, result) => {
+          if (err) return reject(err);
+          resolve(result || []);
+        }
+      );
+    });
+    
+    console.log("Organizaciones con pedidos pendientes:", organizacionesDisponibles.map(org => `"${org.Organizacion}"`));
+
+    // Paso 3: Buscar pedidos (con logging detallado)
     const query = `
       SELECT 
         o.Orden_ID as id,
@@ -45,16 +71,23 @@ const getPedidosPendientesProveedor = async (req, res) => {
       ORDER BY o.FechaCreacion DESC
     `;
 
+    console.log(`Paso 3: Ejecutando consulta de pedidos para: "${nombreOrganizacion}"`);
+    console.log("Query SQL:", query);
+    console.log("Parámetros:", [nombreOrganizacion]);
+
     connection.exec(query, [nombreOrganizacion], (err, result) => {
       if (err) {
-        console.error("Error al obtener pedidos pendientes:", err);
+        console.error("❌ Error al obtener pedidos pendientes:", err);
         return res.status(500).json({ error: "Error al obtener pedidos" });
       }
       
-      // Formatear la respuesta para que coincida con lo que espera el frontend
+      console.log(`📊 Resultado crudo de la consulta:`, result);
+      console.log(`📈 Número de pedidos encontrados: ${(result || []).length}`);
+      
+      // Formatear la respuesta
       const pedidosFormateados = (result || []).map(pedido => ({
         id: pedido.id,
-        numero: pedido.id, // Para mostrar en la columna "Número"
+        numero: pedido.id,
         fecha: pedido.fecha,
         solicitadoPor: pedido.solicitadoPor,
         correoSolicitante: pedido.correoSolicitante,
@@ -66,11 +99,13 @@ const getPedidosPendientesProveedor = async (req, res) => {
         descuento: pedido.descuento || 0
       }));
       
-      console.log(`Pedidos encontrados para ${nombreOrganizacion}:`, pedidosFormateados.length);
+      console.log(`✅ Pedidos formateados para ${nombreOrganizacion}:`, pedidosFormateados.length);
+      console.log("=== FIN DEBUG ===");
+      
       res.status(200).json(pedidosFormateados);
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("❌ Error general:", error);
     res.status(500).json({ error: "Error del servidor" });
   }
 };
