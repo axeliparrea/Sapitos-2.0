@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import getCookie from "../utils/cookies"; 
@@ -19,26 +18,19 @@ const InvoiceListProveedor = () => {
       setLoading(true);
       
       const userData = getCookie('UserData');
-      console.log("Datos del usuario:", userData);
       
-      if (!userData) {
-        throw new Error("Datos de usuario no encontrados");
-      }
-      
-      if (!userData.token) {
-        throw new Error("Token no encontrado");
+      if (!userData || !userData.token) {
+        throw new Error("Datos de autenticación no encontrados");
       }
 
-      // Obtener locationId desde userData
       const locationId = userData.locationId || userData.LOCATION_ID || userData.organizacion_id;
       
       if (!locationId) {
         throw new Error("Location ID no encontrado");
       }
 
-      // CORREGIDO: Usar axios en lugar de fetch
       const response = await axios.get(
-        `http://localhost:5000/proveedor/inventario/${locationId}`,
+        `http://localhost:5000/proveedor/pedidos/${locationId}`,
         {
           headers: { 
             'Authorization': `Bearer ${userData.token}`,
@@ -47,51 +39,54 @@ const InvoiceListProveedor = () => {
         }
       );
       
-      console.log("Respuesta del servidor:", response.data);
-      
       const data = response.data || [];
       
       const formattedPedidos = data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),
-        id: `#${pedido.id}`,
-        solicitadoPor: pedido.solicitadoPor || pedido.nombre || "N/A",
-        fecha: formatDate(pedido.fecha || pedido.ultimaCompra),
-        fechaEntrega: pedido.fechaEntrega ? formatDate(pedido.fechaEntrega) : '-',
-        total: pedido.total || pedido.precioProveedor || 0,
-        estatus: pedido.estado || "Activo"
+        id: pedido.ID,
+        solicitadoPor: pedido.SolicitadoPor,
+        fechaCreacion: formatDate(pedido.FechaCreacion),
+        fechaEntrega: formatDate(pedido.FechaEntrega),
+        cantidad: pedido.Total,
+        estado: pedido.Estado,
+        // Nuevos campos
+        cantidadProductos: pedido.CantidadProductos || 0,
+        precioVenta: parseFloat(pedido.PrecioVenta || 0).toFixed(2),
+        metodoPago: pedido.MetodoPago || 'N/A',
+        descripcion: pedido.Descripcion || ''
       }));
       
       setPedidos(formattedPedidos);
       
     } catch (error) {
       console.error("Error al obtener los pedidos:", error);
-      
-      let errorMessage = "No se pudieron cargar los pedidos";
-      
-      if (error.response?.status === 401) {
-        errorMessage = "Sesión expirada. Por favor, inicia sesión nuevamente.";
-        document.cookie = 'UserData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      } else if (error.message.includes("Location ID")) {
-        errorMessage = "No se pudo identificar la ubicación del proveedor";
-      } else if (error.message.includes("Token") || error.message.includes("usuario")) {
-        errorMessage = "Error de autenticación. Por favor, inicia sesión nuevamente.";
-        document.cookie = 'UserData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      }
-      
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: errorMessage
-      });
-      
-      setPedidos([]);
+      handleError(error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleError = (error) => {
+    let errorMessage = "No se pudieron cargar los pedidos";
+    
+    if (error.response?.status === 401) {
+      errorMessage = "Sesión expirada. Por favor, inicia sesión nuevamente.";
+      document.cookie = 'UserData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    } else if (error.message.includes("Location ID")) {
+      errorMessage = "No se pudo identificar la ubicación del proveedor";
+    }
+    
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: errorMessage
+    });
+    
+    setPedidos([]);
+  };
+
   const formatDate = (dateString) => {
-    if (!dateString) return "";
+    if (!dateString) return "Pendiente";
     const date = new Date(dateString);
     const day = date.getDate();
     const month = date.getMonth();
@@ -100,11 +95,26 @@ const InvoiceListProveedor = () => {
     return `${day} ${months[month]} ${year}`;
   };
 
-  // CORREGIDO: Verificar que pedidos existe y es array antes de filtrar
+  const getEstadoClass = (estado) => {
+    switch (estado?.toLowerCase()) {
+      case 'completado':
+        return 'text-success';
+      case 'pendiente':
+        return 'text-warning';
+      case 'en reparto':
+        return 'text-primary';
+      case 'cancelado':
+        return 'text-danger';
+      default:
+        return '';
+    }
+  };
+
   const pedidosFiltrados = Array.isArray(pedidos) ? pedidos.filter(pedido => {
     const searchLower = searchTerm.toLowerCase();
-    return (pedido.solicitadoPor || "").toLowerCase().includes(searchLower) || 
-           (pedido.id || "").toLowerCase().includes(searchLower);
+    return pedido.solicitadoPor?.toLowerCase().includes(searchLower) || 
+           pedido.id?.toString().includes(searchLower) ||
+           pedido.estado?.toLowerCase().includes(searchLower);
   }) : [];
 
   return (
@@ -119,7 +129,7 @@ const InvoiceListProveedor = () => {
               type='text'
               name='search'
               className='form-control form-control-sm w-auto'
-              placeholder='Buscar por solicitante o ID'
+              placeholder='Buscar por cliente o ID'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -142,52 +152,55 @@ const InvoiceListProveedor = () => {
             <thead>
               <tr>
                 <th>Número</th>
-                <th>ID</th>
-                <th>Solicitado Por</th>
-                <th>Fecha Solicitud</th>
+                <th>ID Pedido</th>
+                <th>Cliente</th>
+                <th>Fecha Pedido</th>
                 <th>Fecha Entrega</th>
-                <th>Total</th>
+                <th>Cantidad Productos</th>
+                <th>Precio Total</th>
+                <th>Método Pago</th>
                 <th>Estado</th>
+                <th>Descripción</th>
               </tr>
             </thead>
             <tbody>
               {pedidosFiltrados.length > 0 ? (
-                pedidosFiltrados.map((pedido, idx) => (
-                  <tr key={`pedido-${pedido.id}-${idx}`}>
+                pedidosFiltrados.map((pedido) => (
+                  <tr key={`pedido-${pedido.id}`}>
                     <td>{pedido.numero}</td>
-                    <td>
-                      <Link 
-                        to={`/pedidos/${pedido.id.replace("#", "")}`} 
-                        className='text-primary-600'
-                      >
-                        {pedido.id}
-                      </Link>
-                    </td>
-                    <td>
-                      <h6 className='text-md mb-0 fw-medium'>
-                        {pedido.solicitadoPor}
-                      </h6>
-                    </td>
-                    <td>{pedido.fecha}</td>
+                    <td>#{pedido.id}</td>
+                    <td>{pedido.solicitadoPor}</td>
+                    <td>{pedido.fechaCreacion}</td>
                     <td>{pedido.fechaEntrega}</td>
-                    <td>${pedido.total}</td>
+                    <td>{pedido.cantidadProductos}</td>
+                    <td>${pedido.cantidad}</td>
+                    <td>{pedido.metodoPago}</td>
+                    <td className={getEstadoClass(pedido.estado)}>
+                      {pedido.estado}
+                    </td>
                     <td>
-                      <span className={`px-24 py-4 rounded-pill fw-medium text-sm ${
-                        pedido.estatus === 'Completado' ? 'bg-success-focus text-success-main' : 
-                        pedido.estatus === 'Rechazado' ? 'bg-danger-focus text-danger-main' :
-                        'bg-warning-focus text-warning-main'
-                      }`}>
-                        {pedido.estatus}
-                      </span>
+                      <button 
+                        className="btn btn-sm btn-outline-info"
+                        title="Ver detalles"
+                        onClick={() => {
+                          Swal.fire({
+                            title: `Detalles del Pedido #${pedido.id}`,
+                            text: pedido.descripcion || 'Sin descripción disponible',
+                            icon: 'info'
+                          });
+                        }}
+                      >
+                        <Icon icon="ion:information-circle-outline" />
+                      </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center py-4">
+                  <td colSpan="10" className="text-center py-4">
                     {searchTerm ? 
                       `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
-                      "No hay pedidos en el historial"
+                      "No hay pedidos registrados"
                     }
                   </td>
                 </tr>

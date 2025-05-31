@@ -1,22 +1,53 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { useState } from "react";
 
 const UserMenu = ({ name = "Usuario", role = "Invitado", profileImage = "assets/images/user.png", onClose }) => {
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return; 
+    
+    setIsLoggingOut(true);
+    
     try {
       const response = await fetch("http://localhost:5000/users/logoutUser", {
         method: "POST",
-        credentials: "include", // Ensures cookies are included in the request
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (!response.ok) throw new Error("Logout failed");
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Logout exitoso:", data.message);
+      } else {
+        console.warn("Respuesta de logout no exitosa, pero continuando con limpieza local");
+      }
 
-      navigate("/"); // Redirect to login or home page
+      if (onClose) {
+        onClose();
+      }
+      window.location.href = "/";
+      
     } catch (error) {
-      console.error("Error during logout:", error);
-      alert("No se pudo cerrar sesión.");
+      console.error("Error durante logout:", error);
+      
+      // Incluso si hay error, intentar limpiar localmente
+      if (onClose) {
+        onClose();
+      }
+      
+      // Mostrar mensaje al usuario pero aún así redirigir
+      alert("Hubo un problema cerrando sesión, pero serás redirigido.");
+      
+      // Redirigir de todos modos para limpiar estado
+      window.location.href = "/signin";
+      
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -42,7 +73,13 @@ const UserMenu = ({ name = "Usuario", role = "Invitado", profileImage = "assets/
                 <h6 className="text-lg text-primary-light fw-semibold mb-2">{name}</h6>
                 <span className="text-secondary-light fw-medium text-sm">{role}</span>
               </div>
-              <button  id="tache" type="button" className="hover-text-danger" onClick={onClose}>
+              <button 
+                id="tache" 
+                type="button" 
+                className="hover-text-danger" 
+                onClick={onClose}
+                disabled={isLoggingOut}
+              >
                 <Icon icon="radix-icons:cross-1" className="icon text-xl" />
               </button>
             </div>
@@ -51,7 +88,7 @@ const UserMenu = ({ name = "Usuario", role = "Invitado", profileImage = "assets/
                 <Link
                   id="userMenuProfile"
                   className="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3"
-                  to="#"
+                  to="/profile"
                 >
                   <Icon icon="solar:user-linear" className="icon text-xl" /> Mi Perfil
                 </Link>
@@ -59,10 +96,23 @@ const UserMenu = ({ name = "Usuario", role = "Invitado", profileImage = "assets/
               <li>
                 <button
                   id="logoutButton"
-                  className="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3 w-100 border-0 bg-transparent"
+                  className={`dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3 w-100 border-0 bg-transparent ${isLoggingOut ? 'opacity-50' : ''}`}
                   onClick={handleLogout}
+                  disabled={isLoggingOut}
                 >
-                  <Icon icon="lucide:power" className="icon text-xl" /> Cerrar Sesión
+                  {isLoggingOut ? (
+                    <>
+                      <div className="spinner-border spinner-border-sm me-2" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                      Cerrando...
+                    </>
+                  ) : (
+                    <>
+                      <Icon icon="lucide:power" className="icon text-xl" /> 
+                      Cerrar Sesión
+                    </>
+                  )}
                 </button>
               </li>
             </ul>

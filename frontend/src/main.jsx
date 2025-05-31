@@ -1,3 +1,8 @@
+// Polyfill para global (para fundamental-react y otras libs)
+if (typeof global === "undefined") {
+  window.global = window;
+}
+
 import { createRoot } from "react-dom/client";
 import "react-quill/dist/quill.snow.css";
 import "jsvectormap/dist/css/jsvectormap.css";

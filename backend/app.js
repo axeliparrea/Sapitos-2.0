@@ -28,6 +28,7 @@ app.use(cors(corsOptions));
 app.use("/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs)); 
 app.use("/users/getUsers", userRoutes); 
+app.use("/users/logoutUser", userRoutes);
 
 
 // inventory routes

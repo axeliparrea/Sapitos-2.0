@@ -1,8 +1,10 @@
 const express = require("express");
-const { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser, getUserByEmail } = require("../controllers/userController");
+const { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser, getUserByEmail, getProfileImage, updateProfileImage} = require("../controllers/userController");
 const router = express.Router();
 
-const { auth } = require('../middleware/auth'); // Import the middleware
+const { auth } = require('../middleware/auth');
+const fileUpload = require("express-fileupload");
+router.use(fileUpload());
 
 /**
  * @swagger
@@ -146,7 +148,8 @@ router.post("/login", loginUser);
  *       500:
  *         description: Error del servidor
  */
-router.get("/getUsers", getUsers);
+router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
+// router.get("/getUsers", getUsers);
 
 /**
  * @swagger
@@ -202,7 +205,8 @@ router.post("/logoutUser", logoutUser);
  *       500:
  *         description: Server error
  */
-router.delete("/deleteUser", deleteUser);
+router.delete("/deleteUser", auth(["admin"]), deleteUser);
+// router.delete("/deleteUser", deleteUser);
 
 /**
  * @swagger
@@ -297,6 +301,114 @@ router.put("/updateUser", updateUser);
  */
 router.get("/:correo", getUserByEmail);
 
-router.get("/getSession", getSession);
+/**
+ * @swagger
+ * /users/updateProfileImage:
+ *   post:
+ *     summary: Update user profile image
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - correo
+ *               - imageData
+ *             properties:
+ *               correo:
+ *                 type: string
+ *                 description: Email del usuario
+ *               imageData:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: Array de bytes de la imagen
+ *               contentType:
+ *                 type: string
+ *                 description: Tipo de contenido de la imagen
+ *     responses:
+ *       200:
+ *         description: Image updated successfully
+ *       400:
+ *         description: Missing required data
+ *       500:
+ *         description: Server error
+ */
+router.post("/updateProfileImage", updateProfileImage);
+
+/**
+ * @swagger
+ * /users/{correo}:
+ *   get:
+ *     summary: Get user by email
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: correo
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email del usuario
+ *     responses:
+ *       200:
+ *         description: Usuario encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 correo:
+ *                   type: string
+ *                 nombre:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 rol:
+ *                   type: string
+ *                 rfc:
+ *                   type: string
+ *                 fechaEmpiezo:
+ *                   type: string
+ *                   format: date
+ *                 locationId:
+ *                   type: integer
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/:correo", getUserByEmail);
+
+/**
+ * @swagger
+ * /users/{correo}/profileImage:
+ *   get:
+ *     summary: Get user profile image
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: correo
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email del usuario
+ *     responses:
+ *       200:
+ *         description: Imagen de perfil del usuario
+ *         content:
+ *           image/jpeg:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Usuario o imagen no encontrada
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/:correo/profileImage", getProfileImage);
 
 module.exports = router;

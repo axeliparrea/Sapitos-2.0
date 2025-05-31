@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
 import SignInPage from "./pages/SignInPage";
-
+import Profile from "./components/UserPerfil";
 import HomeAdmin from "./pages/admin/Home";
 import InventarioAdmin from "./pages/admin/Inventario";
 
@@ -29,8 +29,8 @@ import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
 
 const App = () => {
-  const [role, setRole] = useState(null); // Initially null
-  const [loading, setLoading] = useState(true); // Loading state
+  const [role, setRole] = useState(null); 
+  const [loading, setLoading] = useState(true); 
   useEffect(() => {
     const fetchSession = async () => {
       try {
@@ -94,6 +94,20 @@ const App = () => {
             <Navigate to="/" />
           } 
         />
+
+        <Route 
+          path="/profile" 
+          element={
+            role ? <Profile /> : <Navigate to="/" />
+          } 
+        />
+        <Route 
+          path="/profile/:id" 
+          element={
+            role ? <Profile /> : <Navigate to="/" />
+          } 
+        />
+        
         <Route 
           path="/ordenes-proveedores" 
           element={
@@ -173,6 +187,7 @@ const App = () => {
           } 
         />
       </Routes> 
+
     </BrowserRouter>
 
   );
