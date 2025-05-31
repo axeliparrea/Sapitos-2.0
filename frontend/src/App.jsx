@@ -95,6 +95,15 @@ const App = () => {
           } 
         />
         <Route 
+          path="/preview" 
+          element={
+            role === "admin" ? <InvoicePreviewPage /> :
+            role === "dueno" ? <InvoicePreviewPage/> :
+            role === "cliente" ? <InvoicePreviewPage/> :
+            <Navigate to="/" />
+          } 
+        />
+        <Route 
           path="/ordenes-proveedores" 
           element={
             role === "dueno" ? <InvoiceProveedorPage/> :
