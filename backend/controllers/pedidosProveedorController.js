@@ -166,12 +166,11 @@ const aceptarPedido = async (req, res) => {
         console.error("Error al verificar pedido:", err);
         return res.status(500).json({ error: "Error al verificar el pedido" });
       }
-      
       if (!result || result.length === 0) {
         return res.status(404).json({ error: "Pedido no encontrado" });
       }
-      
-      if (result[0].Estado !== 'Pendiente') {
+      console.log("Estado actual del pedido:", result[0].ESTADO);
+      if (result[0].ESTADO !== 'Pendiente') {
         return res.status(400).json({ error: "Solo se pueden aceptar pedidos en estado Pendiente" });
       }
 

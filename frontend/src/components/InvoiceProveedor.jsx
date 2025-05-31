@@ -14,40 +14,28 @@ const InvoiceProveedor = () => {
     fetchPedidos();
   }, []);
 
+  // Nueva función usando fetch y await
   const fetchPedidos = async () => {
     try {
       setLoading(true);
-      
       const token = localStorage.getItem('token');
-      
-      if (!token) {
-        throw new Error("Token no encontrado");
-      }
-
-      console.log("Token payload:", JSON.parse(atob(token.split('.')[1])));
-      
+      if (!token) throw new Error("Token no encontrado");
       const payload = JSON.parse(atob(token.split('.')[1]));
       const locationId = payload.locationId;
-      
-      if (!locationId) {
-        throw new Error("Location ID no encontrado en el token");
-      }
-
-      console.log("Haciendo petición a:", `http://localhost:5000/proveedor/pedidos/${locationId}`);
-
-      const response = await axios.get(
-        `http://localhost:5000/proveedor/pedidos/${locationId}`,
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+      if (!locationId) throw new Error("Location ID no encontrado en el token");
+      const url = `http://localhost:5000/proveedor/pedidos/${locationId}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      );
-
-      console.log("Respuesta del servidor:", response.data);
-      const data = response.data || [];
-      
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'No se pudieron cargar los pedidos');
+      }
+      const data = await response.json();
       const formattedPedidos = data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),
         id: pedido.id,
@@ -62,36 +50,14 @@ const InvoiceProveedor = () => {
         tipoOrden: pedido.tipoOrden,
         descuento: pedido.descuento || 0
       }));
-      
-      console.log("Pedidos formateados:", formattedPedidos);
       setPedidos(formattedPedidos);
-      
     } catch (error) {
       console.error("Error al obtener los pedidos:", error);
-      console.error("Respuesta completa del error:", error.response);
-      
-      let errorMessage = "No se pudieron cargar los pedidos";
-      
-      if (error.response?.status === 404) {
-        errorMessage = "Endpoint no encontrado. Verifica que el servidor esté configurado correctamente.";
-      } else if (error.response?.status === 401) {
-        errorMessage = "Sesión expirada. Por favor, inicia sesión nuevamente.";
-        localStorage.removeItem('token');
-      } else if (error.message.includes("Token")) {
-        errorMessage = "Error de autenticación. Por favor, inicia sesión nuevamente.";
-        localStorage.removeItem('token');
-      } else if (error.message.includes("Location ID")) {
-        errorMessage = "No se pudo identificar la ubicación del proveedor";
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      }
-      
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: errorMessage
+        text: error.message || "No se pudieron cargar los pedidos"
       });
-      
       setPedidos([]);
     } finally {
       setLoading(false);
