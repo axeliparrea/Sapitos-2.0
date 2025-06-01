@@ -8,6 +8,7 @@ const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
 const ordenesRoutes = require("./routes/ordenes");
+const mlRoutes = require("./routes/ml");
 
 const app = express();
 
@@ -27,6 +28,8 @@ app.use("/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs)); 
 app.use("users/getUsers", userRoutes); 
 
+// ML model routes
+app.use("/ml", mlRoutes);
 
 // inventory routes
 app.use("/inventory", inventoryRoutes);
