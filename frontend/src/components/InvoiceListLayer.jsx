@@ -291,7 +291,7 @@ const InvoiceListLayer = () => {
                       </span>
                     </td>
                     <td>
-                      <Link to={`/pedido/${pedido.id.replace("#", "")}`} className='w-32-px h-32-px me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'>
+                      <Link to={`/preview/${pedido.id.replace("#", "")}`} className='w-32-px h-32-px me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'>
                         <Icon icon='iconamoon:eye-light' />
                       </Link>
                       <button 
