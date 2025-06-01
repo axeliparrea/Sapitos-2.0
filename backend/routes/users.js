@@ -148,8 +148,8 @@ router.post("/login", loginUser);
  *       500:
  *         description: Error del servidor
  */
-router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
-// router.get("/getUsers", getUsers);
+// router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
+router.get("/getUsers", getUsers);
 
 /**
  * @swagger
@@ -410,5 +410,7 @@ router.get("/:correo", getUserByEmail);
  *         description: Error del servidor
  */
 router.get("/:correo/profileImage", getProfileImage);
+
+
 
 module.exports = router;
