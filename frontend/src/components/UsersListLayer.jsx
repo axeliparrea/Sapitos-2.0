@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { Link, useNavigate } from "react-router-dom"; // IMPORTANTE: useNavigate agregado
+import { Link, useNavigate } from "react-router-dom"; 
 import axios from "axios";
 
 const UsersListLayer = () => {
@@ -20,11 +20,19 @@ const UsersListLayer = () => {
   const fetchUsuarios = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/users/getUsers');
+      const response = await axios.get('http://localhost:5000/users/getUsers', {
+        withCredentials: true // Asegura que la cookie se envía
+      });
       setUsuarios(response.data || []);
       setUsuariosFiltrados(response.data || []);
     } catch (error) {
-      console.error("Error al obtener usuarios:", error);
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        alert("No autorizado. Por favor inicia sesión como administrador o dueño.");
+        window.location.href = "/";
+      } else {
+        console.error("Error al obtener usuarios:", error);
+        alert("Error al obtener usuarios: " + (error.response?.data?.error || error.message));
+      }
     } finally {
       setLoading(false);
     }

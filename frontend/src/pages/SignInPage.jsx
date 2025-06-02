@@ -8,10 +8,13 @@ const SignInPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const hasCheckedSession = useRef(false)
+  const hasCheckedSession = useRef(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    if (hasCheckedSession.current) return; 
+    if (hasCheckedSession.current) return;
     hasCheckedSession.current = true;
 
     const checkSession = async () => {
@@ -20,71 +23,132 @@ const SignInPage = () => {
           credentials: "include",
         });
 
-        if (!response.ok) return;
+        if (!response.ok) {
+          await clearInvalidSession();
+          setCheckingSession(false);
+          return;
+        }
 
         const data = await response.json();
-        const token = data.token;
-        if (!token) return;
+        let userRole;
+        if (data.usuario && data.usuario.rol) {
+          userRole = data.usuario.rol;
+        } else if (data.token) {
+          try {
+            const decoded = jwtDecode(data.token);
+            userRole = decoded.rol; 
+          } catch {
+            await clearInvalidSession();
+            setCheckingSession(false);
+            return;
+          }
+        } else {
+          setCheckingSession(false);
+          return;
+        }
 
-        const decoded = jwtDecode(token);
-        //console.log("Usuario ya autenticado:", decoded);
-
-        const userRole = decoded.ROL;
-        if (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor" ) {
+        if (
+          (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor") &&
+          window.location.pathname !== "/dashboard"
+        ) {
           navigate("/dashboard");
         }
+      } catch {
+        await clearInvalidSession();
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+
+    // Función para limpiar sesión inválida
+    const clearInvalidSession = async () => {
+      try {
+        await fetch("http://localhost:5000/users/logoutUser", {
+          method: "POST",
+          credentials: "include",
+        });
       } catch (error) {
-        console.error("No se pudo verificar la sesión:", error);
+        console.error("Error limpiando sesión:", error);
       }
     };
 
     checkSession();
-  }, [navigate]); 
+  }, [navigate]);
 
   const handleLogin = async (event) => {
     event.preventDefault();
+    setIsLoading(true);
+    setError('');
 
     try {
+      // Primero limpiar cualquier sesión previa
+      await fetch("http://localhost:5000/users/logoutUser", {
+        method: "POST",
+        credentials: "include",
+      });
+
       const response = await fetch("http://localhost:5000/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
       });
+      
       const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error(data.error || "Error en el inicio de sesión");
       }
 
-      window.location.reload(); 
+      if (!data.usuario) {
+        throw new Error("Datos de sesión incompletos");
+      }
+
+      console.log("Login exitoso:", data.usuario);
+      
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 100);
+      
     } catch (error) {
       console.error("Error:", error);
-      alert(error.message || "Login failed");
+      setError(error.message || "Error en el inicio de sesión");
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <span>Cargando...</span>
+      </div>
+    );
+  }
 
   return (
     <section className='auth bg-base d-flex flex-wrap'>
       <div className='auth-left d-lg-block d-none'>
         <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
-          <img src='assets/images/auth/auth-img.png' alt='WowDash React Vite' />
+          <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
         </div>
       </div>
       <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center'>
         <div className='max-w-464-px mx-auto w-100'>
           <div>
-            <Link to='/index' className='mb-40 max-w-290-px'>
-              <img src='assets/images/logo.png' alt='WowDash React Vite' />
+            <Link to='/' className='mb-40 max-w-290-px d-block'>
+              <img src='assets/images/logo.png' alt='Logo' className='img-fluid' />
             </Link>
             <h4 className='mb-12'>Iniciar sesión</h4>
             <p className='mb-32 text-secondary-light text-lg'>
               Por favor ingrese sus datos
             </p>
           </div>
-          <form onSubmit={handleLogin}>
+          
+          <form onSubmit={handleLogin} className='needs-validation' noValidate>
             <div className='icon-field mb-16'>
               <span className='icon top-50 translate-middle-y'>
-                <Icon icon='mage:email' />
+                <Icon icon='mdi:email-outline' className='text-muted' />
               </span>
               <input
                 type='email'
@@ -94,12 +158,14 @@ const SignInPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete='email'
               />
             </div>
+
             <div className='position-relative mb-20'>
               <div className='icon-field'>
                 <span className='icon top-50 translate-middle-y'>
-                  <Icon icon='solar:lock-password-outline' />
+                  <Icon icon='solar:lock-password-outline' className='text-muted' />
                 </span>
                 <input
                   type='password'
@@ -109,15 +175,38 @@ const SignInPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete='current-password'
                 />
               </div>
             </div>
             
-            <button id='loginButton' type='submit'
-              className='btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32'>
-              Iniciar sesión
-            </button>
-    
+            <div className='d-grid gap-3'>
+              <button 
+                id='loginButton' 
+                type='submit'
+                className='btn btn-primary h-48-px d-flex align-items-center justify-content-center radius-12'
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>Procesando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon icon="solar:login-2-outline" className="me-2" />
+                    <span>Iniciar sesión</span>
+                  </>
+                )}
+              </button>
+
+              {error && (
+                <div className="alert alert-danger d-flex align-items-center p-3 mb-0">
+                  <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
+                  <div className="text-sm">{error}</div>
+                </div>
+              )}
+            </div>
           </form>
         </div>
       </div>

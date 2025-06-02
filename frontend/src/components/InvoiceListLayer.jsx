@@ -23,10 +23,12 @@ const InvoiceListLayer = () => {
         console.error("La respuesta no es un array:", response.data);
         const data = response.data.formatted || response.data.pedidos || [];
         
-        const formattedPedidos = data.map((pedido, index) => ({
+        const formattedPedidos = response.data.map((pedido, index) => ({
           numero: String(index + 1).padStart(2, '0'),
           id: `#${pedido.id}`,
-          proveedor: pedido.creadaPor,
+          proveedor: pedido.organizacion, 
+          solicitadoPor: pedido.creadoPorNombre, 
+          email: pedido.creadaPor, 
           fecha: formatDate(pedido.fechaCreacion),
           cantidad: pedido.total,
           estatus: pedido.estatus
@@ -121,47 +123,83 @@ const InvoiceListLayer = () => {
       }
     }
   };
-
   const enviarAInventario = async (pedido) => {
     if (pedido.estatus === "Completado") {
       try {
-        await axios.post("/inventario/agregar", {
-          proveedor: pedido.proveedor,
-          cantidad: pedido.cantidad,
-          fechaRecepcion: new Date().toISOString(),
-          pedidoId: pedido.id.replace("#", "")
-        });
-        
+
         if (typeof Swal !== 'undefined') {
+          const response = await axios.put(`http://localhost:5000/pedido/${pedido.id.replace("#", "")}/inventario`);
+            
           Swal.fire({
             icon: "success",
             title: "Éxito",
-            text: `Pedido ${pedido.id} enviado al inventario correctamente`
+            text: response.data.message || `Pedido ${pedido.id} enviado al inventario principal correctamente`
           });
+          fetchPedidos(); 
         } else {
-          alert(`Pedido ${pedido.id} enviado al inventario correctamente`);
+          const response = await axios.put(`http://localhost:5000/pedido/${pedido.id.replace("#", "")}/inventario`);
+          alert(response.data.message || `Pedido ${pedido.id} enviado al inventario principal correctamente`);
+          fetchPedidos();
         }
       } catch (error) {
         console.error("Error al enviar al inventario:", error);
+        let errorMessage = "No se pudo enviar el pedido al inventario";
+        
+        if (error.response && error.response.data && error.response.data.error) {
+          errorMessage += `: ${error.response.data.error}`;
+        } else if (error.response && error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
+
+
         if (typeof Swal !== 'undefined') {
           Swal.fire({
             icon: "error",
             title: "Error",
-            text: "No se pudo enviar el pedido al inventario"
+            text: errorMessage
           });
         } else {
-          alert("Error: No se pudo enviar el pedido al inventario");
+          alert(errorMessage);
         }
       }
     } else {
+      const message = "Solo los pedidos con estatus \'Completado\' pueden enviarse al inventario";
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({ icon: "info", title: "Información", text: message });
+      } else {
+        alert(message);
+      }
+    }
+  };
+
+  const marcarComoCompletado = async (pedido) => {
+    try {
+      const pedidoId = pedido.id.replace('#', '');
+      
+      await axios.patch(`http://localhost:5000/pedido/${pedidoId}/estatus`, {
+        estatus: "Completado"
+      });
+      
       if (typeof Swal !== 'undefined') {
         Swal.fire({
-          icon: "warning",
-          title: "Acción no permitida",
-          text: "Solo los pedidos con estatus 'Completado' pueden enviarse al inventario"
+          icon: 'success',
+          title: 'Pedido completado',
+          text: `El pedido ${pedido.id} ha sido marcado como completado.`
         });
       } else {
-        alert("Solo los pedidos con estatus 'Completado' pueden enviarse al inventario");
+        alert(`El pedido ${pedido.id} ha sido marcado como completado.`);
+      }
+      fetchPedidos();
+    } catch (error) {
+      console.error('Error al marcar como completado:', error);
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo marcar el pedido como completado.'
+        });
+      } else {
+        alert('No se pudo marcar el pedido como completado.');
       }
     }
   };
@@ -253,7 +291,7 @@ const InvoiceListLayer = () => {
                       </span>
                     </td>
                     <td>
-                      <Link to={`/pedido/${pedido.id.replace("#", "")}`} className='w-32-px h-32-px me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'>
+                      <Link to={`/detalle-pedido/${pedido.id.replace("#", "")}`} className='w-32-px h-32-px me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center' title="Ver Detalle">
                         <Icon icon='iconamoon:eye-light' />
                       </Link>
                       <button 
@@ -263,6 +301,16 @@ const InvoiceListLayer = () => {
                       >
                         <Icon icon='mingcute:delete-2-line' />
                       </button>
+                      {pedido.estatus === 'En Reparto' && (
+                        <button
+                          onClick={() => marcarComoCompletado(pedido)}
+                          className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+                          style={{ border: 'none' }}
+                          title="Marcar como completado"
+                        >
+                          <Icon icon='mdi:check-bold' />
+                        </button>
+                      )}
                       {pedido.estatus === 'Completado' && (
                         <button 
                           onClick={() => enviarAInventario(pedido)}
