@@ -688,6 +688,8 @@ const getPedidosProveedor = async (req, res) => {
   }
 };
 
+
+// invoicePreview
 const getDetallesPedido = async (req, res) => {
   const { id } = req.params;
   
@@ -721,6 +723,8 @@ const getDetallesPedido = async (req, res) => {
     res.status(500).json({ error: "Error al obtener detalles" });
   }
 };
+
+
 
 // Recibir pedido y agregar al inventario (para admin)
 const enviarAInventario = async (req, res) => {

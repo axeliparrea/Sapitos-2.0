@@ -1,10 +1,10 @@
-import MasterLayout from "../components/masterLayout";
-import InvoicePreview from "../components/InvoicePreview";
+import MasterLayout from "../../components/masterLayout";
+import InvoicePreview from "../../components/InvoicePreview"; 
 
 const InvoicePreviewPage = ({ aceptadas }) => {
   return (
     <>
-      <MasterLayout>
+      <MasterLayout role="admin">
         <InvoicePreview/>
       </MasterLayout>
     </>

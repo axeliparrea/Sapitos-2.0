@@ -1,27 +1,121 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 
 const InvoicePreview = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [pedido, setPedido] = useState(null);
+  const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState({ nombre: '', rol: '', email: '' });
 
   useEffect(() => {
-    const fetchPedido = async () => {
+    const fetchSession = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/pedido/${id}`);
-        setPedido(response.data);
+        const response = await fetch('http://localhost:5000/users/getSession', {
+          credentials: 'include' // equivalent to withCredentials: true
+        });
+        
+        const data = await response.json();
+        if (data && data.usuario) {
+          setSession({
+            userId: data.usuario.id,
+            nombre: data.usuario.nombre,
+            email: data.usuario.correo,
+            rol: data.usuario.rol
+          });
+        }
+      } catch (error) {
+        console.error('Error al obtener sesión:', error);
+        setSession(null);
+      }
+    };
+
+    const fetchPedidoDetalles = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        // Fetch order information
+        const pedidoResponse = await fetch(`http://localhost:5000/pedido/${id}/detalles`);
+        const orderData = await pedidoResponse.json();
+        
+        // Fetch product details
+        const productosResponse = await fetch(`http://localhost:5000/pedido/${id}/detalles`);
+        const productosData = await productosResponse.json();
+        
+        const productosFormateados = productosData.map(producto => ({
+          id: producto.ID,
+          nombre: producto.NOMBRE,
+          categoria: producto.CATEGORIA,
+          cantidad: parseInt(producto.CANTIDAD),
+          precioCompra: parseFloat(producto.PRECIOUNITARIO),
+          total: parseFloat(producto.TOTAL)
+        }));
+        
+        // Use actual data from the API or fallback to defaults
+        const orderDetails = {
+          id: id,
+          fechaCreacion: orderData.fechaCreacion || new Date(),
+          creadoPor: orderData.creadoPorNombre || orderData.solicitadoPor || "Usuario Admin",
+          correo: orderData.creadaPor || orderData.email || "admin@ejemplo.com",
+          organizacion: orderData.organizacion || "Sapitos 2.0",
+          proveedor: { nombre: orderData.proveedor || "Proveedor" },
+          descuentoAplicado: orderData.descuentoAplicado || 0,
+          total: orderData.total || productosFormateados.reduce((acc, p) => acc + p.total, 0)
+        };
+
+        setProductos(productosFormateados);
+        setPedido(orderDetails);
       } catch (error) {
         console.error("Error al obtener el pedido:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchPedido();
+
+    fetchSession();
+    fetchPedidoDetalles();
   }, [id]);
+
+  const exportToCSV = () => {
+    if (!pedido || !productos.length) return;
+
+    const headers = ['#', 'Producto', 'Categoría', 'Precio', 'Cantidad', 'Subtotal'];
+    const data = productos.map((prod, idx) => [
+      idx + 1,
+      prod.nombre,
+      prod.categoria,
+      prod.precioCompra.toFixed(2),
+      prod.cantidad,
+      (prod.precioCompra * prod.cantidad).toFixed(2)
+    ]);
+
+    const subtotal = productos.reduce((acc, p) => acc + (p.precioCompra * p.cantidad), 0);
+    
+    data.push(['', '', '', '', 'Subtotal:', subtotal.toFixed(2)]);
+    data.push(['', '', '', '', 'Descuento:', pedido.descuentoAplicado.toFixed(2)]);
+    data.push(['', '', '', '', 'Impuesto:', '0.00']);
+    data.push(['', '', '', '', 'Total:', pedido.total.toFixed(2)]);
+
+    let csvContent = headers.join(',') + '\n';
+    data.forEach(row => {
+      csvContent += row.join(',') + '\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `pedido-${pedido.id}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (loading) {
     return (
@@ -32,89 +126,134 @@ const InvoicePreview = () => {
     );
   }
 
-  const subtotal = pedido.productos.reduce((acc, p) => acc + p.precioCompra * p.cantidad, 0);
+  if (!pedido || !productos || productos.length === 0) {
+    return (
+      <div className='card-body text-center py-5'>
+        <div className="d-flex align-items-center mb-3">
+          <button
+            onClick={() => navigate(-1)} 
+            className='btn btn-light d-flex align-items-center'
+          >
+            <Icon icon='mdi:arrow-left' className='me-2' />
+            Regresar
+          </button>
+        </div>
+        <p>No se encontraron datos del pedido.</p>
+      </div>
+    );
+  }
+
+  const subtotal = productos.reduce((acc, p) => acc + (p.precioCompra * p.cantidad), 0);
 
   return (
-    <div className='card'>
-      <div className='card-body py-40'>
-        <div className='row justify-content-center'>
-          <div className='col-lg-8'>
-            <div className='shadow-4 border radius-8'>
-              <div className='p-20 d-flex flex-wrap justify-content-between gap-3 border-bottom'>
-                <div>
-                  <h3 className='text-xl'>Pedido #{pedido.id}</h3>
-                  <p className='mb-1 text-sm'>Fecha: {new Date(pedido.fechaCreacion).toLocaleDateString("es-MX")}</p>
-                  <p className='mb-1 text-sm'>Solicitado por: {pedido.creadoPor}</p>
-                  <p className='mb-0 text-sm'>Email: {pedido.correo}</p>
-                </div>
-                <div>
-                  <h6 className='mb-0'>Proveedor</h6>
-                  <p className='text-sm mb-0'>{pedido.proveedor.nombre}</p>
-                </div>
-              </div>
-              <div className='py-28 px-20'>
-                <div className='table-responsive scroll-sm'>
-                  <table className='table bordered-table text-sm'>
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Producto</th>
-                        <th>Categoría</th>
-                        <th>Precio</th>
-                        <th>Cantidad</th>
-                        <th className='text-end'>Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pedido.productos.map((prod, idx) => (
-                        <tr key={idx}>
-                          <td>{idx + 1}</td>
-                          <td>{prod.nombre}</td>
-                          <td>{prod.categoria}</td>
-                          <td>${prod.precioCompra.toFixed(2)}</td>
-                          <td>{prod.cantidad}</td>
-                          <td className='text-end'>${(prod.precioCompra * prod.cantidad).toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className='d-flex flex-wrap justify-content-between gap-3 mt-4'>
+    <>
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <button
+          onClick={() => navigate(-1)} 
+          className='btn btn-light d-flex align-items-center'
+        >
+          <Icon icon='mdi:arrow-left' className='me-2' />
+          Regresar
+        </button>
+        <div className="d-flex align-items-center gap-3">
+          <div className="text-end">
+            <p className="mb-0 small">Visualizado por: {session.nombre}</p>
+            <p className="mb-0 small text-muted">Rol: {session.rol}</p>
+          </div>
+          <button
+            onClick={exportToCSV}
+            className='btn btn-success d-flex align-items-center'
+          >
+            <Icon icon='mdi:file-export-outline' className='me-2' />
+            Exportar CSV
+          </button>
+        </div>
+      </div>
+      <div className='card'>
+        <div className='card-body py-40'>
+          <div className='row justify-content-center'>
+            <div className='col-lg-8'>
+              <div className='shadow-4 border radius-8'>
+                <div className='p-20 d-flex flex-wrap justify-content-between gap-3 border-bottom'>
                   <div>
-                    <p className='text-sm mb-0'>Gracias por tu pedido</p>
+                    <h3 className='text-xl'>Pedido #{pedido.id}</h3>
+                    <p className='mb-1 text-sm'>Fecha: {new Date(pedido.fechaCreacion).toLocaleDateString("es-MX")}</p>
+                    <div className='mb-2'>
+                      <p className='mb-1 fw-medium text-sm'>Información del Solicitante:</p>
+                      <p className='mb-1 text-sm'>Nombre: {pedido.creadoPor}</p>
+                      <p className='mb-0 text-sm'>Email: {pedido.correo}</p>
+                      <p className='mb-0 text-sm'>Organización: {pedido.organizacion}</p>
+                    </div>
                   </div>
                   <div>
-                    <table className='text-sm'>
+                    <h6 className='mb-0'>Proveedor</h6>
+                    <p className='text-sm mb-0'>{pedido.proveedor.nombre}</p>
+                  </div>
+                </div>
+                <div className='py-28 px-20'>
+                  <div className='table-responsive scroll-sm'>
+                    <table className='table bordered-table text-sm'>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Producto</th>
+                          <th>Categoría</th>
+                          <th>Precio</th>
+                          <th>Cantidad</th>
+                          <th className='text-end'>Subtotal</th>
+                        </tr>
+                      </thead>
                       <tbody>
-                        <tr>
-                          <td className='pe-64'>Subtotal:</td>
-                          <td className='pe-16'>${subtotal.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className='pe-64'>Descuento:</td>
-                          <td className='pe-16'>-${pedido.descuentoAplicado.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className='pe-64 border-bottom pb-4'>Impuesto:</td>
-                          <td className='pe-16 border-bottom pb-4'>$0.00</td>
-                        </tr>
-                        <tr>
-                          <td className='pe-64 pt-4 fw-semibold'>Total:</td>
-                          <td className='pe-16 pt-4 fw-semibold'>${pedido.total.toFixed(2)}</td>
-                        </tr>
+                        {productos.map((prod, idx) => (
+                          <tr key={prod.id || idx}>
+                            <td>{idx + 1}</td>
+                            <td>{prod.nombre}</td>
+                            <td>{prod.categoria}</td>
+                            <td>${prod.precioCompra.toFixed(2)}</td>
+                            <td>{prod.cantidad}</td>
+                            <td className='text-end'>${(prod.precioCompra * prod.cantidad).toFixed(2)}</td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div className='mt-64 text-center'>
-                  <p className='text-secondary-light text-sm fw-semibold'>¡Gracias por tu compra!</p>
+                  <div className='d-flex flex-wrap justify-content-between gap-3 mt-4'>
+                    <div>
+                      <p className='text-sm mb-0'>Gracias por tu pedido</p>
+                    </div>
+                    <div>
+                      <table className='text-sm'>
+                        <tbody>
+                          <tr>
+                            <td className='pe-64'>Subtotal:</td>
+                            <td className='pe-16'>${subtotal.toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td className='pe-64'>Descuento:</td>
+                            <td className='pe-16'>-${pedido.descuentoAplicado.toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td className='pe-64 border-bottom pb-4'>Impuesto:</td>
+                            <td className='pe-16 border-bottom pb-4'>$0.00</td>
+                          </tr>
+                          <tr>
+                            <td className='pe-64 pt-4 fw-semibold'>Total:</td>
+                            <td className='pe-16 pt-4 fw-semibold'>${pedido.total.toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div className='mt-64 text-center'>
+                    <p className='text-secondary-light text-sm fw-semibold'>¡Gracias por tu compra!</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -460,7 +460,42 @@ const updateProfileImage = (req, res) => {
   }
 };
 
+const getLocations = async (req, res) => {
+  try {
+    console.log("getLocations endpoint called"); // Log when the endpoint is hit
 
+    const query = `
+      SELECT Location_ID, Nombre, Tipo
+      FROM Location2
+      ORDER BY Nombre
+    `;
+
+    connection.exec(query, [], (err, result) => {
+      if (err) {
+        console.error("Error al obtener ubicaciones:", err);
+        return res.status(500).json({ error: "Error al obtener ubicaciones" });
+      }
+
+      if (!result || result.length === 0) {
+        console.warn("No locations found in the database");
+        return res.status(404).json({ error: "No se encontraron ubicaciones" });
+      }
+
+      console.log("Query executed successfully, result:", result); // Log the query result
+
+      const locations = result.map(location => ({
+        Location_ID: location.LOCATION_ID,
+        Nombre: location.NOMBRE,
+        Tipo: location.TIPO
+      }));
+
+      res.status(200).json(locations);
+    });
+  } catch (error) {
+    console.error("Error in getLocations:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
 
 module.exports = { 
   registerUser, 
@@ -472,5 +507,6 @@ module.exports = {
   updateUser, 
   getUserByEmail,
   getProfileImage,
-  updateProfileImage
+  updateProfileImage,
+  getLocations
 };

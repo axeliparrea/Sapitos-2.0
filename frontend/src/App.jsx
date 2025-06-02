@@ -19,6 +19,7 @@ import InventarioCliente from "./pages/cliente/Inventario"
 import HomeProveedor from "./pages/proveedor/Home";
 import InvoiceListProveedorPage from "./pages/proveedor/InvoiceListProveedorPage";
 import InvoiceProveedorPage from "./pages/proveedor/InvoiceProveedorPage";
+import InvoicePreviewPage from "./pages/InvoicePreviewPage";
 
 import Pedidos from "./pages/admin/Pedidos"
 
@@ -194,6 +195,16 @@ const App = () => {
             role === "admin" ? <InvoiceAddLayer /> :
             <Navigate to="/" />
           } 
+        />
+
+        <Route
+          path="/detalle-pedido/:id"
+          element={
+            role === "admin" ? <InvoicePreviewPage /> :
+            role === "dueno" ? <InvoicePreviewPage/> :
+            role === "cliente" ? <InvoicePreviewPage/> :
+            <Navigate to="/" />
+          }
         />
       </Routes> 
 

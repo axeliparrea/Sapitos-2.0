@@ -2,15 +2,14 @@ const { connection } = require("../config/db");
 
 const getPedidosPendientesProveedor = async (req, res) => {
   const { locationId } = req.params;
-  
+
   console.log(`=== DEBUG: Iniciando consulta para locationId: ${locationId} ===`);
-  
+
   if (!locationId) {
     return res.status(400).json({ error: "ID de ubicación requerido" });
   }
 
   try {
-    // Paso 1: Buscar el proveedor
     console.log(`Paso 1: Buscando proveedor en Location2 con ID: ${locationId}`);
     
     const [location] = await new Promise((resolve, reject) => {
@@ -29,28 +28,12 @@ const getPedidosPendientesProveedor = async (req, res) => {
     });
 
     if (!location) {
-      console.log("❌ Proveedor no encontrado en Location2");
+      console.log("Proveedor no encontrado en Location2");
       return res.status(404).json({ error: "Proveedor no encontrado" });
     }
 
     const nombreOrganizacion = location.Nombre;
-    console.log(`✅ Proveedor encontrado: "${nombreOrganizacion}" (longitud: ${nombreOrganizacion.length})`);
-
-    // Paso 2: Verificar organizaciones disponibles
-    console.log("Paso 2: Verificando organizaciones con pedidos pendientes...");
-    
-    const organizacionesDisponibles = await new Promise((resolve, reject) => {
-      connection.exec(
-        'SELECT DISTINCT Organizacion FROM Ordenes2 WHERE Estado = ?',
-        ['Pendiente'],
-        (err, result) => {
-          if (err) return reject(err);
-          resolve(result || []);
-        }
-      );
-    });
-    
-    console.log("Organizaciones con pedidos pendientes:", organizacionesDisponibles.map(org => `"${org.Organizacion}"`));
+    console.log(`Proveedor encontrado: "${nombreOrganizacion}"`);
 
     const query = `
       SELECT 
@@ -61,21 +44,21 @@ const getPedidosPendientesProveedor = async (req, res) => {
         o.Total as total,
         o.Estado as estado,
         o.FechaEstimadaEntrega as fechaEstimada,
-        o.Organizacion as organizacion,
         o.TipoOrden as tipoOrden,
         o.DescuentoAplicado as descuento
       FROM Ordenes2 o
       INNER JOIN Usuario2 u ON o.Creado_por_ID = u.Usuario_ID 
-      WHERE o.Estado IN ('Pendiente', 'Aprobado', 'En Reparto') AND o.Organizacion = ?
+      WHERE o.Estado IN ('Pendiente', 'Aprobado', 'En Reparto') 
+        AND u.Location_ID = ?
       ORDER BY o.FechaCreacion DESC
     `;
 
-    connection.exec(query, [nombreOrganizacion], (err, result) => {
+    connection.exec(query, [locationId], (err, result) => {
       if (err) {
-        console.error("❌ Error al obtener pedidos pendientes:", err);
+        console.error("Error al obtener pedidos pendientes:", err);
         return res.status(500).json({ error: "Error al obtener pedidos" });
       }
- 
+
       const pedidosFormateados = (result || []).map(pedido => ({
         id: pedido.ID,
         numero: pedido.ID,
@@ -85,18 +68,17 @@ const getPedidosPendientesProveedor = async (req, res) => {
         total: pedido.TOTAL,
         estado: pedido.ESTADO,
         fechaEstimada: pedido.FECHAESTIMADA,
-        organizacion: pedido.ORGANIZACION,
         tipoOrden: pedido.TIPOORDEN,
         descuento: pedido.DESCUENTO || 0
       }));
-      
-      console.log(`✅ Pedidos formateados para ${nombreOrganizacion}:`, pedidosFormateados.length);
+
+      console.log(`Pedidos formateados para ${nombreOrganizacion}:`, pedidosFormateados.length);
       console.log("=== FIN DEBUG ===");
-      
+
       res.status(200).json(pedidosFormateados);
     });
   } catch (error) {
-    console.error("❌ Error general:", error);
+    console.error("Error general:", error);
     res.status(500).json({ error: "Error del servidor" });
   }
 };
@@ -140,7 +122,7 @@ const getInventarioProveedor = async (req, res) => {
   }
 };
 
-// CAMBIO IMPORTANTE: Usar el mismo flujo que pedidosController.js
+
 const aceptarPedido = async (req, res) => {
   const { id } = req.params;
   
@@ -196,14 +178,13 @@ const aceptarPedido = async (req, res) => {
 
 const rechazarPedido = async (req, res) => {
   const { id } = req.params;
-  const { motivo } = req.body; // Opcional: razón del rechazo
+  const { motivo } = req.body; 
   
   if (!id || isNaN(id)) {
     return res.status(400).json({ error: "ID de pedido inválido" });
   }
 
   try {
-    // Verificar que el pedido esté pendiente
     const checkQuery = 'SELECT Estado FROM Ordenes2 WHERE Orden_ID = ?';
     
     connection.exec(checkQuery, [id], (err, result) => {
@@ -220,7 +201,6 @@ const rechazarPedido = async (req, res) => {
         return res.status(400).json({ error: "Solo se pueden rechazar pedidos en estado Pendiente" });
       }
 
-      // Actualizar estado a Rechazado
       const updateQuery = `
         UPDATE Ordenes2 SET 
           Estado = 'Rechazado',
@@ -246,7 +226,7 @@ const rechazarPedido = async (req, res) => {
   }
 };
 
-// NUEVA FUNCIÓN: Para obtener detalles de un pedido específico
+
 const getDetallePedido = async (req, res) => {
   const { id } = req.params;
   
@@ -284,7 +264,7 @@ const getDetallePedido = async (req, res) => {
   }
 };
 
-// NUEVA FUNCIÓN: Para marcar pedido como enviado/en reparto
+
 const enviarPedido = async (req, res) => {
   const { id } = req.params;
   
@@ -293,7 +273,6 @@ const enviarPedido = async (req, res) => {
   }
 
   try {
-    // Verificar que el pedido esté aprobado
     const checkQuery = `
       SELECT Estado, Organizacion FROM Ordenes2 
       WHERE Orden_ID = ?
@@ -316,15 +295,12 @@ const enviarPedido = async (req, res) => {
       }
 
       try {
-        // Iniciar transacción para actualizar stock y estado
         await new Promise((resolve, reject) => {
           connection.exec('BEGIN', [], (err) => {
             if (err) reject(err);
             else resolve();
           });
         });
-
-        // Obtener productos del pedido para reducir stock
         const productos = await new Promise((resolve, reject) => {
           connection.exec(`
             SELECT 
@@ -342,7 +318,6 @@ const enviarPedido = async (req, res) => {
           });
         });
 
-        // Verificar stock suficiente y reducir
         for (const producto of productos) {
           if (producto.StockActual < producto.Cantidad) {
             await new Promise((resolve) => {
@@ -352,8 +327,6 @@ const enviarPedido = async (req, res) => {
               error: `Stock insuficiente para ${producto.NombreProducto}. Disponible: ${producto.StockActual}, Solicitado: ${producto.Cantidad}` 
             });
           }
-
-          // Reducir stock
           await new Promise((resolve, reject) => {
             connection.exec(`
               UPDATE Inventario2 SET 
@@ -367,8 +340,6 @@ const enviarPedido = async (req, res) => {
             });
           });
         }
-
-        // Actualizar estado del pedido
         await new Promise((resolve, reject) => {
           connection.exec(`
             UPDATE Ordenes2 SET 
@@ -385,8 +356,6 @@ const enviarPedido = async (req, res) => {
             else resolve();
           });
         });
-
-        // Confirmar transacción
         await new Promise((resolve, reject) => {
           connection.exec('COMMIT', [], (err) => {
             if (err) reject(err);
@@ -401,7 +370,6 @@ const enviarPedido = async (req, res) => {
         });
 
       } catch (transactionError) {
-        // Rollback en caso de error
         await new Promise((resolve) => {
           connection.exec('ROLLBACK', [], () => resolve());
         });

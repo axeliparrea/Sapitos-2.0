@@ -20,9 +20,12 @@ const InvoiceProveedor = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       if (!token) throw new Error("Token no encontrado");
+
+      // Decodificar el token para obtener el LOCATION_ID
       const payload = JSON.parse(atob(token.split('.')[1]));
       const locationId = payload.locationId;
       if (!locationId) throw new Error("Location ID no encontrado en el token");
+
       const url = `http://localhost:5000/proveedor/pedidos/${locationId}`;
       const response = await fetch(url, {
         method: 'GET',
@@ -31,10 +34,12 @@ const InvoiceProveedor = () => {
           'Content-Type': 'application/json'
         }
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'No se pudieron cargar los pedidos');
       }
+
       const data = await response.json();
       const formattedPedidos = data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),

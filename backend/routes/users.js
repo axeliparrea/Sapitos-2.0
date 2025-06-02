@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser, getUserByEmail, getProfileImage, updateProfileImage} = require("../controllers/userController");
+const { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser, getUserByEmail, getProfileImage, updateProfileImage, getLocations} = require("../controllers/userController");
 const router = express.Router();
 
 const { auth } = require('../middleware/auth');
@@ -411,6 +411,34 @@ router.get("/:correo", getUserByEmail);
  */
 router.get("/:correo/profileImage", getProfileImage);
 
-
+/**
+ * @swagger
+ * /users/locations:
+ *   get:
+ *     summary: Get all locations
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: List of locations retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   Location_ID:
+ *                     type: integer
+ *                     description: Unique ID of the location
+ *                   Nombre:
+ *                     type: string
+ *                     description: Name of the location
+ *                   Tipo:
+ *                     type: string
+ *                     description: Type of the location
+ *       500:
+ *         description: Error retrieving locations
+ */
+router.get('/locations', getLocations);
 
 module.exports = router;
