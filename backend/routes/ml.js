@@ -32,7 +32,9 @@ try {
 const { 
     runModelUpdate, 
     getModelUpdateLogs, 
-    getNextScheduledUpdate 
+    getNextScheduledUpdate,
+    getModelStatus,
+    toggleModelStatus
 } = mlController;
 
 const { auth } = require('../middleware/auth');
@@ -90,5 +92,54 @@ router.get('/logs', auth(['admin']), getModelUpdateLogs);
  *         description: Server error
  */
 router.get('/schedule', auth(['admin']), getNextScheduledUpdate);
+
+/**
+ * @swagger
+ * /ml/status:
+ *   get:
+ *     summary: Get the current status of the ML model
+ *     description: Returns whether the model is active or inactive, and when it was last updated
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Model status retrieved successfully
+ *       403:
+ *         description: Unauthorized access
+ *       500:
+ *         description: Server error
+ */
+router.get('/status', auth(['admin']), getModelStatus);
+
+/**
+ * @swagger
+ * /ml/toggle-status:
+ *   post:
+ *     summary: Toggle model status between active and inactive
+ *     description: Activates or deactivates the model
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [active, inactive]
+ *                 description: The new status for the model
+ *     responses:
+ *       200:
+ *         description: Model status toggled successfully
+ *       400:
+ *         description: Invalid status value
+ *       403:
+ *         description: Unauthorized access
+ *       500:
+ *         description: Server error
+ */
+router.post('/toggle-status', auth(['admin']), toggleModelStatus);
 
 module.exports = router;

@@ -155,8 +155,130 @@ const getNextScheduledUpdate = async (req, res) => {
     }
 };
 
+/**
+ * Get the current status of the ML model
+ */
+const getModelStatus = async (req, res) => {
+    try {
+        // Check if user has required permissions
+        if (req.user && req.user.rol !== 'admin') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'No tienes permisos para ver el estado del modelo' 
+            });
+        }
+        
+        // In production, this would check configuration or database
+        // to determine if the model is active or inactive
+        const configPath = path.join(__dirname, '..', '..', 'mlops', 'config', 'model_status.json');
+        
+        let status = 'inactive';
+        let lastUpdated = null;
+        
+        if (fs.existsSync(configPath)) {
+            try {
+                const statusConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                status = statusConfig.status || 'inactive';
+                lastUpdated = statusConfig.lastUpdated;
+            } catch (err) {
+                logger.error(`Error parsing model status config: ${err}`);
+                // Continue using default values
+            }
+        } else {
+            // If status file doesn't exist, check logs to determine if model is running
+            const logsDir = path.join(__dirname, '..', '..', 'mlops', 'logs');
+            
+            if (fs.existsSync(logsDir)) {
+                const files = fs.readdirSync(logsDir)
+                    .filter(file => file.startsWith('weekly_stock_update_'))
+                    .sort()
+                    .reverse();
+                
+                if (files.length > 0) {
+                    // If logs exist, consider the model active
+                    status = 'active';
+                    
+                    // Get the date from the log filename (format: weekly_stock_update_YYYY-MM-DD.log)
+                    const match = files[0].match(/weekly_stock_update_(\d{4}-\d{2}-\d{2})/);
+                    if (match) {
+                        lastUpdated = match[1];
+                    }
+                }
+            }
+        }
+        
+        return res.status(200).json({
+            success: true,
+            status: status,
+            lastUpdated: lastUpdated
+        });
+    } catch (error) {
+        logger.error(`Error retrieving model status: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al recuperar el estado del modelo',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Toggle model status (active/inactive)
+ */
+const toggleModelStatus = async (req, res) => {
+    try {
+        // Check if user has required permissions
+        if (req.user && req.user.rol !== 'admin') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'No tienes permisos para cambiar el estado del modelo' 
+            });
+        }
+        
+        const { status } = req.body;
+        
+        if (!status || (status !== 'active' && status !== 'inactive')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Estado de modelo inválido. Use "active" o "inactive".'
+            });
+        }
+        
+        // Update the model status configuration file
+        const configPath = path.join(__dirname, '..', '..', 'mlops', 'config', 'model_status.json');
+        const configDir = path.dirname(configPath);
+        
+        // Create config directory if it doesn't exist
+        if (!fs.existsSync(configDir)) {
+            fs.mkdirSync(configDir, { recursive: true });
+        }
+        
+        // Save the status
+        fs.writeFileSync(configPath, JSON.stringify({
+            status: status,
+            lastUpdated: new Date().toISOString()
+        }));
+        
+        return res.status(200).json({
+            success: true,
+            message: `Modelo ${status === 'active' ? 'activado' : 'desactivado'} correctamente.`,
+            status: status,
+            lastUpdated: new Date().toISOString()
+        });
+    } catch (error) {
+        logger.error(`Error toggling model status: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al cambiar el estado del modelo',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     runModelUpdate,
     getModelUpdateLogs,
-    getNextScheduledUpdate
+    getNextScheduledUpdate,
+    getModelStatus,
+    toggleModelStatus
 };

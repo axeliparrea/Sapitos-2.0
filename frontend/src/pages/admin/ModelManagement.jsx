@@ -12,6 +12,7 @@ import MasterLayout from "../../components/masterLayout";
 const ModelManagement = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [modelStatus, setModelStatus] = useState({ status: 'inactive', lastUpdated: null }); // Added model status state
   
   // Auto-clear error messages after 5 seconds
   useEffect(() => {
@@ -73,6 +74,25 @@ const ModelManagement = () => {
   }, [handleAuthError]);
 
   /**
+   * Fetch the current status of the model
+   */
+  const fetchModelStatus = useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/ml/status', {
+        withCredentials: true // Include credentials (cookies) with the request
+      });
+      setModelStatus(response.data);
+    } catch (error) {
+      if (!handleAuthError(error)) {
+        console.error("Error fetching model status:", error);
+        // Don't show error message as this is non-critical
+        // Fall back to default state (inactive)
+        setModelStatus({ status: 'inactive', lastUpdated: null });
+      }
+    }
+  }, [handleAuthError]);
+
+  /**
    * Fetch information about the next scheduled update
    */  const fetchScheduleInfo = useCallback(async () => {
     try {
@@ -99,8 +119,8 @@ const ModelManagement = () => {
       }
       setLoading(false);
     }
-  }, [handleAuthError]);
-  
+  }, [handleAuthError]);  // Ya no se necesita toggleModelStatus porque el estado del modelo es solo informativo
+
   /**
    * Trigger a manual model update
    */
@@ -113,8 +133,9 @@ const ModelManagement = () => {
         type: 'success',
         text: response.data.message
       });
-      // Refresh logs after update
+      // Refresh data after update
       await fetchLogs();
+      await fetchModelStatus(); // Also refresh model status
       setLoading(false);
     } catch (error) {
       if (!handleAuthError(error)) {
@@ -126,7 +147,7 @@ const ModelManagement = () => {
       }
       setLoading(false);
     }
-  }, [handleAuthError, fetchLogs]);
+  }, [handleAuthError, fetchLogs, fetchModelStatus]);
   
   // Check authenticated session and fetch schedule information on component mount
   useEffect(() => {
@@ -148,10 +169,10 @@ const ModelManagement = () => {
           navigate('/');
           return;
         }
-        
-        // If session is valid and user is admin, fetch the schedule info and logs
+          // If session is valid and user is admin, fetch all model data
         fetchScheduleInfo();
         fetchLogs(); // Cargar logs automáticamente al inicio
+        fetchModelStatus(); // Cargar el estado del modelo
       } catch (error) {
         console.error("Session validation error:", error);
         navigate('/');
@@ -159,7 +180,7 @@ const ModelManagement = () => {
     };
     
     checkSession();
-  }, [navigate, fetchScheduleInfo, fetchLogs]);
+  }, [navigate, fetchScheduleInfo, fetchLogs, fetchModelStatus]);
   
   // Format date for display
   const formatDate = (dateString) => {
@@ -169,13 +190,25 @@ const ModelManagement = () => {
 
   return (
     <MasterLayout role="admin">
-      <div id="modelManagementAdmin">
-        <div className="card mb-4">
-          <div className="card-header bg-white border-bottom">
+      <div id="modelManagementAdmin">        <div className="card mb-4">          <div className="card-header bg-white border-bottom pb-2">
             <h5 className="mb-0">Gestión de Modelo de Predicción</h5>
-          </div>          <div className="card-body">
+          </div>          <div className="card-body py-2 ps-1">
+            {/* Indicador de estado del modelo */}
+            <div className={`alert ${modelStatus.status === 'active' ? 'alert-success' : 'alert-danger'} d-flex align-items-center mb-2 py-2 mx-1`}>
+              <i className={`bi bi-circle-fill ${modelStatus.status === 'active' ? 'text-success' : 'text-danger'} me-2`} style={{ fontSize: '0.8rem' }}></i>
+              <div>
+                <span className="fw-semibold small">Estado del modelo:</span> 
+                <span className="small ms-1">{modelStatus.status === 'active' ? 'Activo' : 'Inactivo'}</span>
+                {modelStatus.lastUpdated && (
+                  <small className="ms-2 text-muted" style={{ fontSize: '0.75rem' }}>
+                    (Última actualización: {new Date(modelStatus.lastUpdated).toLocaleDateString()})
+                  </small>
+                )}
+              </div>
+            </div>
+            
             {message && (
-              <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show mb-4`} role="alert">
+              <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show mb-2`} role="alert">
                 {message.text}
                 <button 
                   type="button" 
@@ -277,19 +310,51 @@ const ModelManagement = () => {
             <div className="card">
               <div className="card-header bg-white border-bottom">
                 <h5 className="card-title mb-0">Acerca del Modelo de Predicción</h5>
-              </div>
-              <div className="card-body">
+              </div>              <div className="card-body">
                 <div className="card-text">
-                  <h6>Modelo de Predicción de Stock Mínimo</h6>
-                  <p>El modelo utiliza XGBoost para predecir la demanda futura de productos y actualizar automáticamente los valores de stock mínimo en la base de datos.</p>
-                  <hr />
-                  <p className="mb-2">Características principales:</p>
-                  <ul>
-                    <li>Entrenamiento semanal con datos actualizados</li>
-                    <li>Predicción de demanda para la semana siguiente</li>
-                    <li>Actualización automática de valores de stock_minimo</li>
-                    <li>Factor de seguridad del 20% para prevenir faltantes</li>
-                  </ul>
+                  <h6 className="mb-3">Modelo HybridGradientBoostingTree de Predicción de Stock Mínimo</h6>
+                  
+                  <div className="mb-4">
+                    <h6 className="text-primary mb-2"><i className="bi bi-diagram-3"></i> Arquitectura del Modelo</h6>
+                    <p>Implementación avanzada basada en HybridGradientBoostingTree con preprocesamiento mediante biblioteca hana-ml. El modelo combina técnicas de árboles de decisión y boosting para optimizar la predicción de stock mínimo.</p>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h6 className="text-primary mb-2"><i className="bi bi-bar-chart-line"></i> Variables Principales</h6>
+                    <p><strong>Variable objetivo:</strong> <code>demanda_mensual</code></p>
+                    <p><strong>Predictores clave:</strong></p>
+                    <ul className="mb-3">
+                      <li><code>historial_ventas</code> (últimos 6 meses)</li>
+                      <li><code>temporada</code> (factor estacional)</li>
+                      <li><code>dias_reposicion</code> (lead time del proveedor)</li>
+                      <li><code>precio</code> (elasticidad de demanda)</li>
+                      <li><code>tendencia_categoria</code> (análisis de mercado)</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h6 className="text-primary mb-2"><i className="bi bi-gear"></i> Pipeline de Procesamiento</h6>
+                    <ol className="mb-3">
+                      <li>Extracción de datos históricos de ventas</li>
+                      <li>Preprocesamiento y normalización con hana-ml</li>
+                      <li>Feature engineering y selección de variables</li>
+                      <li>Entrenamiento del modelo HybridGradientBoostingTree</li>
+                      <li>Validación con datos históricos (RMSE, MAE)</li>
+                      <li>Predicción y cálculo de stock mínimo óptimo</li>
+                      <li>Actualización automática en base de datos</li>
+                    </ol>
+                  </div>
+                    <div className="row align-items-start">                    <div className="col-12 mb-4">
+                      <h6 className="text-primary mb-2"><i className="bi bi-calendar-check"></i> Parámetros Operativos</h6>
+                      <ul className="mb-0">
+                        <li>Entrenamiento mensual con datos actualizados</li>
+                        <li>Predicción de demanda para los próximos 2 meses</li>
+                        <li>Factor de seguridad dinámico (15%-25%) según categoría</li>
+                        <li>Margen de error promedio: 8% (MAPE)</li>
+                        <li>Monitoreo continuo con reentrenamiento mensual automático</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
