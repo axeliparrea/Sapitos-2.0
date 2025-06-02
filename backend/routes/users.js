@@ -205,8 +205,8 @@ router.post("/logoutUser", logoutUser);
  *       500:
  *         description: Server error
  */
-router.delete("/deleteUser", auth(["admin"]), deleteUser);
-// router.delete("/deleteUser", deleteUser);
+//router.delete("/deleteUser", auth(["admin"]), deleteUser);
+router.delete("/deleteUser", deleteUser);
 
 /**
  * @swagger

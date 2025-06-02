@@ -53,11 +53,11 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   // Mostrar loading mientras se obtiene la sesión
   if (loading) {
     return (
-      <div className="navbar-header">
+      <div className="navbar-header"id="navbarHeader">
         <div className="row align-items-center justify-content-between">
           <div className="col-auto">
             <div className="d-flex flex-wrap align-items-center gap-4">
-              <button type="button" className="sidebar-toggle" onClick={sidebarControl}>
+              <button id="botonrayas" type="button"  className="sidebar-toggle" onClick={sidebarControl}>
                 <Icon
                   icon={sidebarActive ? "iconoir:arrow-right" : "heroicons:bars-3-solid"}
                   className="icon text-2xl non-active"
@@ -87,12 +87,12 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   }
 
   return (
-    <div className="navbar-header">
+    <div className="navbar-header"id="navbarHeader">
       <div className="row align-items-center justify-content-between">
         {/* Botones del navbar */}
         <div className="col-auto">
           <div className="d-flex flex-wrap align-items-center gap-4">
-            <button type="button" className="sidebar-toggle" onClick={sidebarControl}>
+            <button id="botonrayas" type="button" className="sidebar-toggle" onClick={sidebarControl}>
               <Icon
                 icon={sidebarActive ? "iconoir:arrow-right" : "heroicons:bars-3-solid"}
                 className="icon text-2xl non-active"
