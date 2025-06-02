@@ -16,9 +16,8 @@ const fs = require('fs');
 const runModelUpdate = async (req, res) => {
     try {
         logger.info('Manual model update requested');
-        
-        // Check if user has required permissions (admin or similar)
-        if (req.user && req.user.role !== 'admin') {
+          // Check if user has required permissions (admin or similar)
+        if (req.user && req.user.rol !== 'admin') {
             return res.status(403).json({ 
                 success: false, 
                 message: 'No tienes permisos para ejecutar esta acción' 
@@ -46,9 +45,8 @@ const runModelUpdate = async (req, res) => {
  * Get logs from the last model update
  */
 const getModelUpdateLogs = async (req, res) => {
-    try {
-        // Check if user has required permissions
-        if (req.user && req.user.role !== 'admin') {
+    try {        // Check if user has required permissions
+        if (req.user && req.user.rol !== 'admin') {
             return res.status(403).json({ 
                 success: false, 
                 message: 'No tienes permisos para ver los logs' 
