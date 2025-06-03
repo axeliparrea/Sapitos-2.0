@@ -1,40 +1,7 @@
 const { connection } = require("../config/db");
 
 const getPedidosPendientesProveedor = async (req, res) => {
-  const { locationId } = req.params;
-
-  console.log(`=== DEBUG: Iniciando consulta para locationId: ${locationId} ===`);
-
-  if (!locationId) {
-    return res.status(400).json({ error: "ID de ubicación requerido" });
-  }
-
   try {
-    console.log(`Paso 1: Buscando proveedor en Location2 con ID: ${locationId}`);
-    
-    const [location] = await new Promise((resolve, reject) => {
-      connection.exec(
-        'SELECT Nombre AS "Nombre" FROM Location2 WHERE Location_ID = ?', 
-        [locationId],
-        (err, result) => {
-          if (err) {
-            console.error("Error en consulta Location2:", err);
-            return reject(err);
-          }
-          console.log("Resultado Location2:", result);
-          resolve(result);
-        }
-      );
-    });
-
-    if (!location) {
-      console.log("Proveedor no encontrado en Location2");
-      return res.status(404).json({ error: "Proveedor no encontrado" });
-    }
-
-    const nombreOrganizacion = location.Nombre;
-    console.log(`Proveedor encontrado: "${nombreOrganizacion}"`);
-
     const query = `
       SELECT 
         o.Orden_ID as id,
@@ -49,11 +16,10 @@ const getPedidosPendientesProveedor = async (req, res) => {
       FROM Ordenes2 o
       INNER JOIN Usuario2 u ON o.Creado_por_ID = u.Usuario_ID 
       WHERE o.Estado IN ('Pendiente', 'Aprobado', 'En Reparto') 
-        AND u.Location_ID = ?
       ORDER BY o.FechaCreacion DESC
     `;
 
-    connection.exec(query, [locationId], (err, result) => {
+    connection.exec(query, [], (err, result) => {
       if (err) {
         console.error("Error al obtener pedidos pendientes:", err);
         return res.status(500).json({ error: "Error al obtener pedidos" });
@@ -71,9 +37,6 @@ const getPedidosPendientesProveedor = async (req, res) => {
         tipoOrden: pedido.TIPOORDEN,
         descuento: pedido.DESCUENTO || 0
       }));
-
-      console.log(`Pedidos formateados para ${nombreOrganizacion}:`, pedidosFormateados.length);
-      console.log("=== FIN DEBUG ===");
 
       res.status(200).json(pedidosFormateados);
     });
