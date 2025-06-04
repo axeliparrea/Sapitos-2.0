@@ -177,10 +177,28 @@ const toggleModelStatus = async (req, res) => {
     }
 };
 
+/**
+ * Get mock historical performance metrics
+ */
+const getModelMetrics = async (req, res) => {
+    try {
+        // Generate mock metrics for past 7 days
+        const metrics = Array.from({ length: 7 }).map((_, idx) => {
+            const date = new Date(Date.now() - idx * 24 * 60 * 60 * 1000);
+            return { date: date.toISOString(), mape: parseFloat((Math.random() * 10 + 5).toFixed(2)) };
+        }).reverse();
+        return res.status(200).json({ success: true, metrics });
+    } catch (error) {
+        logger.error(`Error retrieving mock metrics: ${error}`);
+        return res.status(500).json({ success: false, message: 'Error al recuperar métricas (dev)', error: error.message });
+    }
+};
+
 module.exports = {
     runModelUpdate,
     getModelUpdateLogs,
     getNextScheduledUpdate,
     getModelStatus,
-    toggleModelStatus
+    toggleModelStatus,
+    getModelMetrics
 };

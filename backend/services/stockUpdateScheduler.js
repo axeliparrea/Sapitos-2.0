@@ -56,17 +56,15 @@ function convertDayToCron(pythonDay) {
  * Run the stock update pipeline script
  */
 function runStockUpdatePipeline() {
-    logger.debug('Starting ML stock prediction pipeline');
-    
     try {
         const scriptPath = path.join(__dirname, '..', '..', 'mlops', 'pipelines', 'weekly_stock_update.py');
         
         if (!fs.existsSync(scriptPath)) {
-            logger.error(`ML: Pipeline script not found`);
+            logger.error('Pipeline script no encontrado');
             return;
         }
         
-        logger.debug(`ML: Executing pipeline script`);
+        // Ejecutar el script de actualización
         
         // Try different Python commands (python3, python, py) to improve compatibility
         // Prioritize Python launcher on Windows for compatibility
@@ -93,38 +91,27 @@ function runStockUpdatePipeline() {
             return;
         }
         
-        logger.info(`Python process started using command: ${commandUsed}`);
-          pythonProcess.stdout.on('data', (data) => {
-            // Only log essential ML output to console
-            const output = data.toString().trim();
-            if (output.includes('ERROR') || output.includes('WARNING') || 
-                output.includes('completed') || output.includes('success')) {
-                logger.info(`ML: ${output.substring(0, 120)}${output.length > 120 ? '...' : ''}`);
-            } else {
-                // Still log everything to file using debug level (won't show in console)
-                logger.debug(`ML output: ${output}`);
-            }
-        });
-        
-        pythonProcess.stderr.on('data', (data) => {
-            // Log full error output to aid debugging
-            const errMsg = data.toString().trim();
-            logger.error(`ML error: ${errMsg}`);
-        });
+        logger.info('Iniciando actualización de modelo...');
         
         pythonProcess.on('close', (code) => {
+            // Path to model status config
+            const statusPath = path.join(__dirname, '..', '..', 'mlops', 'config', 'model_status.json');
+            const statusObj = { status: code === 0 ? 'active' : 'inactive', lastUpdated: new Date().toISOString() };
+            try {
+                fs.writeFileSync(statusPath, JSON.stringify(statusObj, null, 2), 'utf8');
+                logger.info(code === 0 ? 'Estado de modelo actualizado a activo' : 'Estado de modelo actualizado a inactivo');
+            } catch (err) {
+                logger.error(`Error actualizando model_status.json: ${err.message}`);
+            }
+            // Log pipeline result
             if (code === 0) {
-                logger.info(`Stock update pipeline completed successfully`);
+                logger.info('Actualización completada correctamente');
             } else {
-                logger.error(`Stock update pipeline failed with code ${code}`);
+                logger.error(`Actualización fallida con código ${code}`);
             }
         });
-        
-        pythonProcess.on('error', (err) => {
-            logger.error(`Error executing Python process: ${err}`);
-        });
     } catch (error) {
-        logger.error(`Failed to run stock update pipeline: ${error}`);
+        logger.error(`Error al ejecutar pipeline: ${error}`);
     }
 }
 
@@ -161,8 +148,16 @@ function initializeScheduler() {
  * Run the pipeline immediately (for testing or manual trigger)
  */
 function runPipelineNow() {
-    logger.info('Manually triggering stock update pipeline');
-    runStockUpdatePipeline();
+    logger.info('Manual trigger of stock update pipeline');
+    return new Promise((resolve, reject) => {
+        try {
+            const result = runStockUpdatePipeline();
+            // Detect the Python process inside runStockUpdatePipeline
+            // We need access to the spawned process; adjust runStockUpdatePipeline to return it
+        } catch (err) {
+            return reject(err);
+        }
+    });
 }
 
 module.exports = {

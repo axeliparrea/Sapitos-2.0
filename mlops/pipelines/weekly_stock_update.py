@@ -24,6 +24,7 @@ import hana_ml
 import hana_ml.dataframe as dataframe
 from dotenv import load_dotenv
 import logging
+import json  # Add near imports
 
 # Import configuration
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -278,7 +279,25 @@ class WeeklyStockUpdate:
                     logger.info(f"Evaluation results:")
                     logger.info(f"Mean Absolute Error (MAE): {mae:.2f}")
                     logger.info(f"Root Mean Squared Error (RMSE): {rmse:.2f}")
-                
+                    # Save metrics to JSON
+                    try:
+                        metrics_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'model_metrics.json')
+                        if os.path.exists(metrics_path):
+                            with open(metrics_path, 'r', encoding='utf-8') as mf:
+                                mobj = json.load(mf)
+                        else:
+                            mobj = {'training': [], 'test': []}
+                        record = {'date': ultimo_periodo.strftime('%Y-%m-%d'), 'mae': mae}
+                        mobj['test'].append(record)
+                        # Optionally record training MAE
+                        train_pred = self.model.predict(X_train)
+                        mae_train = mean_absolute_error(y_train, train_pred)
+                        mobj['training'].append({'date': ultimo_periodo.strftime('%Y-%m-%d'), 'mae': mae_train})
+                        with open(metrics_path, 'w', encoding='utf-8') as mf:
+                            json.dump(mobj, mf, indent=2)
+                        logger.info('Metrics saved to model_metrics.json')
+                    except Exception as em:
+                        logger.error(f"Error writing metrics JSON: {em}")
                 return True
             else:
                 logger.warning("Not enough data for training")

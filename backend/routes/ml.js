@@ -142,4 +142,7 @@ router.get('/status', auth(['admin']), getModelStatus);
  */
 router.post('/toggle-status', auth(['admin']), toggleModelStatus);
 
+// Add route for model metrics
+router.get('/metrics', auth(['admin']), mlController.getModelMetrics);
+
 module.exports = router;

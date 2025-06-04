@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import MasterLayout from "../../components/masterLayout";
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 /**
  * ML Model Management Component
@@ -12,7 +16,13 @@ import MasterLayout from "../../components/masterLayout";
 const ModelManagement = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
-  const [modelStatus, setModelStatus] = useState({ status: 'inactive', lastUpdated: null }); // Added model status state
+  const [modelStatus, setModelStatus] = useState({ status: 'inactive', lastUpdated: null });
+  const [nextUpdate, setNextUpdate] = useState(null);
+  const [logs, setLogs] = useState(null);
+  // Performance metrics separated by dataset
+  const [trainingData, setTrainingData] = useState([]);
+  const [testData, setTestData] = useState([]);
+  const [activeTab, setActiveTab] = useState('status'); // New state for active tab
   
   // Auto-clear error messages after 5 seconds
   useEffect(() => {
@@ -26,8 +36,7 @@ const ModelManagement = () => {
       if (timer) clearTimeout(timer);
     };
   }, [message]);
-  const [nextUpdate, setNextUpdate] = useState(null);
-  const [logs, setLogs] = useState(null);
+  
   // Reverse log lines to show most recent first
   const reversedLogContent = logs?.logContent ? logs.logContent.split('\n').reverse().join('\n') : null;
   const navigate = useNavigate();
@@ -80,10 +89,10 @@ const ModelManagement = () => {
    */
   const fetchModelStatus = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:5000/ml/status', {
-        withCredentials: true // Include credentials (cookies) with the request
-      });
+      setLoading(true);
+      const response = await axios.get('http://localhost:5000/ml/status', { withCredentials: true });
       setModelStatus(response.data);
+      setLoading(false);
     } catch (error) {
       if (!handleAuthError(error)) {
         console.error("Error fetching model status:", error);
@@ -91,6 +100,7 @@ const ModelManagement = () => {
         // Fall back to default state (inactive)
         setModelStatus({ status: 'inactive', lastUpdated: null });
       }
+      setLoading(false);
     }
   }, [handleAuthError]);
 
@@ -124,32 +134,40 @@ const ModelManagement = () => {
   }, [handleAuthError]);  // Ya no se necesita toggleModelStatus porque el estado del modelo es solo informativo
 
   /**
+   * Fetch model performance metrics
+   */
+  const fetchMetrics = useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/ml/metrics', { withCredentials: true });
+      console.log('Metrics response:', response.data);
+      setTrainingData(response.data.training || []);
+      setTestData(response.data.test || []);
+    } catch (error) {
+      if (!handleAuthError(error)) {
+        console.error('Error fetching metrics:', error);
+      }
+    }
+  }, [handleAuthError]);
+
+  /**
    * Trigger a manual model update
    */
   const runManualUpdate = useCallback(async () => {
     try {
-      setLoading(true);      const response = await axios.post('http://localhost:5000/ml/update', {}, {
-        withCredentials: true // Include credentials (cookies) with the request
-      });
-      setMessage({
-        type: 'success',
-        text: response.data.message
-      });
-      // Refresh data after update
+      setLoading(true);
+      const response = await axios.post('http://localhost:5000/ml/update', {}, { withCredentials: true });
+      setMessage({ type: 'success', text: response.data.message });
       await fetchLogs();
-      await fetchModelStatus(); // Also refresh model status
+      await fetchModelStatus();
+      await fetchMetrics();
       setLoading(false);
     } catch (error) {
       if (!handleAuthError(error)) {
-        setMessage({
-          type: 'error',
-          text: 'Error al iniciar actualización: ' + 
-                (error.response?.data?.message || error.message)
-        });
+        setMessage({ type: 'error', text: 'Error al iniciar actualización: ' + (error.response?.data?.message || error.message) });
       }
       setLoading(false);
     }
-  }, [handleAuthError, fetchLogs, fetchModelStatus]);
+  }, [handleAuthError, fetchLogs, fetchModelStatus, fetchMetrics]);
   
   // Check authenticated session and fetch schedule information on component mount
   useEffect(() => {
@@ -173,8 +191,9 @@ const ModelManagement = () => {
         }
           // If session is valid and user is admin, fetch all model data
         fetchScheduleInfo();
-        fetchLogs(); // Cargar logs automáticamente al inicio
-        fetchModelStatus(); // Cargar el estado del modelo
+        fetchLogs();
+        fetchModelStatus();
+        fetchMetrics();
       } catch (error) {
         console.error("Session validation error:", error);
         navigate('/');
@@ -182,137 +201,125 @@ const ModelManagement = () => {
     };
     
     checkSession();
-  }, [navigate, fetchScheduleInfo, fetchLogs, fetchModelStatus]);
+  }, [navigate, fetchScheduleInfo, fetchLogs, fetchModelStatus, fetchMetrics]);
   
   // Format date for display
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString();
   };
+  
+  // Prepare chart data and options
+  const trainingChartData = {
+    labels: trainingData.map(item => formatDate(item.date)),
+    datasets: [
+      { label: 'Training MAPE (%)', data: trainingData.map(item => item.mae || item.mape), fill: false, borderColor: 'rgb(54,162,235)' }
+    ]
+  };
+  const testChartData = {
+    labels: testData.map(item => formatDate(item.date)),
+    datasets: [
+      { label: 'Test MAPE (%)', data: testData.map(item => item.mae || item.mape), fill: false, borderColor: 'rgb(255,99,132)' }
+    ]
+  };
+  const chartOptions = {
+    responsive: true,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { y: { beginAtZero: true, max: 100 } }
+  };
+  const smallChartOptions = { responsive: true, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { display: false } } };
 
   return (
     <MasterLayout role="admin">
-      <div id="modelManagementAdmin">        <div className="card mb-4">          <div className="card-header bg-white border-bottom pb-2">
-            <h5 className="mb-0">Gestión de Modelo de Predicción</h5>
-          </div>          <div className="card-body py-2 ps-1">
-            {/* Indicador de estado del modelo */}
-            <div className={`alert ${modelStatus.status === 'active' ? 'alert-success' : 'alert-danger'} d-flex align-items-center mb-2 py-2 mx-1`}>
-              <i className={`bi bi-circle-fill ${modelStatus.status === 'active' ? 'text-success' : 'text-danger'} me-2`} style={{ fontSize: '0.8rem' }}></i>
-              <div>
-                <span className="fw-semibold small">Estado del modelo:</span> 
-                <span className="small ms-1">{modelStatus.status === 'active' ? 'Activo' : 'Inactivo'}</span>
-                {modelStatus.lastUpdated && (
-                  <small className="ms-2 text-muted" style={{ fontSize: '0.75rem' }}>
-                    (Última actualización: {new Date(modelStatus.lastUpdated).toLocaleDateString()})
-                  </small>
-                )}
-              </div>
-            </div>
-            
-            {message && message.type === 'error' && (
-              <div className="alert alert-danger alert-dismissible fade show mb-2" role="alert">
-                {message.text}
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={() => setMessage(null)} 
-                  aria-label="Close"
-                ></button>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="row">
-          {/* Schedule information card */}
-          <div className="col-xl-6 mb-4">
-            <div className="card h-100">
-              <div className="card-header bg-white border-bottom">
-                <h5 className="card-title mb-0">Programación de Actualización</h5>
-              </div>
-              <div className="card-body">
-                {loading && !nextUpdate ? (
-                  <div className="text-center">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Cargando...</span>
+      <div className="container py-4">
+        <h2 className="mb-4 text-center">Modelo IA</h2>
+        <ul className="nav nav-tabs mb-4 justify-content-center">
+          {['status','schedule','logs','info'].map(tab => (
+            <li className="nav-item" key={tab}>
+              <button
+                className={`nav-link ${activeTab===tab?'active':''}`}
+                onClick={()=>setActiveTab(tab)}
+              >
+                {tab==='status'? 'Estado' :
+                 tab==='schedule'? 'Programación' :
+                 tab==='logs'? 'Logs' : 'Acerca'}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="tab-content">
+          {activeTab==='status' && (
+            <div className="row mb-4">
+              {trainingData.length===0 && testData.length===0 && (
+                <div className="col-12 text-center text-muted">Sin métricas disponibles</div>
+              )}
+              {trainingData.length>0 && (
+                <div className="col-md-6">
+                  <div className="card p-4 mb-4">
+                    <h6 className="text-center mt-4 mb-4">Entrenamiento</h6>
+                    <div className="mt-3">
+                      <Line data={trainingChartData} options={chartOptions} height={150} />
                     </div>
                   </div>
-                ) : nextUpdate ? (
+                </div>
+              )}
+              {testData.length>0 && (
+                <div className="col-md-6">
+                  <div className="card p-4 mb-4">
+                    <h6 className="text-center mt-4 mb-4">Prueba</h6>
+                    <div className="mt-3">
+                      <Line data={testChartData} options={chartOptions} height={150} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab==='schedule' && (
+            <div>
+              {/* Status section */}
+              <div className="card p-4 mb-4 text-center">
+                <span className={`badge ${modelStatus.status==='active'?'bg-success':'bg-danger'} fs-5`}>{modelStatus.status==='active'? 'Activo' : 'Inactivo'}</span>
+                {modelStatus.lastUpdated && <p className="mt-2 small text-muted">Última: {formatDate(modelStatus.lastUpdated)}</p>}
+              </div>
+              {/* Schedule section */}
+              <div className="card p-4 mb-4">
+                {nextUpdate ? (
                   <div>
-                    <div className="mb-3">
-                      <strong className="d-block mb-1">Día programado:</strong>
-                      <span className="text-secondary">{nextUpdate.day}</span>
-                    </div>
-                    <div className="mb-3">
-                      <strong className="d-block mb-1">Hora programada:</strong>
-                      <span className="text-secondary">{nextUpdate.hour}</span>
-                    </div>
-                    <div className="mb-4">
-                      <strong className="d-block mb-1">Próxima ejecución:</strong>
-                      <span className="text-secondary">{formatDate(nextUpdate.nextRun)}</span>
-                    </div>
-                    
-                    <button 
-                      className="btn btn-primary" 
-                      onClick={runManualUpdate}
-                      disabled={loading}
-                    >
-                      {loading ? 'Iniciando...' : 'Ejecutar Actualización Ahora'}
-                    </button>
+                    <p><strong>Día:</strong> {nextUpdate.day}</p>
+                    <p><strong>Hora:</strong> {nextUpdate.hour}</p>
+                    <p><strong>Próxima:</strong> {formatDate(nextUpdate.nextRun)}</p>
+                    <button className="btn btn-primary mt-3" onClick={runManualUpdate} disabled={loading}>{loading? 'Iniciando...' : 'Actualizar Ahora'}</button>
                   </div>
                 ) : (
-                  <p className="mb-0">No se pudo obtener información de programación</p>
+                  <p className="text-center text-muted">No hay programación disponible</p>
                 )}
               </div>
             </div>
-          </div>
-          
-          {/* Logs card */}
-          <div className="col-xl-6 mb-4">
-            <div className="card h-100">
-              <div className="card-header bg-white border-bottom">
-                <h5 className="card-title mb-0">{logs?.logFile || 'Logs'}</h5>
-              </div>
-              <div className="card-body">
-                {loading ? (
-                  <div className="text-center py-4">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Cargando logs...</span>
-                    </div>
-                    <p className="mt-2 text-muted">Cargando logs...</p>
-                  </div>
-                ) : logs && logs.logContent ? (
-                  <div>
-                    {/* Title now shows file name, so static label removed */}
-                    <div className="bg-dark text-light p-3 mt-0" style={{ maxHeight: '250px', overflow: 'auto', borderRadius: '4px' }}>
-                      <pre className="mb-0" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{reversedLogContent}</pre>
-                    </div>
-                  </div>                ) : (
-                  <div className="text-center py-5 px-3 bg-light rounded" style={{ minHeight: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <i className="bi bi-file-earmark-text" style={{ fontSize: '3rem', color: '#6c757d' }}></i>
-                    <p className="text-muted mt-4 mb-0">No hay logs disponibles para mostrar</p>
-                  </div>
-                )}
-              </div>
+          )}
+          {activeTab==='logs' && (
+            <div className="card p-4 mb-4" style={{maxHeight: '300px', overflowY: 'auto'}}>
+              {logs?.logContent ? (
+                <pre className="mb-0" style={{whiteSpace:'pre-wrap',wordBreak:'break-word'}}>
+                  {reversedLogContent}
+                </pre>
+              ) : (
+                <p className="text-center text-muted">Sin logs</p>
+              )}
             </div>
-          </div>
-        </div>
-        
-        {/* Information about the model */}
-        <div className="row">
-          <div className="col-12">
-            <div className="card">
+          )}
+          {activeTab==='info' && (
+            <div className="card mb-4">
               <div className="card-header bg-white border-bottom">
                 <h5 className="card-title mb-0">Acerca del Modelo de Predicción</h5>
-              </div>              <div className="card-body">
+              </div>
+              <div className="card-body">
                 <div className="card-text">
                   <h6 className="mb-3">Modelo HybridGradientBoostingTree de Predicción de Stock Mínimo</h6>
-                  
                   <div className="mb-4">
                     <h6 className="text-primary mb-2"><i className="bi bi-diagram-3"></i> Arquitectura del Modelo</h6>
                     <p>Implementación avanzada basada en HybridGradientBoostingTree con preprocesamiento mediante biblioteca hana-ml. El modelo combina técnicas de árboles de decisión y boosting para optimizar la predicción de stock mínimo.</p>
                   </div>
-                  
                   <div className="mb-4">
                     <h6 className="text-primary mb-2"><i className="bi bi-bar-chart-line"></i> Variables Principales</h6>
                     <p><strong>Variable objetivo:</strong> <code>demanda_mensual</code></p>
@@ -325,7 +332,6 @@ const ModelManagement = () => {
                       <li><code>tendencia_categoria</code> (análisis de mercado)</li>
                     </ul>
                   </div>
-                  
                   <div className="mb-4">
                     <h6 className="text-primary mb-2"><i className="bi bi-gear"></i> Pipeline de Procesamiento</h6>
                     <ol className="mb-3">
@@ -338,21 +344,20 @@ const ModelManagement = () => {
                       <li>Actualización automática en base de datos</li>
                     </ol>
                   </div>
-                    <div className="row align-items-start">                    <div className="col-12 mb-4">
-                      <h6 className="text-primary mb-2"><i className="bi bi-calendar-check"></i> Parámetros Operativos</h6>
-                      <ul className="mb-0">
-                        <li>Entrenamiento mensual con datos actualizados</li>
-                        <li>Predicción de demanda para los próximos 2 meses</li>
-                        <li>Factor de seguridad dinámico (15%-25%) según categoría</li>
-                        <li>Margen de error promedio: 8% (MAPE)</li>
-                        <li>Monitoreo continuo con reentrenamiento mensual automático</li>
-                      </ul>
-                    </div>
+                  <div className="mb-4">
+                    <h6 className="text-primary mb-2"><i className="bi bi-calendar-check"></i> Parámetros Operativos</h6>
+                    <ul className="mb-0">
+                      <li>Entrenamiento mensual con datos actualizados</li>
+                      <li>Predicción de demanda para los próximos 2 meses</li>
+                      <li>Factor de seguridad dinámico (15%-25%) según categoría</li>
+                      <li>Margen de error promedio: 8% (MAPE)</li>
+                      <li>Monitoreo continuo con reentrenamiento mensual automático</li>
+                    </ul>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </MasterLayout>

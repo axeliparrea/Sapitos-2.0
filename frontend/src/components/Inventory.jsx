@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Form, InputGroup, Button, Modal, Dropdown, Badge } from 'react-bootstrap';
+import { Icon } from "@iconify/react/dist/iconify.js";
 import axios from 'axios';
 
 const Inventory = () => {
@@ -8,6 +9,8 @@ const Inventory = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   // Estados del filtro 
   const [filters, setFilters] = useState({
@@ -55,10 +58,9 @@ const Inventory = () => {
 
     fetchInventory();
   }, []);
-
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allIds = filteredItems.map(item => item.inventarioId);
+      const allIds = currentItems.map(item => item.inventarioId);
       setSelectedItems(allIds);
     } else {
       setSelectedItems([]);
@@ -134,11 +136,16 @@ const Inventory = () => {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES');
   };
-  
-  // Contador de filtros activos
+    // Contador de filtros activos
   const activeFilterCount = Object.values(filters).reduce(
     (count, filterArray) => count + filterArray.length, 0
   );
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const idxLast = currentPage * itemsPerPage;
+  const idxFirst = idxLast - itemsPerPage;
+  const currentItems = filteredItems.slice(idxFirst, idxLast);
 
   if (loading) return <div className="text-center p-4">Cargando inventario...</div>;
   if (error) return <div className="alert alert-danger">{error}</div>;
@@ -170,50 +177,54 @@ const Inventory = () => {
     link.click();
     document.body.removeChild(link);
   };
-  
-  return (
-    <div className="inventory-container mb-5">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <InputGroup className="w-50">
-          <InputGroup.Text>
-            <i className="bi bi-search"></i>
-          </InputGroup.Text>
-          <Form.Control
-            id="buscadorInventario" 
-            placeholder="Buscar por nombre, ID, categoría o ubicación..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </InputGroup>
-        <div>
+    return (
+    <div className='card h-100 p-0 radius-12'>
+      <div className='card-header d-flex justify-content-between align-items-center py-16 px-24'>
+        <div className='d-flex flex-wrap align-items-center gap-3'>
+          <div className='d-flex align-items-center gap-2'>
+            <span>Inventario</span>
+          </div>
+          <div className='icon-field'>
+            <input
+              type='text'
+              name='search'
+              className='form-control form-control-sm w-auto'
+              placeholder='Buscar por nombre, ID, categoría...'
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />            <span className='icon'>
+              <Icon icon='ion:search-outline' />
+            </span>
+          </div>
+          <div>
+            <Button 
+              id="btnFiltrarInventario" 
+              variant={activeFilterCount > 0 ? "primary" : "outline-secondary"} 
+              onClick={() => setShowFilters(!showFilters)}
+              className="btn-sm position-relative"
+              size="sm"            >
+              <Icon icon="bi:funnel" /> Filtrar
+              {activeFilterCount > 0 && (
+                <Badge bg="danger" pill className="position-absolute top-0 start-100 translate-middle">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
+        </div>
+        <div className='d-flex flex-wrap align-items-center gap-3'>
           <Button 
             id="btnExportarCSV"
             variant="success" 
             onClick={exportToCSV}
-            className="me-5 p-3"
-          >
-            <i className="bi bi-download"></i> Exportar CSV
-          </Button>
-          
-          <Button 
-            id="btnFiltrarInventario" 
-            variant={activeFilterCount > 0 ? "primary" : "outline-secondary"} 
-            onClick={() => setShowFilters(!showFilters)}
-            className="position-relative p-3"
-          >
-            <i className="bi bi-funnel"></i> Filtrar
-            {activeFilterCount > 0 && (
-              <Badge bg="danger" pill className="position-absolute top-0 start-100 translate-middle">
-                {activeFilterCount}
-              </Badge>
-            )}
+            className="btn-sm"
+            size="sm"          >
+            <Icon icon="bi:download" /> Exportar CSV
           </Button>
         </div>
-      </div>
-
-      {/* Panel de filtros */}
+      </div>      {/* Panel de filtros */}
       {showFilters && (
-        <div className="filter-panel p-4 mb-3 border rounded shadow-sm bg-light">
+        <div className="filter-panel p-4 mb-3 border rounded shadow-sm bg-light mx-24">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="m-0 text-primary">Filtros</h5>
             <Button id="btnLimpiarFiltros" variant="link" size="sm" onClick={clearFilters} className="text-danger">
@@ -298,175 +309,256 @@ const Inventory = () => {
                 onChange={() => toggleFilter('stockStatus', 'alto')}
               />
             </div>
-          </div>
-        </div>
+          </div>        </div>
       )}
 
-      <Table responsive bordered hover className="sapitos-table-styles"> {/* Added custom class */}
-        <thead className="table-light">
-          <tr>
-            <th>
-              <Form.Check
-                type="checkbox"
-                onChange={handleSelectAll}
-                checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
-              />
-            </th>
-            <th>ID Inv.</th>
-            <th>ID Art.</th>
-            <th>Nombre</th>
-            <th>
-              Categoría
-              <Dropdown className="d-inline-block ms-1">
-                <Dropdown.Toggle variant="light" size="sm" id="dropdown-categoria" style={{padding: '0 5px'}}>
-                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  {filterOptions.categorias.map(categoria => (
-                    <Dropdown.Item key={categoria} onClick={() => toggleFilter('categoria', categoria)}>
-                      <Form.Check 
-                        type="checkbox"
-                        checked={filters.categoria.includes(categoria)}
-                        label={categoria}
-                        onChange={() => {}}
-                        onClick={e => e.stopPropagation()}
-                      />
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Menu>
-              </Dropdown>
-            </th>
-            <th>
-              Ubicación
-              <Dropdown className="d-inline-block ms-1">
-                <Dropdown.Toggle variant="light" size="sm" id="dropdown-location" style={{padding: '0 5px'}}>
-                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  {filterOptions.locations.map(location => (
-                    <Dropdown.Item key={location} onClick={() => toggleFilter('location', location)}>
-                      <Form.Check 
-                        type="checkbox"
-                        checked={filters.location.includes(location)}
-                        label={location}
-                        onChange={() => {}}
-                        onClick={e => e.stopPropagation()}
-                      />
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Menu>
-              </Dropdown>
-            </th>
-            <th>
-              Stock Actual
-              <Dropdown className="d-inline-block ms-1">
-                <Dropdown.Toggle variant="light" size="sm" id="dropdown-stock" style={{padding: '0 5px'}}>
-                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'bajo')}>
-                    <Form.Check 
+      <div className='card-body p-24'>
+        {loading ? (
+          <div className="text-center py-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Cargando inventario...</span>
+            </div>
+          </div>
+        ) : (
+          <div className="table-responsive scroll-sm">
+            <table className='table bordered-table sm-table mb-0'>
+              <thead>
+                <tr>
+                  <th>                    <Form.Check
                       type="checkbox"
-                      checked={filters.stockStatus.includes('bajo')}
-                      label="Bajo stock"
-                      onChange={() => {}}
-                      onClick={e => e.stopPropagation()}
+                      onChange={handleSelectAll}
+                      checked={selectedItems.length === currentItems.length && currentItems.length > 0}
                     />
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'normal')}>
-                    <Form.Check 
-                      type="checkbox"
-                      checked={filters.stockStatus.includes('normal')}
-                      label="Stock normal"
-                      onChange={() => {}}
-                      onClick={e => e.stopPropagation()}
-                    />
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'alto')}>
-                    <Form.Check 
-                      type="checkbox"
-                      checked={filters.stockStatus.includes('alto')}
-                      label="Stock alto"
-                      onChange={() => {}}
-                      onClick={e => e.stopPropagation()}
-                    />
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </th>
-            <th>Stock Mín.</th>
-            <th>Stock Rec.</th>
-            <th>Precio Venta</th>
-            <th>Temporada</th>
-            {/* Removed: Precio Prov., Margen %, Última Import., Última Export. */}
-          </tr>
-        </thead>
-        <tbody>
-          {filteredItems.length > 0 ? (
-            filteredItems.map((item) => {
-              let stockStatus = 'normal';
-              let rowClass = '';
-              
-              if (item.stockActual <= item.stockMinimo) {
-                stockStatus = 'bajo';
-                rowClass = 'table-danger';
-              } else if (item.stockActual > item.stockRecomendado) {
-                stockStatus = 'alto';
-                rowClass = 'table-success';
-              }
-              
-              return (
-                <tr key={item.inventarioId} className={rowClass}>
-                  <td>
-                    <Form.Check
-                      type="checkbox"
-                      checked={selectedItems.includes(item.inventarioId)}
-                      onChange={() => handleSelectItem(item.inventarioId)}
-                    />
-                  </td>
-                  <td>{item.inventarioId}</td>
-                  <td>{item.articuloId}</td>
-                  <td>{item.nombre}</td>
-                  <td>{item.categoria}</td>
-                  <td>
-                    {item.locationNombre}
-                    {item.locationTipo && (
-                      <small className="text-muted d-block">({item.locationTipo})</small>
-                    )}
-                  </td>
-                  <td>
-                    <span className={`badge ${stockStatus === 'bajo' ? 'bg-danger' : stockStatus === 'alto' ? 'bg-success' : 'bg-secondary'}`}>
-                      {item.stockActual}
-                    </span>
-                  </td>
-                  <td>{item.stockMinimo}</td>
-                  <td>{item.stockRecomendado}</td>
-                  <td>${parseFloat(item.precioVenta || 0)?.toFixed(2)}</td>
-                  <td>{item.temporada || '-'}</td>
-                  {/* Removed: precioProveedor, margenGanancia, fechaUltimaImportacion, fechaUltimaExportacion */}
+                  </th>
+                  <th>ID Inv.</th>
+                  <th>ID Art.</th>
+                  <th>Nombre</th>
+                  <th>
+                    Categoría                    <Dropdown className="d-inline-block ms-1">
+                      <Dropdown.Toggle variant="light" size="sm" id="dropdown-categoria" style={{padding: '0 5px'}}>
+                        <Icon icon="bi:funnel-fill" style={{fontSize: '0.7rem'}} />
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        {filterOptions.categorias.map(categoria => (
+                          <Dropdown.Item key={categoria} onClick={() => toggleFilter('categoria', categoria)}>
+                            <Form.Check 
+                              type="checkbox"
+                              checked={filters.categoria.includes(categoria)}
+                              label={categoria}
+                              onChange={() => {}}
+                              onClick={e => e.stopPropagation()}
+                            />
+                          </Dropdown.Item>
+                        ))}
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </th>
+                  <th>
+                    Ubicación                    <Dropdown className="d-inline-block ms-1">
+                      <Dropdown.Toggle variant="light" size="sm" id="dropdown-location" style={{padding: '0 5px'}}>
+                        <Icon icon="bi:funnel-fill" style={{fontSize: '0.7rem'}} />
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        {filterOptions.locations.map(location => (
+                          <Dropdown.Item key={location} onClick={() => toggleFilter('location', location)}>
+                            <Form.Check 
+                              type="checkbox"
+                              checked={filters.location.includes(location)}
+                              label={location}
+                              onChange={() => {}}
+                              onClick={e => e.stopPropagation()}
+                            />
+                          </Dropdown.Item>
+                        ))}
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </th>
+                  <th>
+                    Stock Actual                    <Dropdown className="d-inline-block ms-1">
+                      <Dropdown.Toggle variant="light" size="sm" id="dropdown-stock" style={{padding: '0 5px'}}>
+                        <Icon icon="bi:funnel-fill" style={{fontSize: '0.7rem'}} />
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'bajo')}>
+                          <Form.Check 
+                            type="checkbox"
+                            checked={filters.stockStatus.includes('bajo')}
+                            label="Bajo stock"
+                            onChange={() => {}}
+                            onClick={e => e.stopPropagation()}
+                          />
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'normal')}>
+                          <Form.Check 
+                            type="checkbox"
+                            checked={filters.stockStatus.includes('normal')}
+                            label="Stock normal"
+                            onChange={() => {}}
+                            onClick={e => e.stopPropagation()}
+                          />
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'alto')}>
+                          <Form.Check 
+                            type="checkbox"
+                            checked={filters.stockStatus.includes('alto')}
+                            label="Stock alto"
+                            onChange={() => {}}
+                            onClick={e => e.stopPropagation()}
+                          />
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </th>
+                  <th>Stock Mín.</th>
+                  <th>Stock Rec.</th>
+                  <th>Precio Venta</th>
+                  <th>Temporada</th>
                 </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td colSpan="11" className="text-center">No se encontraron items</td> {/* Adjusted colSpan */}
-            </tr>
-          )}
-        </tbody>
-      </Table>
-
-      {/* Estadísticas de resultados filtrados */}
-      <div className="d-flex justify-content-between align-items-center mt-3">
+              </thead>              <tbody>
+                {currentItems.length > 0 ? (
+                  currentItems.map((item) => {
+                    let stockStatus = 'normal';
+                    let rowClass = '';
+                    
+                    if (item.stockActual <= item.stockMinimo) {
+                      stockStatus = 'bajo';
+                      rowClass = 'table-danger';
+                    } else if (item.stockActual > item.stockRecomendado) {
+                      stockStatus = 'alto';
+                      rowClass = 'table-success';
+                    }
+                    
+                    return (
+                      <tr key={item.inventarioId} className={rowClass}>
+                        <td>
+                          <Form.Check
+                            type="checkbox"
+                            checked={selectedItems.includes(item.inventarioId)}
+                            onChange={() => handleSelectItem(item.inventarioId)}
+                          />
+                        </td>
+                        <td>{item.inventarioId}</td>
+                        <td>{item.articuloId}</td>
+                        <td><h6 className='text-md mb-0 fw-medium'>{item.nombre}</h6></td>
+                        <td>{item.categoria}</td>
+                        <td>
+                          {item.locationNombre}
+                          {item.locationTipo && (
+                            <small className="text-muted d-block">({item.locationTipo})</small>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`px-12 py-1 rounded-pill fw-medium text-xs ${stockStatus === 'bajo' ? 'bg-danger text-white' : stockStatus === 'alto' ? 'bg-success text-white' : 'bg-secondary text-white'}`}>
+                            {item.stockActual}
+                          </span>
+                        </td>
+                        <td>{item.stockMinimo}</td>
+                        <td>{item.stockRecomendado}</td>
+                        <td>${parseFloat(item.precioVenta || 0)?.toFixed(2)}</td>
+                        <td>{item.temporada || '-'}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="11" className="text-center py-3">No se encontraron items</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>      {/* Estadísticas de resultados filtrados */}
+      <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24 p-24">
         <div>
           <small className="text-muted">
-            Mostrando {filteredItems.length} de {inventory.length} productos
+            Mostrando {idxFirst + 1} a {Math.min(idxLast, filteredItems.length)} de {filteredItems.length} productos
             {activeFilterCount > 0 ? ` (${activeFilterCount} filtros aplicados)` : ''}
           </small>
         </div>
+        
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <nav>
+            <ul className="pagination pagination-sm mb-0">
+              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <Icon icon="lucide:chevron-first" />
+                </button>
+              </li>
+              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <Icon icon="lucide:chevron-left" />
+                </button>
+              </li>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  const delta = 2;
+                  return (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - delta && page <= currentPage + delta)
+                  );
+                })
+                .reduce((acc, page) => {
+                  const last = acc[acc.length - 1];
+                  if (last && page - last > 1) {
+                    acc.push('...');
+                  }
+                  acc.push(page);
+                  return acc;
+                }, [])
+                .map((page, index) => (
+                  page === '...' ? (
+                    <li key={`ellipsis-${index}`} className="page-item disabled">
+                      <span className="page-link">...</span>
+                    </li>
+                  ) : (
+                    <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                      <button 
+                        className="page-link"
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </button>
+                    </li>
+                  )
+                ))}
+              
+              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <Icon icon="lucide:chevron-right" />
+                </button>
+              </li>
+              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  <Icon icon="lucide:chevron-last" />
+                </button>
+              </li>
+            </ul>
+          </nav>        )}
+        
         <div>
           {selectedItems.length > 0 && (
             <Button variant="outline-danger" size="sm">
-              <i className="bi bi-trash"></i> Eliminar seleccionados ({selectedItems.length})
+              <Icon icon="mingcute:delete-2-line" className="me-1" /> Eliminar seleccionados ({selectedItems.length})
             </Button>
           )}
         </div>

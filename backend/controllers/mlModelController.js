@@ -15,8 +15,14 @@ const fs = require('fs');
  */
 const runModelUpdate = async (req, res) => {
     try {
-        logger.info('Manual model update requested');
-          // Check if user has required permissions (admin or similar)
+        logger.info('Solicitud de actualización manual recibida');
+        // Actualizar estado del modelo a activo inmediatamente
+        const statusPath = path.join(__dirname, '..', '..', 'mlops', 'config', 'model_status.json');
+        const statusDir = path.dirname(statusPath);
+        if (!fs.existsSync(statusDir)) fs.mkdirSync(statusDir, { recursive: true });
+        fs.writeFileSync(statusPath, JSON.stringify({ status: 'active', lastUpdated: new Date().toISOString() }, null, 2));
+
+         // Check if user has required permissions (admin or similar)
         if (req.user && req.user.rol !== 'admin') {
             return res.status(403).json({ 
                 success: false, 
@@ -29,13 +35,13 @@ const runModelUpdate = async (req, res) => {
         
         return res.status(200).json({ 
             success: true, 
-            message: 'Actualización de modelo iniciada correctamente. Revisa los logs para más detalles.' 
+            message: 'Actualización iniciada' 
         });
     } catch (error) {
-        logger.error(`Error in manual model update: ${error}`);
+        logger.error(`Error al iniciar actualización: ${error}`);
         return res.status(500).json({ 
             success: false, 
-            message: 'Error al iniciar la actualización del modelo',
+            message: 'Error al iniciar actualización',
             error: error.message 
         });
     }
@@ -275,10 +281,32 @@ const toggleModelStatus = async (req, res) => {
     }
 };
 
+/**
+ * Get historical performance metrics for the model
+ */
+const getModelMetrics = async (req, res) => {
+    try {
+        const metricsPath = path.join(__dirname, '..', '..', 'mlops', 'config', 'model_metrics.json');
+        let training = [];
+        let test = [];
+        if (fs.existsSync(metricsPath)) {
+            const content = fs.readFileSync(metricsPath, 'utf8');
+            const obj = JSON.parse(content);
+            training = obj.training || [];
+            test = obj.test || [];
+        }
+        return res.status(200).json({ success: true, training, test });
+    } catch (error) {
+        logger.error(`Error retrieving model metrics: ${error}`);
+        return res.status(500).json({ success: false, message: 'Error al recuperar métricas del modelo', error: error.message });
+    }
+};
+
 module.exports = {
     runModelUpdate,
     getModelUpdateLogs,
     getNextScheduledUpdate,
     getModelStatus,
-    toggleModelStatus
+    toggleModelStatus,
+    getModelMetrics
 };
