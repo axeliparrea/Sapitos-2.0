@@ -31,6 +31,14 @@ mlops/
 
 ## Features
 
+### Synthetic Data Generation
+
+- **Smart Data Generation**: The system includes a comprehensive synthetic data generator that creates realistic historical data for training and testing.
+- **Real Data Integration**: The generator automatically queries existing users, locations, products, and payment methods from the database instead of using hardcoded values.
+- **3-Year Historical Data**: Generates data spanning from 2022 to 2025 with seasonal patterns and business logic.
+- **Multiple Data Types**: Creates orders, order products, product history, payments, and comments with realistic relationships.
+- **Easy Testing**: Includes a test script to verify database connectivity and show what real data will be used.
+
 ### Weekly Model Training
 
 - The system automatically retrains the model each week using the most recent data from the database.

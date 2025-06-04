@@ -2,11 +2,18 @@
 Before running the project, ensure you have the following:  
 
 - **Node.js**: Version 16 or higher  
-- **Python**: Version 3.8 or higher (for ML functionality)
+- **Python**: Version 3.8 or higher (for ML functionality)  
 - **Backend `.env` file**: Ensure it's correctly configured  
 - **HANA Instance**: Must be running  
-- **Python libraries**: Required for ML functionality (`hana_ml`, `pandas`, `numpy`, `scikit-learn`, `xgboost`, `python-dotenv`)
+- **Python libraries**: Required for ML functionality (`hana_ml`, `pandas`, `numpy`, `scikit-learn`, `xgboost`, `python-dotenv`)  
 
+<Installation of Python dependencies>  
+To install required Python packages for the ML pipeline, run in PowerShell:  
+```powershell  
+cd mlops  
+py -m pip install --upgrade pip  
+py -m pip install -r requirements.txt  
+```  
 ---
 
 ## How to Run the Project  
@@ -16,7 +23,7 @@ _Open a terminal and run:_
 ```sh
 cd backend
 npm install
-npm npx nodemon server.js
+npx nodemon server.js
 ```
 
 The backend includes the ML model scheduler which will automatically run weekly. The scheduler will:

@@ -69,14 +69,18 @@ function runStockUpdatePipeline() {
         logger.debug(`ML: Executing pipeline script`);
         
         // Try different Python commands (python3, python, py) to improve compatibility
-        const pythonCommands = ['python3', 'python', 'py'];
+        // Prioritize Python launcher on Windows for compatibility
+        const pythonCommands = process.platform === 'win32'
+            ? ['py', 'python', 'python3']
+            : ['python3', 'python', 'py'];
         let pythonProcess = null;
         let commandUsed = '';
         
         for (const cmd of pythonCommands) {
             try {
                 // Try to spawn the process with the current command
-                pythonProcess = spawn(cmd, [scriptPath], { shell: true });
+                // Run script with cwd set to its pipeline folder to resolve relative paths correctly
+                pythonProcess = spawn(cmd, [scriptPath], { shell: true, cwd: path.dirname(scriptPath) });
                 commandUsed = cmd;
                 break;
             } catch (err) {
@@ -103,7 +107,9 @@ function runStockUpdatePipeline() {
         });
         
         pythonProcess.stderr.on('data', (data) => {
-            logger.error(`ML error: ${data.toString().trim().substring(0, 150)}`);
+            // Log full error output to aid debugging
+            const errMsg = data.toString().trim();
+            logger.error(`ML error: ${errMsg}`);
         });
         
         pythonProcess.on('close', (code) => {

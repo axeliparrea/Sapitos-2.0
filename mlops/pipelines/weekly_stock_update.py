@@ -53,7 +53,8 @@ create_directory_if_not_exists('../models/results')
 
 class WeeklyStockUpdate:
     """Class to handle weekly stock minimum updates based on ML predictions"""
-      def __init__(self):
+    
+    def __init__(self):
         """Initialize the weekly stock update process"""
         self.conn = None
         self.model = None
@@ -72,7 +73,7 @@ class WeeklyStockUpdate:
             logger.info("Connecting to database")
             self.conn = dataframe.ConnectionContext(
                 address=os.getenv('HANA_HOST'),
-                port=443,
+                port=int(os.getenv('HANA_PORT', 443)),
                 user=os.getenv('HANA_USER'),
                 password=os.getenv('HANA_PASSWORD')
             )
@@ -120,11 +121,11 @@ class WeeklyStockUpdate:
             articulo_id_col = [col for col in articulo_pd.columns if col.upper() == 'ARTICULO_ID'][0]
             orden_id_col = [col for col in ordenes_pd.columns if col.upper() == 'ORDEN_ID'][0]
             
-            # Merge DataFrames
-            df = inventario_pd.merge(historial_pd, on=inventario_id_col, how='inner') \
-                          .merge(articulo_pd, on=articulo_id_col, how='inner') \
-                          .merge(ordenes_productos_pd, on=inventario_id_col, how='inner') \
-                          .merge(ordenes_pd, on=orden_id_col, how='inner')
+            # Merge DataFrames (use left joins to retain inventory even if no matching records)
+            df = inventario_pd.merge(historial_pd, on=inventario_id_col, how='left') \
+                          .merge(articulo_pd, on=articulo_id_col, how='left') \
+                          .merge(ordenes_productos_pd, on=inventario_id_col, how='left') \
+                          .merge(ordenes_pd, on=orden_id_col, how='left')
             
             # Clean up column names and select relevant ones
             df_clean = df[[
@@ -339,7 +340,7 @@ class WeeklyStockUpdate:
         except Exception as e:
             logger.error(f"Error predicting next period: {e}")
             return None
-      def calculate_new_stock_minimums(self, df_next, df):
+    def calculate_new_stock_minimums(self, df_next, df):
         """Calculate new stock minimums based on predictions"""
         try:
             logger.info("Calculating new stock minimums")
@@ -421,7 +422,7 @@ class WeeklyStockUpdate:
         except Exception as e:
             logger.error(f"Error updating database: {e}")
             return 0
-      def save_model_and_results(self, df_update):
+    def save_model_and_results(self, df_update):
         """Save the model and results for future use"""
         try:
             today_str = datetime.datetime.now().strftime("%Y%m%d")

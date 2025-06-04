@@ -71,18 +71,19 @@ const UsersListLayer = () => {
     <div className="card h-100 p-0 radius-12">
       <div className="card-header d-flex justify-content-between align-items-center py-16 px-24">
         <div className="d-flex align-items-center gap-3">
-          <span className="text-md fw-medium text-secondary-light mb-0">Mostrar</span>
-          <form className="navbar-search">
+          <span>Usuarios</span>
+          <div className="icon-field">
             <input
               type="text"
-              id="buscadorUsuarios"
-              className="bg-base h-40-px w-auto"
+              className="form-control form-control-sm w-auto"
               placeholder="Buscar usuarios..."
               value={terminoBusqueda}
               onChange={(e) => setTerminoBusqueda(e.target.value)}
             />
-            <Icon icon="ion:search-outline" className="icon" />
-          </form>
+            <span className="icon">
+              <Icon icon="ion:search-outline" />
+            </span>
+          </div>
         </div>
         <Link to="/agregar-usuario" id="agregarUsuarioBtn"  className="btn btn-primary btn-sm">
           <Icon icon="ic:baseline-plus" className="icon text-xl" /> Agregar Usuario
@@ -119,22 +120,24 @@ const UsersListLayer = () => {
                           <div className="d-flex align-items-center gap-10 justify-content-center">
                             {/* Botón Editar */}
                             <button
-                              id={`editarUsuario-${index}`} 
                               type="button"
                               onClick={() => navigate(`/editar-usuario/${usuario.correo || usuario.CORREO}`)}
-                              className="bg-success-focus bg-hover-success-200 text-success-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                              className="w-24-px h-24-px me-4 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                              style={{ border: 'none' }}
+                              title="Editar Usuario"
                             >
-                              <Icon icon="lucide:edit" className="menu-icon" />
+                              <Icon icon="lucide:edit" />
                             </button>
 
                             {/* Botón Eliminar */}
                             <button
-                              id={`eliminarUsuario-${index}`}
                               type="button"
                               onClick={() => eliminarUsuario(usuario.correo)}
-                              className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                              className="w-24-px h-24-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                              style={{ border: 'none' }}
+                              title="Eliminar Usuario"
                             >
-                              <Icon icon="fluent:delete-24-regular" className="menu-icon" />
+                              <Icon icon="fluent:delete-24-regular" />
                             </button>
                           </div>
                         </td>

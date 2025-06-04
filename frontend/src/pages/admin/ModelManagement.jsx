@@ -28,6 +28,8 @@ const ModelManagement = () => {
   }, [message]);
   const [nextUpdate, setNextUpdate] = useState(null);
   const [logs, setLogs] = useState(null);
+  // Reverse log lines to show most recent first
+  const reversedLogContent = logs?.logContent ? logs.logContent.split('\n').reverse().join('\n') : null;
   const navigate = useNavigate();
   
   /**
@@ -207,8 +209,8 @@ const ModelManagement = () => {
               </div>
             </div>
             
-            {message && (
-              <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show mb-2`} role="alert">
+            {message && message.type === 'error' && (
+              <div className="alert alert-danger alert-dismissible fade show mb-2" role="alert">
                 {message.text}
                 <button 
                   type="button" 
@@ -268,16 +270,8 @@ const ModelManagement = () => {
           {/* Logs card */}
           <div className="col-xl-6 mb-4">
             <div className="card h-100">
-              <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-                <h5 className="card-title mb-0">Logs de Actualización</h5>
-                <button 
-                  className="btn btn-sm btn-outline-primary" 
-                  onClick={fetchLogs} 
-                  disabled={loading}
-                  title="Actualizar logs"
-                >
-                  <i className="bi bi-arrow-clockwise"></i> {loading ? 'Actualizando...' : 'Actualizar'}
-                </button>
+              <div className="card-header bg-white border-bottom">
+                <h5 className="card-title mb-0">{logs?.logFile || 'Logs'}</h5>
               </div>
               <div className="card-body">
                 {loading ? (
@@ -289,9 +283,9 @@ const ModelManagement = () => {
                   </div>
                 ) : logs && logs.logContent ? (
                   <div>
-                    <p><strong>Archivo:</strong> {logs.logFile}</p>
-                    <div className="bg-dark text-light p-3 mt-3" style={{ maxHeight: '400px', overflow: 'auto', borderRadius: '4px' }}>
-                      <pre className="mb-0" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{logs.logContent}</pre>
+                    {/* Title now shows file name, so static label removed */}
+                    <div className="bg-dark text-light p-3 mt-0" style={{ maxHeight: '250px', overflow: 'auto', borderRadius: '4px' }}>
+                      <pre className="mb-0" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{reversedLogContent}</pre>
                     </div>
                   </div>                ) : (
                   <div className="text-center py-5 px-3 bg-light rounded" style={{ minHeight: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>

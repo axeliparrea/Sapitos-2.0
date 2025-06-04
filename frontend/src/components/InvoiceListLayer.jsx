@@ -9,6 +9,8 @@ const InvoiceListLayer = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchPedidos();
@@ -211,10 +213,15 @@ const InvoiceListLayer = () => {
     const cumpleFiltro = filterStatus ? pedido.estatus === filterStatus : true;
     return cumpleBusqueda && cumpleFiltro;
   });
+  // Pagination calculations
+  const totalPages = Math.ceil(pedidosFiltrados.length / itemsPerPage);
+  const idxLast = currentPage * itemsPerPage;
+  const idxFirst = idxLast - itemsPerPage;
+  const currentPedidos = pedidosFiltrados.slice(idxFirst, idxLast);
 
   return (
-    <div className='card'>
-      <div className='card-header d-flex flex-wrap align-items-center justify-content-between gap-3'>
+    <div className='card h-100 p-0 radius-12'>
+      <div className='card-header d-flex justify-content-between align-items-center py-16 px-24'>
         <div className='d-flex flex-wrap align-items-center gap-3'>
           <div className='d-flex align-items-center gap-2'>
             <span>Pedidos</span>
@@ -252,7 +259,7 @@ const InvoiceListLayer = () => {
         </div>
       </div>
 
-      <div className='card-body'>
+      <div className='card-body p-24'>
         {loading ? (
           <div className="text-center py-4">
             <div className="spinner-border text-primary" role="status">
@@ -260,78 +267,127 @@ const InvoiceListLayer = () => {
             </div>
           </div>
         ) : (
-          <table className='table bordered-table mb-0'>
-            <thead>
-              <tr>
-                <th>Número</th>
-                <th>ID</th>
-                <th>Proveedor</th>
-                <th>Fecha</th>
-                <th>Cantidad</th>
-                <th>Estatus</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pedidosFiltrados.length > 0 ? (
-                pedidosFiltrados.map((pedido, idx) => (
-                  <tr key={idx}>
-                    <td>{pedido.numero}</td>
-                    <td><Link to={`/pedido/${pedido.id.replace("#", "")}`} className='text-primary-600'>{pedido.id}</Link></td>
-                    <td><h6 className='text-md mb-0 fw-medium'>{pedido.proveedor}</h6></td>
-                    <td>{pedido.fecha}</td>
-                    <td>{pedido.cantidad}</td>
-                    <td>
-                      <span className={`px-24 py-4 rounded-pill fw-medium text-sm ${
-                        pedido.estatus === 'Completado' ? 'bg-success-focus text-success-main' : 
-                        pedido.estatus === 'En Reparto' ? 'bg-success-focus text-success-main' : 
-                        'bg-warning-focus text-warning-main'
-                      }`}>
-                        {pedido.estatus}
-                      </span>
-                    </td>
-                    <td>
-                      <Link to={`/detalle-pedido/${pedido.id.replace("#", "")}`} className='w-32-px h-32-px me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center' title="Ver Detalle">
-                        <Icon icon='iconamoon:eye-light' />
-                      </Link>
-                      <button 
-                        onClick={() => handleDelete(pedido.id)}
-                        className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                        style={{ border: 'none' }}
-                      >
-                        <Icon icon='mingcute:delete-2-line' />
-                      </button>
-                      {pedido.estatus === 'En Reparto' && (
-                        <button
-                          onClick={() => marcarComoCompletado(pedido)}
-                          className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                          style={{ border: 'none' }}
-                          title="Marcar como completado"
-                        >
-                          <Icon icon='mdi:check-bold' />
-                        </button>
-                      )}
-                      {pedido.estatus === 'Completado' && (
-                        <button 
-                          onClick={() => enviarAInventario(pedido)}
-                          className='w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                          style={{ border: 'none' }}
-                          title="Enviar a inventario"
-                        >
-                          <Icon icon='material-symbols:inventory-2-outline' />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center py-3">No se encontraron pedidos</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <div className="table-responsive scroll-sm">
+            <table className='table bordered-table sm-table mb-0'>
+             <thead>
+               <tr>
+                 <th>Número</th>
+                 <th>ID</th>
+                 <th>Proveedor</th>
+                 <th>Fecha</th>
+                 <th>Cantidad</th>
+                 <th>Estatus</th>
+                 <th>Acciones</th>
+               </tr>
+             </thead>
+             <tbody>
+               {currentPedidos.length > 0 ? (
+                 currentPedidos.map((pedido, idx) => (
+                   <tr key={idx}>
+                     <td>{pedido.numero}</td>
+                     <td><Link to={`/pedido/${pedido.id.replace("#", "")}`} className='text-primary-600'>{pedido.id}</Link></td>
+                     <td><h6 className='text-md mb-0 fw-medium'>{pedido.proveedor}</h6></td>
+                     <td>{pedido.fecha}</td>
+                     <td>{pedido.cantidad}</td>
+                     <td>
+                       <span className={`px-12 py-1 rounded-pill fw-medium text-xs ${
+                         pedido.estatus === 'Completado' ? 'bg-success-focus text-success-main' : 
+                         pedido.estatus === 'En Reparto' ? 'bg-success-focus text-success-main' : 
+                         'bg-warning-focus text-warning-main'
+                       }`}>
+                         {pedido.estatus}
+                       </span>
+                     </td>
+                     <td className="align-middle d-flex align-items-center">
+                       {/* Botones de acción */}
+                       <Link to={`/detalle-pedido/${pedido.id.replace("#", "")}`} className='w-24-px h-24-px me-4 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center' title="Ver Detalle">
+                         <Icon icon='iconamoon:eye-light' />
+                       </Link>
+                       <button 
+                         onClick={() => handleDelete(pedido.id)}
+                         className='w-24-px h-24-px me-4 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
+                         style={{ border: 'none' }}
+                       >
+                         <Icon icon='mingcute:delete-2-line' />
+                       </button>
+                       {pedido.estatus === 'En Reparto' && (
+                         <button
+                           onClick={() => marcarComoCompletado(pedido)}
+                           className='w-24-px h-24-px me-4 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+                           style={{ border: 'none' }}
+                           title="Marcar como completado"
+                         >
+                           <Icon icon='mdi:check-bold' />
+                         </button>
+                       )}
+                       {pedido.estatus === 'Completado' && (
+                         <button 
+                           onClick={() => enviarAInventario(pedido)}
+                           className='w-24-px h-24-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+                           style={{ border: 'none' }}
+                           title="Enviar a inventario"
+                         >
+                           <Icon icon='material-symbols:inventory-2-outline' />
+                         </button>
+                       )}
+                     </td>
+                   </tr>
+                 ))
+               ) : (
+                 <tr>
+                   <td colSpan="7" className="text-center py-3">No se encontraron pedidos</td>
+                 </tr>
+               )}
+             </tbody>
+           </table>
+          </div>
         )}
+      </div>
+      {/* Paginación */}
+      <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24 p-24">
+         <span>Mostrando {idxFirst + 1} a {Math.min(idxLast, pedidosFiltrados.length)} de {pedidosFiltrados.length} registros</span>
+         <ul className="pagination d-flex flex-wrap align-items-center gap-2 justify-content-center">
+          <li className="page-item">
+            <button
+              type="button"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md"
+            >
+              <Icon icon="mdi:chevron-left" />
+            </button>
+          </li>
+          {(() => {
+            const groupSize = 5;
+            const groupIndex = Math.floor((currentPage - 1) / groupSize);
+            const startPage = groupIndex * groupSize + 1;
+            const endPage = Math.min(startPage + groupSize - 1, totalPages);
+            return Array.from({ length: endPage - startPage + 1 }, (_, idx) => {
+              const page = startPage + idx;
+              return (
+                <li key={page} className="page-item">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(page)}
+                    className={`page-link ${currentPage === page ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-secondary-light'} fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md`}
+                  >
+                    {page}
+                  </button>
+                </li>
+              );
+            });
+          })()}
+          <li className="page-item">
+            <button
+              type="button"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md"
+            >
+              <Icon icon="mdi:chevron-right" />
+            </button>
+          </li>
+        </ul>
       </div>
     </div>
   );
