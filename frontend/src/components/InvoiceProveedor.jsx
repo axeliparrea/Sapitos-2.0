@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { jwtDecode } from "jwt-decode";
 
 const InvoiceProveedor = () => {
   const [pedidos, setPedidos] = useState([]);
@@ -14,23 +15,43 @@ const InvoiceProveedor = () => {
     fetchPedidos();
   }, []);
 
-  // Nueva función usando fetch y await
+  // Funcion pricipal para obtener los pedidos
+  // Verifica la sesión del usuario y obtiene el locationId
   const fetchPedidos = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error("Token no encontrado");
+      const sessionResponse = await fetch("http://localhost:5000/users/getSession", {
+        credentials: "include", 
+      });
 
-      // Decodificar el token para obtener el LOCATION_ID
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const locationId = payload.locationId;
-      if (!locationId) throw new Error("Location ID no encontrado en el token");
+      if (!sessionResponse.ok) {
+        throw new Error("No se pudo verificar la sesión");
+      }
 
+      const sessionData = await sessionResponse.json();
+      let locationId;
+
+      if (sessionData.usuario && sessionData.usuario.locationId) {
+        locationId = sessionData.usuario.locationId;
+      } else if (sessionData.token) {
+        try {
+          const decoded = jwtDecode(sessionData.token);
+          locationId = decoded.locationId;
+        } catch (e) {
+          throw new Error("Error al decodificar el token");
+        }
+      }
+
+      if (!locationId) {
+        throw new Error("Location ID no encontrado en la sesión");
+      }
+
+      // Ahora hacemos la solicitud para obtener los pedidos
       const url = `http://localhost:5000/proveedor/pedidos/${locationId}`;
       const response = await fetch(url, {
         method: 'GET',
+        credentials: 'include', // Incluir cookies automáticamente
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
