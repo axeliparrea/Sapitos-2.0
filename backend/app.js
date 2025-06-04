@@ -9,6 +9,8 @@ const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
 const pedidosHRoutes = require("./routes/pedidosH.js");
 const pedidosProveedorRoutes = require("./routes/pedidosProveedor.js");
+const rolRoutes = require("./routes/rol.js");
+const locationRoutes = require("./routes/location"); // al inicio
 
 const app = express();
 
@@ -33,6 +35,12 @@ app.use("/users/logoutUser", userRoutes);
 
 // inventory routes
 app.use("/inventory", inventoryRoutes);
+
+// roles routes
+app.use("/rol", rolRoutes);
+
+// locations routes
+app.use("/location2", locationRoutes); // junto a tus otras rutas
 
 // pedidos routes
 app.use("/pedido", pedidoRoutes);

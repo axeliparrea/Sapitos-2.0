@@ -119,6 +119,8 @@ router.post("/login", loginUser);
  *                   username:
  *                     type: string
  *                     description: Nombre de usuario
+ *                   Rol_ID:
+ *                     type: integer
  *                   rol:
  *                     type: string
  *                     description: Nombre del rol del usuario

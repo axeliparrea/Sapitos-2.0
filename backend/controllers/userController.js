@@ -185,9 +185,10 @@ const getUsers = async (req, res) => {
         u.RFC,
         u.FechaEmpiezo,
         u.Location_ID,
-        r.Nombre as RolNombre
-      FROM Usuario2 u
-      LEFT JOIN Rol2 r ON u.Rol_ID = r.Rol_ID
+        u.Rol_ID,
+        r.NOMBRE AS rolNombre 
+    FROM Usuario2 u
+    LEFT JOIN Rol2 r ON u.Rol_ID = r.ROL_ID
     `;
 
     connection.exec(query, [], (err, result) => {
@@ -201,7 +202,8 @@ const getUsers = async (req, res) => {
         correo: usuario.CORREO,
         nombre: usuario.NOMBRE,
         username: usuario.USERNAME,
-        rol: usuario.ROLNombre ,
+        rolID: usuario.ROL_ID,
+        rol: usuario.RolNombre ,
         rfc: usuario.RFC,
         fechaEmpiezo: usuario.FECHAEMPIEZO,
         locationId: usuario.LOCATION_ID,
@@ -216,6 +218,7 @@ const getUsers = async (req, res) => {
     res.status(500).json({ error: "Error del servidor" });
   }
 };
+
 
 const deleteUser = async (req, res) => {
   const { correo } = req.body;
