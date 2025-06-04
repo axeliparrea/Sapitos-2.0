@@ -5,77 +5,36 @@ import UserMenu from "../../general/userMenu";
 const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserSession = async () => {
       try {
-        const response = await fetch('http://localhost:5000/users/getSession', {
-          method: 'GET',
-          credentials: 'include',
+        const response = await fetch("http://localhost:5000/users/getSession", {
+          method: "GET",
+          credentials: "include",
           headers: {
-            'Content-Type': 'application/json',
-          }
+            "Content-Type": "application/json",
+          },
         });
 
         if (response.ok) {
           const data = await response.json();
           console.log("Sesión obtenida:", data);
-          
-          // Transformar los datos para que coincidan con el formato esperado
-          const formattedUserData = {
-            id: data.usuario.id,
-            NOMBRE: data.usuario.nombre,
-            ROL: data.usuario.rol, // solo 'rol' minúsculas
-            CORREO: data.usuario.correo,
-            USERNAME: data.usuario.username,
-            ORGANIZACION: data.usuario.organizacion || '', // Si tienes organización en el backend
-            token: data.token
-          };
-          
-          setUserData(formattedUserData);
-        } else {
-          console.log("No hay sesión válida");
-          setUserData(null);
-          // Opcional: redirigir al login si no hay sesión
-          // window.location.href = '/login';
-        }
-      } catch (error) {
-        console.error("Error obteniendo sesión:", error);
-        setUserData(null);
-      } finally {
-        setLoading(false);
-    const fetchUserSession = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/users/getSession', {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Sesión obtenida:", data);
-          
-          // Transformar los datos para que coincidan con el formato esperado
           const formattedUserData = {
             id: data.usuario.id,
             NOMBRE: data.usuario.nombre,
-            ROL: data.usuario.rol, // solo 'rol' minúsculas
+            ROL: data.usuario.rol,
             CORREO: data.usuario.correo,
             USERNAME: data.usuario.username,
-            ORGANIZACION: data.usuario.organizacion || '', // Si tienes organización en el backend
-            token: data.token
+            ORGANIZACION: data.usuario.organizacion || "",
+            token: data.token,
           };
-          
+
           setUserData(formattedUserData);
         } else {
           console.log("No hay sesión válida");
           setUserData(null);
-          // Opcional: redirigir al login si no hay sesión
-          // window.location.href = '/login';
         }
       } catch (error) {
         console.error("Error obteniendo sesión:", error);
@@ -86,12 +45,8 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
     };
 
     fetchUserSession();
-    };
-
-    fetchUserSession();
   }, []);
 
-  // Mostrar loading mientras se obtiene la sesión
   if (loading) {
     return (
       <div className="navbar-header">
@@ -120,17 +75,14 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
     );
   }
 
-  // Construir la ruta de la imagen de perfil usando el correo del usuario
   let profileImage = "assets/images/user.png";
   if (userData?.CORREO) {
-    // Usamos el endpoint backend para obtener la imagen de perfil
     profileImage = `http://localhost:5000/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
   }
 
   return (
-    <div className="navbar-header"id="navbarHeader">
+    <div className="navbar-header" id="navbarHeader">
       <div className="row align-items-center justify-content-between">
-        {/* Botones del navbar */}
         <div className="col-auto">
           <div className="d-flex flex-wrap align-items-center gap-4">
             <button type="button" className="sidebar-toggle" onClick={sidebarControl}>
@@ -140,7 +92,6 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
               />
             </button>
 
-            {/* Organization name */}
             <div className="d-flex align-items-center" style={{ height: "100%" }}>
               <span className="fs-4 fw-semibold text-dark">
                 {userData?.ORGANIZACION || ""}
@@ -154,9 +105,8 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
         </div>
 
         <UserMenu
-          name={userData?.NOMBRE || "Usuario"} 
-          role={userData?.ROL || "Rol"} 
-          profileImage={profileImage}
+          name={userData?.NOMBRE || "Usuario"}
+          role={userData?.ROL || "Rol"}
           profileImage={profileImage}
           onClose={() => console.log("Cerrar menú")}
         />
