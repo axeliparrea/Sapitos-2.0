@@ -149,10 +149,8 @@ const Inventory = () => {
 
   const exportToCSV = () => {
     const headers = [
-      'ID Inventario', 'ID Artículo', 'Nombre', 'Categoría', 'Ubicación', 'Tipo Ubicación',
-      'Stock Actual', 'Stock Mínimo', 'Stock Recomendado', 'Stock Seguridad',
-      'Precio Proveedor', 'Precio Venta', 'Temporada', 'Margen Ganancia',
-      'Tiempo Reposición', 'Demanda Promedio', 'Última Importación', 'Última Exportación'
+      'ID Inventario', 'ID Artículo', 'Nombre', 'Categoría', 'Ubicación',
+      'Stock Actual', 'Stock Mínimo', 'Stock Recomendado', 'Precio Venta', 'Temporada'
     ];
     const rows = filteredItems.map(item => [
       item.inventarioId,
@@ -160,19 +158,11 @@ const Inventory = () => {
       item.nombre,
       item.categoria,
       item.locationNombre,
-      item.locationTipo,
       item.stockActual,
       item.stockMinimo,
       item.stockRecomendado,
-      item.stockSeguridad,
-      item.precioProveedor,
       item.precioVenta,
       item.temporada,
-      item.margenGanancia,
-      item.tiempoReposicion,
-      item.demandaPromedio,
-      formatDate(item.fechaUltimaImportacion),
-      formatDate(item.fechaUltimaExportacion),
     ]);
   
     const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
@@ -316,7 +306,7 @@ const Inventory = () => {
         </div>
       )}
 
-      <Table responsive bordered hover>
+      <Table responsive bordered hover className="sapitos-table-styles"> {/* Added custom class */}
         <thead className="table-light">
           <tr>
             <th>
@@ -410,12 +400,9 @@ const Inventory = () => {
             </th>
             <th>Stock Mín.</th>
             <th>Stock Rec.</th>
-            <th>Precio Prov.</th>
             <th>Precio Venta</th>
             <th>Temporada</th>
-            <th>Margen %</th>
-            <th>Última Import.</th>
-            <th>Última Export.</th>
+            {/* Removed: Precio Prov., Margen %, Última Import., Última Export. */}
           </tr>
         </thead>
         <tbody>
@@ -458,18 +445,15 @@ const Inventory = () => {
                   </td>
                   <td>{item.stockMinimo}</td>
                   <td>{item.stockRecomendado}</td>
-                  <td>${parseFloat(item.precioProveedor || 0)?.toFixed(2)}</td>
                   <td>${parseFloat(item.precioVenta || 0)?.toFixed(2)}</td>
                   <td>{item.temporada || '-'}</td>
-                  <td>{item.margenGanancia ? `${parseFloat(item.margenGanancia).toFixed(1)}%` : '-'}</td>
-                  <td>{formatDate(item.fechaUltimaImportacion)}</td>
-                  <td>{formatDate(item.fechaUltimaExportacion)}</td>
+                  {/* Removed: precioProveedor, margenGanancia, fechaUltimaImportacion, fechaUltimaExportacion */}
                 </tr>
               );
             })
           ) : (
             <tr>
-              <td colSpan="15" className="text-center">No se encontraron items</td>
+              <td colSpan="11" className="text-center">No se encontraron items</td> {/* Adjusted colSpan */}
             </tr>
           )}
         </tbody>

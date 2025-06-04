@@ -8,8 +8,9 @@ const auth = (roles = []) => (req, res, next) => {
   try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = decoded; // Attach user to request
-      if (roles.length && !roles.includes(req.user.ROL)) {
-            console.log("Rol =",req.user.ROL,", forbidden")
+      // Cambiar a req.user.rol (minúsculas)
+      if (roles.length && !roles.includes(req.user.rol)) {
+          console.log("Rol =", req.user.rol, ", forbidden")
           return res.status(403).json({ message: "Forbidden" });
       }
       next();

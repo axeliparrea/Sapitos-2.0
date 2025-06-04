@@ -8,6 +8,9 @@ const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
 const pedidosHRoutes = require("./routes/pedidosH.js");
+const pedidosProveedorRoutes = require("./routes/pedidosProveedor.js");
+const rolRoutes = require("./routes/rol.js");
+const locationRoutes = require("./routes/location"); // al inicio
 
 const app = express();
 
@@ -29,16 +32,27 @@ app.use(express.json());
 // login, register, and logout routes
 app.use("/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs)); 
-app.use("/users/getUsers", userRoutes); 
+app.use("//users/getUsers", userRoutes); 
+app.use("/users/logoutUser", userRoutes);
+app.use("/users/logoutUser", userRoutes);
 
 
 // inventory routes
 app.use("/inventory", inventoryRoutes);
 
+// roles routes
+app.use("/rol", rolRoutes);
+
+// locations routes
+app.use("/location2", locationRoutes); // junto a tus otras rutas
 
 // pedidos routes
 app.use("/pedido", pedidoRoutes);
 app.use("/proveedores", pedidoRoutes);
 app.use("/pedidosH", pedidosHRoutes);
+app.use("/proveedor", pedidosProveedorRoutes);
+app.use("/proveedores", pedidoRoutes);
+app.use("/pedidosH", pedidosHRoutes);
+app.use("/proveedor", pedidosProveedorRoutes);
 
 module.exports = app;

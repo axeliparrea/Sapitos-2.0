@@ -1,8 +1,13 @@
 const express = require("express");
-const { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser, getUserByEmail } = require("../controllers/userController");
+const { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser, getUserByEmail, getProfileImage, updateProfileImage, getLocations} = require("../controllers/userController");
 const router = express.Router();
 
-const { auth } = require('../middleware/auth'); // Import the middleware
+const { auth } = require('../middleware/auth');
+const fileUpload = require("express-fileupload");
+router.use(fileUpload());
+const { auth } = require('../middleware/auth');
+const fileUpload = require("express-fileupload");
+router.use(fileUpload());
 
 /**
  * @swagger
@@ -116,7 +121,10 @@ router.post("/login", loginUser);
  *                     description: Nombre completo del usuario
  *                   username:
  *                     type: string
- *                     description: Nombre de usuario
+ *                     description: Organización a la que pertenece el usuario
+ *                   contrasenia:
+ *                     type: string
+ *                     description: Contraseña encriptada del usuario
  *                   rol:
  *                     type: string
  *                     description: Nombre del rol del usuario
@@ -146,6 +154,7 @@ router.post("/login", loginUser);
  *       500:
  *         description: Error del servidor
  */
+// router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
 router.get("/getUsers", getUsers);
 
 /**
@@ -202,7 +211,9 @@ router.post("/logoutUser", logoutUser);
  *       500:
  *         description: Server error
  */
-router.delete("/deleteUser", deleteUser);
+// router.delete("/deleteUser", auth(["admin"]), deleteUser);
+router.delete("/deleteUser",deleteUser);
+
 
 /**
  * @swagger
@@ -297,6 +308,144 @@ router.put("/updateUser", updateUser);
  */
 router.get("/:correo", getUserByEmail);
 
-router.get("/getSession", getSession);
+/**
+ * @swagger
+ * /users/updateProfileImage:
+ *   post:
+ *     summary: Update user profile image
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - correo
+ *               - imageData
+ *             properties:
+ *               correo:
+ *                 type: string
+ *                 description: Email del usuario
+ *               imageData:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: Array de bytes de la imagen
+ *               contentType:
+ *                 type: string
+ *                 description: Tipo de contenido de la imagen
+ *     responses:
+ *       200:
+ *         description: Image updated successfully
+ *       400:
+ *         description: Missing required data
+ *       500:
+ *         description: Server error
+ */
+router.post("/updateProfileImage", updateProfileImage);
+
+/**
+ * @swagger
+ * /users/{correo}:
+ *   get:
+ *     summary: Get user by email
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: correo
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email del usuario
+ *     responses:
+ *       200:
+ *         description: Usuario encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 correo:
+ *                   type: string
+ *                 nombre:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 rol:
+ *                   type: string
+ *                 rfc:
+ *                   type: string
+ *                 fechaEmpiezo:
+ *                   type: string
+ *                   format: date
+ *                 locationId:
+ *                   type: integer
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/:correo", getUserByEmail);
+
+/**
+ * @swagger
+ * /users/{correo}/profileImage:
+ *   get:
+ *     summary: Get user profile image
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: correo
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email del usuario
+ *     responses:
+ *       200:
+ *         description: Imagen de perfil del usuario
+ *         content:
+ *           image/jpeg:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Usuario o imagen no encontrada
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/:correo/profileImage", getProfileImage);
+
+/**
+ * @swagger
+ * /users/locations:
+ *   get:
+ *     summary: Get all locations
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: List of locations retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   Location_ID:
+ *                     type: integer
+ *                     description: Unique ID of the location
+ *                   Nombre:
+ *                     type: string
+ *                     description: Name of the location
+ *                   Tipo:
+ *                     type: string
+ *                     description: Type of the location
+ *       500:
+ *         description: Error retrieving locations
+ */
+router.get('/locations', getLocations);
 
 module.exports = router;
