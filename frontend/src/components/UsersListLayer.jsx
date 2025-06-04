@@ -16,31 +16,32 @@ const UsersListLayer = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      // Obtener usuarios
       const usuariosResponse = await axios.get('http://localhost:5000/users/getUsers', {
         withCredentials: true
       });
 
-      // Obtener roles
       const rolesResponse = await axios.get('http://localhost:5000/rol/getRoles');
       const rolesMap = {};
       rolesResponse.data.forEach((r) => {
-        rolesMap[r.ROL_ID] = r.NOMBRE;
+        rolesMap[r.ROL_ID?.toString()] = r.NOMBRE;
       });
 
-      // Obtener ubicaciones
       const locationsResponse = await axios.get('http://localhost:5000/location2');
       const locationsMap = {};
       locationsResponse.data.forEach((l) => {
-        locationsMap[l.LOCATION_ID] = l.NOMBRE;
+        locationsMap[l.LOCATION_ID?.toString()] = l.NOMBRE;
       });
 
-      // Enlazar nombre de rol y nombre de ubicación a cada usuario
-      const usuariosConDatos = usuariosResponse.data.map(usuario => ({
-        ...usuario,
-        rol: rolesMap[usuario.rolID] || "Sin rol",
-        locationNombre: locationsMap[usuario.locationId] || "Sin ubicación"
-      }));
+      const usuariosConDatos = usuariosResponse.data.map(usuario => {
+        const rolId = usuario.rolId;
+        const locationId = usuario.locationId;
+
+        return {
+          ...usuario,
+          rol: rolesMap[rolId?.toString()] || "Sin rol",
+          locationNombre: locationsMap[locationId?.toString()] || "Sin ubicación"
+        };
+      });
 
       setUsuarios(usuariosConDatos);
       setUsuariosFiltrados(usuariosConDatos);
