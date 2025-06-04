@@ -5,6 +5,9 @@ const router = express.Router();
 const { auth } = require('../middleware/auth');
 const fileUpload = require("express-fileupload");
 router.use(fileUpload());
+const { auth } = require('../middleware/auth');
+const fileUpload = require("express-fileupload");
+router.use(fileUpload());
 
 /**
  * @swagger
@@ -118,9 +121,10 @@ router.post("/login", loginUser);
  *                     description: Nombre completo del usuario
  *                   username:
  *                     type: string
- *                     description: Nombre de usuario
- *                   Rol_ID:
- *                     type: integer
+ *                     description: Organización a la que pertenece el usuario
+ *                   contrasenia:
+ *                     type: string
+ *                     description: Contraseña encriptada del usuario
  *                   rol:
  *                     type: string
  *                     description: Nombre del rol del usuario
@@ -207,8 +211,9 @@ router.post("/logoutUser", logoutUser);
  *       500:
  *         description: Server error
  */
-router.delete("/deleteUser", auth(["admin"]), deleteUser);
-// router.delete("/deleteUser", deleteUser);
+// router.delete("/deleteUser", auth(["admin"]), deleteUser);
+router.delete("/deleteUser",deleteUser);
+
 
 /**
  * @swagger

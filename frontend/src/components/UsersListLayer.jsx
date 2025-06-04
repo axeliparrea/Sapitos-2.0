@@ -45,8 +45,13 @@ const UsersListLayer = () => {
       setUsuarios(usuariosConDatos);
       setUsuariosFiltrados(usuariosConDatos);
     } catch (error) {
-      console.error("Error al obtener datos:", error);
-      alert("Error al obtener usuarios, roles o ubicaciones");
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        alert("No autorizado. Por favor inicia sesión como administrador o dueño.");
+        window.location.href = "/";
+      } else {
+        console.error("Error al obtener usuarios:", error);
+        alert("Error al obtener usuarios: " + (error.response?.data?.error || error.message));
+      }
     } finally {
       setLoading(false);
     }
