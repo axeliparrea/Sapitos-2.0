@@ -29,14 +29,20 @@ const InvoiceProveedor = () => {
       }
 
       const sessionData = await sessionResponse.json();
+      console.log("Datos de sesión completos:", sessionData);
+      console.log("Usuario en sesión:", sessionData.usuario || "No hay objeto usuario");
+      console.log("Token en sesión:", sessionData.token ? "Presente" : "No hay token");
       let locationId;
+      let roleId;
 
       if (sessionData.usuario && sessionData.usuario.locationId) {
-        locationId = sessionData.usuario.locationId;
+        locationId = sessionData.usuario.locationId; 
+        roleId = sessionData.usuario.ROL_ID; 
       } else if (sessionData.token) {
         try {
           const decoded = jwtDecode(sessionData.token);
           locationId = decoded.locationId;
+          roleId = decoded.roleId;
         } catch (e) {
           throw new Error("Error al decodificar el token");
         }
@@ -46,11 +52,11 @@ const InvoiceProveedor = () => {
         throw new Error("Location ID no encontrado en la sesión");
       }
 
-      // Ahora hacemos la solicitud para obtener los pedidos
+
       const url = `http://localhost:5000/proveedor/pedidos/${locationId}`;
       const response = await fetch(url, {
         method: 'GET',
-        credentials: 'include', // Incluir cookies automáticamente
+        credentials: 'include', 
         headers: {
           'Content-Type': 'application/json'
         }

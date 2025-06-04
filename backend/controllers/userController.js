@@ -21,7 +21,8 @@ const getSession = async (req, res) => {
         nombre: decoded.nombre || decoded.NOMBRE,
         rol: decoded.rol || decoded.ROL,
         correo: decoded.correo || decoded.CORREO,
-        username: decoded.username || decoded.USERNAME
+        username: decoded.username || decoded.USERNAME,
+        locationId: decoded.locationId || decoded.LOCATION_ID
       }
     });
   } catch (err) {
