@@ -67,9 +67,8 @@ class WeeklyStockUpdate:
         
     def connect_to_database(self):
         """Connect to the HANA database"""
-        try:
-            logger.info("Loading environment variables")
-            load_dotenv('../.env')
+        try:            logger.info("Loading environment variables")
+            load_dotenv('../../backend/.env')
             
             logger.info("Connecting to database")
             self.conn = dataframe.ConnectionContext(

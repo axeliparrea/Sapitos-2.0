@@ -19,7 +19,7 @@ except ImportError:
     sys.exit(1)
 
 # Cargar variables de entorno
-load_dotenv()
+load_dotenv('../../backend/.env')
 
 class DataValidator:
     def __init__(self):
