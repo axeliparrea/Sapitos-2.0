@@ -32,7 +32,7 @@ import EditUserLayer from "./components/EditUser";
 const App = () => {
   const [role, setRole] = useState(null); // Initially null
   const [loading, setLoading] = useState(true); // Loading state
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     const fetchSession = async () => {

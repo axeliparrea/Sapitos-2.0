@@ -23,19 +23,19 @@ const UsersListLayer = () => {
     setLoading(true);
     try {
       // Obtener usuarios
-      const usuariosResponse = await axios.get('http://localhost:5000/users/getUsers', {
+      const usuariosResponse = await axios.get(`${API_BASE_URL}/users/getUsers`, {
         withCredentials: true
       });
 
       // Obtener roles
-      const rolesResponse = await axios.get('http://localhost:5000/rol/getRoles');
+      const rolesResponse = await axios.get(`${API_BASE_URL}/rol/getRoles`);
       const rolesMap = {};
       rolesResponse.data.forEach((r) => {
         rolesMap[r.ROL_ID] = r.NOMBRE;
       });
 
       // Obtener ubicaciones
-      const locationsResponse = await axios.get('http://localhost:5000/location2');
+      const locationsResponse = await axios.get(`${API_BASE_URL}/location2`);
       const locationsMap = {};
       locationsResponse.data.forEach((l) => {
         locationsMap[l.LOCATION_ID] = l.NOMBRE;

@@ -9,7 +9,7 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   useEffect(() => {
     const fetchUserSession = async () => {
       try {
-        const response = await fetch('http://localhost:5000/users/getSession', {
+        const response = await fetch(`${API_BASE_URL}/users/getSession`, {
           method: 'GET',
           credentials: 'include',
           headers: {

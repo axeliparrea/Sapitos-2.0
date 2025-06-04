@@ -69,7 +69,7 @@ const SignInPage = () => {
     // Función para limpiar sesión inválida
     const clearInvalidSession = async () => {
       try {
-        await fetch("http://localhost:5000/users/logoutUser", {
+        await fetch(`${API_BASE_URL}/users/logoutUser`, {
           method: "POST",
           credentials: "include",
         });
@@ -88,12 +88,12 @@ const SignInPage = () => {
 
     try {
       // Primero limpiar cualquier sesión previa
-      await fetch("http://localhost:5000/users/logoutUser", {
+      await fetch(`${API_BASE_URL}/users/logoutUser`, {
         method: "POST",
         credentials: "include",
       });
 
-      const response = await fetch("http://localhost:5000/users/login", {
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo: email, contrasena: password }),

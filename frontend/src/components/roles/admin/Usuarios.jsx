@@ -26,7 +26,7 @@ const Usuarios = () => {
     const fetchData = async () => {
       try {
         const [usuariosRes, rolesRes] = await Promise.all([
-          axios.get('http://localhost:5000/users/getUsers'),
+          axios.get(`${API_BASE_URL}/users/getUsers`),
           axios.get('http://localhost:5000/rol/getRoles'),
         ]);
 
@@ -65,7 +65,7 @@ const Usuarios = () => {
 
   const agregarUsuario = async () => {
     try {
-      await axios.post('http://localhost:5000/users/register', nuevoUsuario); 
+      await axios.post(`${API_BASE_URL}/users/register`, nuevoUsuario); 
       setNuevoUsuario({ nombre: "", correo: "", organizacion: "", contrasena: "", rol: "", diasordenprom: 0, valorordenprom: 0 });
       setShowModal(false);
       window.location.reload(); // para refrescar y volver a cargar roles también

@@ -8,6 +8,7 @@ const InvoiceListProveedor = () => {
   const [pedidos, setPedidos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     fetchPedidos();
@@ -30,7 +31,7 @@ const InvoiceListProveedor = () => {
       }
 
       const response = await axios.get(
-        `http://localhost:5000/proveedor/pedidos/${locationId}`,
+        `${API_BASE_URL}/proveedor/pedidos/${locationId}`,
         {
           headers: { 
             'Authorization': `Bearer ${userData.token}`,

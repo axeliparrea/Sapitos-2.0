@@ -124,7 +124,7 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   let profileImage = "assets/images/user.png";
   if (userData?.CORREO) {
     // Usamos el endpoint backend para obtener la imagen de perfil
-    profileImage = `http://localhost:5000/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
+    profileImage = `${API_BASE_URL}/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
   }
 
   return (

@@ -12,7 +12,7 @@ const UserMenu = ({ name = "Usuario", role = "Invitado", profileImage = "assets/
     setIsLoggingOut(true);
     
     try {
-      const response = await fetch("http://localhost:5000/users/logoutUser", {
+      const response = await fetch(`${API_BASE_URL}/users/logoutUser`, {
         method: "POST",
         credentials: "include",
         headers: {

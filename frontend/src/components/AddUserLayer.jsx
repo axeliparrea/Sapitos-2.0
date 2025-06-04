@@ -26,7 +26,7 @@ const AddUserLayer = () => {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/users/locations");
+        const response = await axios.get(`${API_BASE_URL}/users/locations`);
         setLocations(response.data);
       } catch (error) {
         console.error("Error al cargar ubicaciones:", error);

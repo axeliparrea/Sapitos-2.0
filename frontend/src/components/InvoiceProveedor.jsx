@@ -9,6 +9,8 @@ const InvoiceProveedor = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPedido, setSelectedPedido] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+
 
   useEffect(() => {
     fetchPedidos();
@@ -26,7 +28,7 @@ const InvoiceProveedor = () => {
       const locationId = payload.locationId;
       if (!locationId) throw new Error("Location ID no encontrado en el token");
 
-      const url = `http://localhost:5000/proveedor/pedidos/${locationId}`;
+      const url = `${API_BASE_URL}/proveedor/pedidos/${locationId}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -99,8 +101,8 @@ const InvoiceProveedor = () => {
 
       // ENDPOINTS CORREGIDOS para coincidir con las rutas del backend
       const endpoint = nuevoEstatus === "Aprobado" 
-        ? `http://localhost:5000/proveedor/pedido/${id}/aprobar` 
-        : `http://localhost:5000/proveedor/pedido/${id}/rechazar`;
+        ? `${API_BASE_URL}/proveedor/pedido/${id}/aprobar` 
+        : `${API_BASE_URL}/proveedor/pedido/${id}/rechazar`;
       
       console.log("Actualizando pedido:", id, "a estado:", nuevoEstatus);
       console.log("Endpoint:", endpoint);
@@ -157,7 +159,7 @@ const InvoiceProveedor = () => {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/proveedor/pedido/${id}/enviar`, 
+        `${API_BASE_URL}/proveedor/pedido/${id}/enviar`, 
         {}, 
         {
           headers: {
@@ -192,7 +194,7 @@ const InvoiceProveedor = () => {
   const handleVerDetalles = async (id) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/proveedor/pedido/${id}/detalle`,
+        `${API_BASE_URL}/proveedor/pedido/${id}/detalle`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,

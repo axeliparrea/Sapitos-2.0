@@ -23,7 +23,7 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   // Construir la ruta de la imagen de perfil usando el correo del usuario
   let profileImage = "assets/images/user.png";
   if (userData?.CORREO) {
-    profileImage = `http://localhost:5000/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
+    profileImage = `${API_BASE_URL}/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
   }
 
   return (

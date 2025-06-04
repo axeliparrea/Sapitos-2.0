@@ -127,7 +127,7 @@ const InvoiceListLayer = () => {
       try {
 
         if (typeof Swal !== 'undefined') {
-          const response = await axios.put(`http://localhost:5000/pedido/${pedido.id.replace("#", "")}/inventario`);
+          const response = await axios.put(`${API_BASE_URL}/pedido/${pedido.id.replace("#", "")}/inventario`);
             
           Swal.fire({
             icon: "success",
@@ -136,7 +136,7 @@ const InvoiceListLayer = () => {
           });
           fetchPedidos(); 
         } else {
-          const response = await axios.put(`http://localhost:5000/pedido/${pedido.id.replace("#", "")}/inventario`);
+          const response = await axios.put(`${API_BASE_URL}/pedido/${pedido.id.replace("#", "")}/inventario`);
           alert(response.data.message || `Pedido ${pedido.id} enviado al inventario principal correctamente`);
           fetchPedidos();
         }
@@ -175,7 +175,7 @@ const InvoiceListLayer = () => {
     try {
       const pedidoId = pedido.id.replace('#', '');
       
-      await axios.patch(`http://localhost:5000/pedido/${pedidoId}/estatus`, {
+      await axios.patch(`${API_BASE_URL}/pedido/${pedidoId}/estatus`, {
         estatus: "Completado"
       });
       
