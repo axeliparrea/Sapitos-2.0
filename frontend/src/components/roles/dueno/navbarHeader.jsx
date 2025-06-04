@@ -20,6 +20,12 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
     }
   }, []);
 
+  // Construir la ruta de la imagen de perfil usando el correo del usuario
+  let profileImage = "assets/images/user.png";
+  if (userData?.CORREO) {
+    profileImage = `http://localhost:5000/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
+  }
+
   return (
     <div className="navbar-header">
       <div className="row align-items-center justify-content-between">
@@ -46,12 +52,10 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
           </div>
         </div>
 
-
-
         <UserMenu
           name={userData?.NOMBRE || "Usuario"} 
           role={userData?.ROL || "Rol"} 
-          profileImage="assets/images/user.png"
+          profileImage={profileImage}
           onClose={() => console.log("Cerrar menú")}
         />
       </div>

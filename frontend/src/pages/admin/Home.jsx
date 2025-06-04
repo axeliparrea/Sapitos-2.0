@@ -5,9 +5,10 @@ import DashBoardLayerOne from "../../components/DashBoardLayerOne";
 const HomeAdmin = () => {
   return (
     <>
-      {/* MasterLayout */}
       <MasterLayout role="admin">
-        <DashBoardLayerOne />
+        <div id="homeAdminPage"> {/* ID agregado aquí */}
+          <DashBoardLayerOne />
+        </div>
       </MasterLayout>
     </>
   );

@@ -51,6 +51,14 @@
 </head>
 
 <body>
+  <!-- Add this script tag in your index.html file, before any other scripts -->
+  <script>
+    if (typeof global === "undefined") {
+      window.global = window;
+    }
+  </script>
+
+
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>

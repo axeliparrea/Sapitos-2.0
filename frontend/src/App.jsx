@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
 import SignInPage from "./pages/SignInPage";
-
+import Profile from "./components/UserPerfil";
 import HomeAdmin from "./pages/admin/Home";
 import InventarioAdmin from "./pages/admin/Inventario";
 
@@ -17,7 +17,9 @@ import HomeCliente from "./pages/cliente/Home";
 import InventarioCliente from "./pages/cliente/Inventario"
 
 import HomeProveedor from "./pages/proveedor/Home";
-import OrdenesProveedor from "./pages/proveedor/Home";
+import InvoiceListProveedorPage from "./pages/proveedor/InvoiceListProveedorPage";
+import InvoiceProveedorPage from "./pages/proveedor/InvoiceProveedorPage";
+import InvoicePreviewPage from "./pages/InvoicePreviewPage";
 
 import Pedidos from "./pages/admin/Pedidos"
 
@@ -27,11 +29,9 @@ import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
 
-
 const App = () => {
-  const [role, setRole] = useState(null); // Initially null
-  const [loading, setLoading] = useState(true); // Loading state
-
+  const [role, setRole] = useState(null); 
+  const [loading, setLoading] = useState(true); 
   useEffect(() => {
     const fetchSession = async () => {
       try {
@@ -45,18 +45,17 @@ const App = () => {
         }
 
         const data = await cookieResponse.json();
-        //console.log("Session Data:", data);
+        console.log("Session Data:", data);
 
-        const token = data.token;
-        if (!token) {
-          setLoading(false);
-          return;
+        // Check if we have user data with role
+        if (data.usuario && data.usuario.rol) {
+          setRole(data.usuario.rol);
+        } else if (data.token) {
+          // Decode token as fallback
+          const decoded = jwtDecode(data.token);
+          console.log("Decoded JWT:", decoded);
+          setRole(decoded.rol || decoded.ROL);
         }
-
-        // Decode token
-        const decoded = jwtDecode(token);
-        //console.log("Decoded JWT:", decoded);
-        setRole(decoded.ROL); 
       } catch (error) {
         console.error("Error fetching session:", error);
       }
@@ -96,10 +95,33 @@ const App = () => {
             <Navigate to="/" />
           } 
         />
+
+        <Route 
+          path="/profile" 
+          element={
+            role ? <Profile /> : <Navigate to="/" />
+          } 
+        />
+        <Route 
+          path="/profile/:id" 
+          element={
+            role ? <Profile /> : <Navigate to="/" />
+          } 
+        />
+        
+        <Route 
+          path="/preview" 
+          element={
+            role === "admin" ? <InvoicePreviewPage /> :
+            role === "dueno" ? <InvoicePreviewPage/> :
+            role === "cliente" ? <InvoicePreviewPage/> :
+            <Navigate to="/" />
+          } 
+        />
         <Route 
           path="/ordenes-proveedores" 
           element={
-            role === "dueno" ? <OrdenesProveedoresDueno/> :
+            role === "dueno" ? <InvoiceProveedorPage/> :
             <Navigate to="/"/>
             }
           />
@@ -120,7 +142,21 @@ const App = () => {
         <Route 
           path="/ordenes" 
           element={
-            role === "proveedor" ? <OrdenesProveedor/> :
+            role === "proveedor" ? <InvoiceProveedorPage/> :
+            <Navigate to="/"/>
+            }
+          />
+        <Route 
+          path="/ordenes-aceptadas" 
+          element={
+            role === "proveedor" ? <InvoiceListProveedorPage aceptadas={true}/> :
+            <Navigate to="/"/>
+            }
+          />
+        <Route 
+          path="/ordenes/:id" 
+          element={
+            role === "proveedor" ? <InvoiceProveedorPage/> :
             <Navigate to="/"/>
             }
           />
@@ -160,7 +196,18 @@ const App = () => {
             <Navigate to="/" />
           } 
         />
+
+        <Route
+          path="/detalle-pedido/:id"
+          element={
+            role === "admin" ? <InvoicePreviewPage /> :
+            role === "dueno" ? <InvoicePreviewPage/> :
+            role === "cliente" ? <InvoicePreviewPage/> :
+            <Navigate to="/" />
+          }
+        />
       </Routes> 
+
     </BrowserRouter>
 
   );
