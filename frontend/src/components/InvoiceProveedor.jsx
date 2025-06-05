@@ -55,6 +55,7 @@ const InvoiceProveedor = () => {
       }
 
 
+      
       const url = `${API_BASE_URL}/proveedor/pedidos/${locationId}`;
       const response = await fetch(url, {
         method: 'GET',
