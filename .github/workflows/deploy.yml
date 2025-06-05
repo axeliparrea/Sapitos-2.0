@@ -80,6 +80,7 @@ jobs:
           npm install 
           npm run build
           cf push
+
   deploy-backend:
     name: Deploy Backend
     runs-on: ubuntu-latest
@@ -158,33 +159,28 @@ jobs:
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
         run: |
           echo "Environment variables set dynamically from GitHub secrets."
+
       - name: Debug Environment Variables
         env:
-          HANA_HOST: ${{ secrets.HANA_HOST }}
-          HANA_USER: ${{ secrets.HANA_USER }}
-          HANA_PASSWORD: ${{ secrets.HANA_PASSWORD }}
+          SERVER_NODE: ${{ secrets.SERVER_NODE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           echo "Debugging environment variables..."
           echo "CF_USERNAME: $CF_USERNAME"
           echo "ACCESS_TOKENCLOUD: $ACCESS_TOKENCLOUD"
-          echo "HANA_HOST: $HANA_HOST"
-          echo "HANA_USER: $HANA_USER"
-          echo "HANA_PASSWORD is set: $(test -n \\"$HANA_PASSWORD\\" && echo true || echo false)"
+          echo "SERVER_NODE: $SERVER_NODE"
+          echo "DB_USERNAME: $DB_USERNAME"
+          echo "DB_PASSWORD is set: $(test -n \"$DB_PASSWORD\" && echo true || echo false)"
 
       - name: Set environment variables for Cloud Foundry app
         env:
-          HANA_HOST: ${{ secrets.HANA_HOST }}
-          HANA_USER: ${{ secrets.HANA_USER }}
-          HANA_PASSWORD: ${{ secrets.HANA_PASSWORD }}
           SERVER_NODE: ${{ secrets.SERVER_NODE }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           BACK_PORT: ${{ secrets.BACK_PORT }}
         run: |
-          cf set-env Sapitos-backend HANA_HOST "$HANA_HOST"
-          cf set-env Sapitos-backend HANA_USER "$HANA_USER"
-          cf set-env Sapitos-backend HANA_PASSWORD "$HANA_PASSWORD"
           cf set-env Sapitos-backend SERVER_NODE "$SERVER_NODE"
           cf set-env Sapitos-backend DB_USERNAME "$DB_USERNAME"
           cf set-env Sapitos-backend DB_PASSWORD "$DB_PASSWORD"
@@ -196,7 +192,6 @@ jobs:
         run: |
           cd backend
           # Update manifest to disable MLOps in Cloud Foundry and set other env vars
-          # This will overwrite the existing backend/manifest.yml
           cat > manifest.yml << EOL
           applications:
             - name: Sapitos-backend
@@ -208,9 +203,6 @@ jobs:
               env:
                 NODE_ENV: production
                 DISABLE_MLOPS: true
-                HANA_HOST: ${{ secrets.HANA_HOST }}
-                HANA_USER: ${{ secrets.HANA_USER }}
-                HANA_PASSWORD: ${{ secrets.HANA_PASSWORD }}
                 SERVER_NODE: ${{ secrets.SERVER_NODE }}
                 DB_USERNAME: ${{ secrets.DB_USERNAME }}
                 DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
