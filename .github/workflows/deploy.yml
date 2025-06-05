@@ -159,6 +159,15 @@ jobs:
         run: |
           echo "Environment variables set dynamically from GitHub secrets."
 
+      - name: Debug Environment Variables
+        run: |
+          echo "Debugging environment variables..."
+          echo "CF_USERNAME: $CF_USERNAME"
+          echo "ACCESS_TOKENCLOUD: $ACCESS_TOKENCLOUD"
+          echo "HANA_HOST: $HANA_HOST"
+          echo "HANA_USER: $HANA_USER"
+          echo "HANA_PASSWORD is set: $(test -n "$HANA_PASSWORD" && echo true || echo false)"
+
       - name: Deploy Backend
         run: |
           cd backend
