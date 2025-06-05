@@ -82,6 +82,23 @@ jobs:
             cf login --sso-passcode "$ACCESS_TOKENCLOUD"
           fi
 
+      - name: Debug Login Failure
+        run: |
+          echo "Debugging login failure..."
+          echo "CF_USERNAME: $CF_USERNAME"
+          echo "CF_PASSWORD: $CF_PASSWORD"
+          echo "ACCESS_TOKENCLOUD: $ACCESS_TOKENCLOUD"
+          cf api "https://api.cf.us10-001.hana.ondemand.com"
+          if [ ! -z "$CF_USERNAME" ] && [ ! -z "$CF_PASSWORD" ]; then
+            echo "Attempting login with credentials..."
+            cf login -u "$CF_USERNAME" -p "$CF_PASSWORD" || echo "Credential login failed."
+          fi
+          if [ ! -z "$ACCESS_TOKENCLOUD" ]; then
+            echo "Attempting login with SSO token..."
+            cf login --sso-passcode "$ACCESS_TOKENCLOUD" || echo "SSO token login failed."
+          fi
+          echo "Login debugging complete."
+
       - name: Prepare environment variables
         env:
           SERVER_NODE: ${{ secrets.SERVER_NODE }}
