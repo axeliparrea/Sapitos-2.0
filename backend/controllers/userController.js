@@ -183,6 +183,7 @@ const getUsers = async (req, res) => {
         u.Nombre,
         u.Correo,
         u.Username,
+        u.Rol_ID,
         u.RFC,
         u.FechaEmpiezo,
         u.Location_ID,
@@ -202,6 +203,7 @@ const getUsers = async (req, res) => {
         correo: usuario.CORREO,
         nombre: usuario.NOMBRE,
         username: usuario.USERNAME,
+        rolId: usuario.ROL_ID, // <-- ESTO ESTÁ BIEN
         rol: usuario.ROLNombre ,
         rfc: usuario.RFC,
         fechaEmpiezo: usuario.FECHAEMPIEZO,
