@@ -21,7 +21,8 @@ const getSession = async (req, res) => {
         nombre: decoded.nombre || decoded.NOMBRE,
         rol: decoded.rol || decoded.ROL,
         correo: decoded.correo || decoded.CORREO,
-        username: decoded.username || decoded.USERNAME
+        username: decoded.username || decoded.USERNAME,
+        locationId: decoded.locationId || decoded.LOCATION_ID
       }
     });
   } catch (err) {
@@ -182,6 +183,7 @@ const getUsers = async (req, res) => {
         u.Nombre,
         u.Correo,
         u.Username,
+        u.Rol_ID,
         u.RFC,
         u.FechaEmpiezo,
         u.Location_ID,
@@ -201,6 +203,7 @@ const getUsers = async (req, res) => {
         correo: usuario.CORREO,
         nombre: usuario.NOMBRE,
         username: usuario.USERNAME,
+        rolId: usuario.ROL_ID, // <-- ESTO ESTÁ BIEN
         rol: usuario.ROLNombre ,
         rfc: usuario.RFC,
         fechaEmpiezo: usuario.FECHAEMPIEZO,

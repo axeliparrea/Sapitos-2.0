@@ -6,6 +6,7 @@ import SignInPage from "./pages/SignInPage";
 import Profile from "./components/UserPerfil";
 import HomeAdmin from "./pages/admin/Home";
 import InventarioAdmin from "./pages/admin/Inventario";
+import ModelManagement from "./pages/admin/ModelManagement";
 
 import HomeDueno from "./pages/dueno/Home";
 import InventarioDueno from "./pages/dueno/Inventario";
@@ -180,11 +181,18 @@ const App = () => {
             role === "admin" ? <AddUserLayer /> :
             <Navigate to="/" />
           } 
-        />
-        <Route 
+        />        <Route 
           path="/editar-usuario/:userId" 
           element={
             role === "admin" ? <EditUserLayer /> :
+            <Navigate to="/" />
+          }
+        />
+
+        <Route 
+          path="/modelo-prediccion" 
+          element={
+            role === "admin" ? <ModelManagement /> :
             <Navigate to="/" />
           }
         />

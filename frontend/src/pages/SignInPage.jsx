@@ -81,11 +81,11 @@ const SignInPage = () => {
     setError('');
 
     try {
-      // Primero limpiar cualquier sesión previa
-      await fetch("http://localhost:5000/users/logoutUser", {
-        method: "POST",
-        credentials: "include",
-      });
+      // // Primero limpiar cualquier sesión previa
+      // await fetch("http://localhost:5000/users/logoutUser", {
+      //   method: "POST",
+      //   credentials: "include",
+      // });
 
       const response = await fetch("http://localhost:5000/users/login", {
         method: "POST",

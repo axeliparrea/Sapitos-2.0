@@ -93,10 +93,7 @@ router.post("/login", loginUser);
  * /users/getUsers:
  *   get:
  *     summary: Obtiene todos los usuarios registrados en el sistema
- *     description: Retorna una lista completa de usuarios con sus datos básicos desde la nueva estructura Usuario2
  *     tags: [Users]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de usuarios obtenida exitosamente
@@ -119,6 +116,9 @@ router.post("/login", loginUser);
  *                   username:
  *                     type: string
  *                     description: Nombre de usuario
+ *                   rolId:
+ *                     type: integer
+ *                     description: ID del rol (Rol_ID)
  *                   rol:
  *                     type: string
  *                     description: Nombre del rol del usuario
@@ -134,20 +134,19 @@ router.post("/login", loginUser);
  *                     description: ID de la ubicación del usuario
  *                   organizacion:
  *                     type: string
- *                     description: Organización (valor por defecto para compatibilidad)
+ *                     description: Organización (valor por defecto)
  *                   diasOrdenProm:
  *                     type: number
  *                     nullable: true
- *                     description: Campo legacy (null en nueva estructura)
  *                   valorOrdenProm:
  *                     type: number
  *                     nullable: true
- *                     description: Campo legacy (null en nueva estructura)
  *       401:
- *         description: No autorizado (token inválido o faltante)
+ *         description: No autorizado
  *       500:
  *         description: Error del servidor
  */
+
 // router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
 router.get("/getUsers", getUsers);
 
