@@ -76,6 +76,9 @@ jobs:
       - name: Deploy Frontend
         run: |
           cd frontend
+          rm -rf dist
+          npm install 
+          npm run build
           cf push
   deploy-backend:
     name: Deploy Backend
