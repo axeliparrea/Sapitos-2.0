@@ -26,20 +26,50 @@ jobs:
           CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
           ACCESS_TOKENCLOUD: ${{ secrets.ACCESS_TOKENCLOUD }}
         run: |
+          echo "Setting API endpoint to https://api.cf.us10-001.hana.ondemand.com"
           cf api "https://api.cf.us10-001.hana.ondemand.com"
           
-          # Intenta primero con credenciales
-          if [ ! -z "$CF_USERNAME" ] && [ ! -z "$CF_PASSWORD" ]; then
-            echo "Intentando login con credenciales..."
+          echo "Attempting Cloud Foundry login..."
+          echo "Debug: CF_USERNAME is empty: $(test -z "$CF_USERNAME" && echo true || echo false)"
+          echo "Debug: ACCESS_TOKENCLOUD is empty: $(test -z "$ACCESS_TOKENCLOUD" && echo true || echo false)"
+
+          if [ -n "$CF_USERNAME" ] && [ -n "$CF_PASSWORD" ]; then
+            echo "Attempting login with username/password..."
             if cf login -u "$CF_USERNAME" -p "$CF_PASSWORD"; then
-              echo "Login exitoso con credenciales"
+              echo "Login successful with username/password."
             else
-              echo "Falló login con credenciales, intentando con token SSO..."
-              cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+              echo "Username/password login failed."
+              if [ -n "$ACCESS_TOKENCLOUD" ]; then
+                echo "Attempting login with SSO passcode as fallback..."
+                if cf login --sso-passcode "$ACCESS_TOKENCLOUD"; then
+                  echo "Login successful with SSO passcode."
+                else
+                  echo "SSO passcode login failed after username/password attempt."
+                  echo "Ensure ACCESS_TOKENCLOUD secret is valid."
+                  exit 1
+                fi
+              else
+                echo "No ACCESS_TOKENCLOUD for fallback. Login failed."
+                echo "Ensure CF_USERNAME, CF_PASSWORD, or ACCESS_TOKENCLOUD secrets are correctly set."
+                exit 1
+              fi
+            fi
+          elif [ -n "$ACCESS_TOKENCLOUD" ]; then
+            echo "No username/password provided or they were empty. Attempting login with SSO passcode..."
+            if cf login --sso-passcode "$ACCESS_TOKENCLOUD"; then
+              echo "Login successful with SSO passcode."
+            else
+              echo "SSO passcode login failed."
+              echo "Ensure ACCESS_TOKENCLOUD secret is set correctly in GitHub and is a valid token."
+              if [ -z "$ACCESS_TOKENCLOUD" ]; then
+                  echo "Specifically, the ACCESS_TOKENCLOUD environment variable resolved to an empty string."
+              fi
+              exit 1
             fi
           else
-            echo "No hay credenciales, intentando con token SSO..."
-            cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+            echo "Critical: Neither username/password nor SSO passcode are available."
+            echo "Please ensure CF_USERNAME/CF_PASSWORD secrets or the ACCESS_TOKENCLOUD secret are correctly set in GitHub."
+            exit 1
           fi
 
       - name: Deploy Frontend
@@ -66,38 +96,51 @@ jobs:
           CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
           ACCESS_TOKENCLOUD: ${{ secrets.ACCESS_TOKENCLOUD }}
         run: |
+          echo "Setting API endpoint to https://api.cf.us10-001.hana.ondemand.com"
           cf api "https://api.cf.us10-001.hana.ondemand.com"
           
-          # Intenta primero con credenciales
-          if [ ! -z "$CF_USERNAME" ] && [ ! -z "$CF_PASSWORD" ]; then
-            echo "Intentando login con credenciales..."
+          echo "Attempting Cloud Foundry login..."
+          echo "Debug: CF_USERNAME is empty: $(test -z "$CF_USERNAME" && echo true || echo false)"
+          echo "Debug: ACCESS_TOKENCLOUD is empty: $(test -z "$ACCESS_TOKENCLOUD" && echo true || echo false)"
+
+          if [ -n "$CF_USERNAME" ] && [ -n "$CF_PASSWORD" ]; then
+            echo "Attempting login with username/password..."
             if cf login -u "$CF_USERNAME" -p "$CF_PASSWORD"; then
-              echo "Login exitoso con credenciales"
+              echo "Login successful with username/password."
             else
-              echo "Falló login con credenciales, intentando con token SSO..."
-              cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+              echo "Username/password login failed."
+              if [ -n "$ACCESS_TOKENCLOUD" ]; then
+                echo "Attempting login with SSO passcode as fallback..."
+                if cf login --sso-passcode "$ACCESS_TOKENCLOUD"; then
+                  echo "Login successful with SSO passcode."
+                else
+                  echo "SSO passcode login failed after username/password attempt."
+                  echo "Ensure ACCESS_TOKENCLOUD secret is valid."
+                  exit 1
+                fi
+              else
+                echo "No ACCESS_TOKENCLOUD for fallback. Login failed."
+                echo "Ensure CF_USERNAME, CF_PASSWORD, or ACCESS_TOKENCLOUD secrets are correctly set."
+                exit 1
+              fi
+            fi
+          elif [ -n "$ACCESS_TOKENCLOUD" ]; then
+            echo "No username/password provided or they were empty. Attempting login with SSO passcode..."
+            if cf login --sso-passcode "$ACCESS_TOKENCLOUD"; then
+              echo "Login successful with SSO passcode."
+            else
+              echo "SSO passcode login failed."
+              echo "Ensure ACCESS_TOKENCLOUD secret is set correctly in GitHub and is a valid token."
+              if [ -z "$ACCESS_TOKENCLOUD" ]; then
+                  echo "Specifically, the ACCESS_TOKENCLOUD environment variable resolved to an empty string."
+              fi
+              exit 1
             fi
           else
-            echo "No hay credenciales, intentando con token SSO..."
-            cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+            echo "Critical: Neither username/password nor SSO passcode are available."
+            echo "Please ensure CF_USERNAME/CF_PASSWORD secrets or the ACCESS_TOKENCLOUD secret are correctly set in GitHub."
+            exit 1
           fi
-
-      - name: Debug Login Failure
-        run: |
-          echo "Debugging login failure..."
-          echo "CF_USERNAME: $CF_USERNAME"
-          echo "CF_PASSWORD: $CF_PASSWORD"
-          echo "ACCESS_TOKENCLOUD: $ACCESS_TOKENCLOUD"
-          cf api "https://api.cf.us10-001.hana.ondemand.com"
-          if [ ! -z "$CF_USERNAME" ] && [ ! -z "$CF_PASSWORD" ]; then
-            echo "Attempting login with credentials..."
-            cf login -u "$CF_USERNAME" -p "$CF_PASSWORD" || echo "Credential login failed."
-          fi
-          if [ ! -z "$ACCESS_TOKENCLOUD" ]; then
-            echo "Attempting login with SSO token..."
-            cf login --sso-passcode "$ACCESS_TOKENCLOUD" || echo "SSO token login failed."
-          fi
-          echo "Login debugging complete."
 
       - name: Prepare environment variables
         env:
