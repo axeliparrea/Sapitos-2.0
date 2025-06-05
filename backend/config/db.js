@@ -36,19 +36,23 @@ const getHanaCredentials = () => {
       }
     }
 
-    // Usar variables de entorno directas (desde vars.yml)
-    if (process.env.SERVER_NODE) {
+    // Usar variables de entorno directas (desde GitHub Secrets)
+    const hanaHost = process.env.HANA_HOST;
+    const hanaUser = process.env.HANA_USER;
+    const hanaPassword = process.env.HANA_PASSWORD;
+
+    if (hanaHost && hanaUser && hanaPassword) {
       console.log('Using direct environment variables for HANA connection');
       return {
-        serverNode: process.env.SERVER_NODE,
-        uid: process.env.DB_USERNAME,
-        pwd: process.env.DB_PASSWORD,
+        serverNode: hanaHost,
+        uid: hanaUser,
+        pwd: hanaPassword,
         encrypt: 'true',
         sslValidateCertificate: 'false'
       };
     }
 
-    throw new Error('No HANA credentials found in environment');
+    throw new Error('No HANA credentials found in environment or VCAP_SERVICES');
   } catch (error) {
     console.error('Error retrieving HANA credentials:', error.message);
     throw error;

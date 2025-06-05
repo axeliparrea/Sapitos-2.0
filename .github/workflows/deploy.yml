@@ -166,7 +166,7 @@ jobs:
           echo "ACCESS_TOKENCLOUD: $ACCESS_TOKENCLOUD"
           echo "HANA_HOST: $HANA_HOST"
           echo "HANA_USER: $HANA_USER"
-          echo "HANA_PASSWORD is set: $(test -n "$HANA_PASSWORD" && echo true || echo false)"
+          echo "HANA_PASSWORD is set: $(test -n \"$HANA_PASSWORD\" && echo true || echo false)"
 
       - name: Deploy Backend
         run: |

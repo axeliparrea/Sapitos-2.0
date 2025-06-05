@@ -5,3 +5,4 @@ applications:
       - nodejs_buildpack
     path: .
     command: node server.js
+health-check-type: process

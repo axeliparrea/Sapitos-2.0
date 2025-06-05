@@ -9,6 +9,12 @@ const { initializeScheduler } = require('./services/stockUpdateScheduler');
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 const PORT = process.env.PORT || 5000;
 
+// Check for critical environment variables
+if (!process.env.HANA_HOST || !process.env.HANA_USER || !process.env.HANA_PASSWORD) {
+  logger.error('Missing HANA credentials in environment variables');
+  process.exit(1);
+}
+
 app.listen(PORT, async () => {
   try {
     // Display startup banner
