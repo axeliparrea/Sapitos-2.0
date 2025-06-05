@@ -36,7 +36,7 @@ const InvoiceProveedor = () => {
       let locationId;
       let roleId;
 
-      
+
       if (sessionData.usuario && sessionData.usuario.locationId) {
         locationId = sessionData.usuario.locationId; 
         roleId = sessionData.usuario.ROL_ID; 
@@ -511,5 +511,6 @@ const InvoiceProveedor = () => {
     </div>
   );
 };
+
 
 export default InvoiceProveedor;
