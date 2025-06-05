@@ -20,14 +20,6 @@ const Inventory = () => {
     stockStatus: [] 
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    categoria: '',
-    ubicacion: '',
-    stockStatus: '',
-    temporada: '',
-    precioMin: '',
-    precioMax: ''
-  });
 
   useEffect(() => {
     const fetchInventory = async () => {

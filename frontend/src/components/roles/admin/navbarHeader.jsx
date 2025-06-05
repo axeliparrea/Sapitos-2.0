@@ -82,11 +82,7 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   }
 
   return (
-<<<<<<< HEAD
     <div className="navbar-header" id="navbarHeader">
-=======
-    <div className="navbar-header" id="navbarHeader">
->>>>>>> 8484549a342214f0887e64ae624da88ec3867b7c
       <div className="row align-items-center justify-content-between">
         <div className="col-auto">
           <div className="d-flex flex-wrap align-items-center gap-4">
