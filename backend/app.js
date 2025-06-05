@@ -12,6 +12,7 @@ const pedidosProveedorRoutes = require("./routes/pedidosProveedor.js");
 const rolRoutes = require("./routes/rol.js");
 const locationRoutes = require("./routes/location"); // al inicio
 const mlRoutes = require("./routes/ml");
+const articuloRoutes = require("./routes/articulo");
 
 const app = express();
 
@@ -46,6 +47,9 @@ app.use("/rol", rolRoutes);
 
 // locations routes
 app.use("/location2", locationRoutes); // junto a tus otras rutas
+
+// articulo routes
+app.use("/articulo", articuloRoutes);
 
 // pedidos routes
 app.use("/pedido", pedidoRoutes);
