@@ -479,7 +479,8 @@ const getLocations = async (req, res) => {
         return res.status(500).json({ error: "Error al obtener ubicaciones" });
       }
 
-      if (!result || result.length === 0) {
+      if (!result || result.length === 0) 
+        {
         console.warn("No locations found in the database");
         return res.status(404).json({ error: "No se encontraron ubicaciones" });
       }
