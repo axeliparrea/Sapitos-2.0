@@ -18,14 +18,11 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y wget
           wget -O cf-cli.deb https://github.com/cloudfoundry/cli/releases/download/v8.14.0/cf8-cli-installer_8.14.0_x86-64.deb
-          sudo dpkg -i cf-cli.deb
-
-      - name: Login to Cloud Foundry
+          sudo dpkg -i cf-cli.deb      - name: Login to Cloud Foundry
         env:
-          CF_API: ${{ secrets.CF_API }}
           ACCESS_TOKENCLOUD: ${{ secrets.ACCESS_TOKENCLOUD }}
         run: |
-          cf api "$CF_API"
+          cf api "https://api.cf.us10-001.hana.ondemand.com"
           cf login --sso-passcode "$ACCESS_TOKENCLOUD"
 
       - name: Deploy Frontend
