@@ -22,10 +22,25 @@ jobs:
 
       - name: Login to Cloud Foundry
         env:
+          CF_USERNAME: ${{ secrets.CF_USERNAME }}
+          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
           ACCESS_TOKENCLOUD: ${{ secrets.ACCESS_TOKENCLOUD }}
         run: |
           cf api "https://api.cf.us10-001.hana.ondemand.com"
-          cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+          
+          # Intenta primero con credenciales
+          if [ ! -z "$CF_USERNAME" ] && [ ! -z "$CF_PASSWORD" ]; then
+            echo "Intentando login con credenciales..."
+            if cf login -u "$CF_USERNAME" -p "$CF_PASSWORD"; then
+              echo "Login exitoso con credenciales"
+            else
+              echo "Falló login con credenciales, intentando con token SSO..."
+              cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+            fi
+          else
+            echo "No hay credenciales, intentando con token SSO..."
+            cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+          fi
 
       - name: Deploy Frontend
         run: |
@@ -47,10 +62,25 @@ jobs:
 
       - name: Login to Cloud Foundry
         env:
+          CF_USERNAME: ${{ secrets.CF_USERNAME }}
+          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
           ACCESS_TOKENCLOUD: ${{ secrets.ACCESS_TOKENCLOUD }}
         run: |
           cf api "https://api.cf.us10-001.hana.ondemand.com"
-          cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+          
+          # Intenta primero con credenciales
+          if [ ! -z "$CF_USERNAME" ] && [ ! -z "$CF_PASSWORD" ]; then
+            echo "Intentando login con credenciales..."
+            if cf login -u "$CF_USERNAME" -p "$CF_PASSWORD"; then
+              echo "Login exitoso con credenciales"
+            else
+              echo "Falló login con credenciales, intentando con token SSO..."
+              cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+            fi
+          else
+            echo "No hay credenciales, intentando con token SSO..."
+            cf login --sso-passcode "$ACCESS_TOKENCLOUD"
+          fi
 
       - name: Prepare environment variables
         env:
