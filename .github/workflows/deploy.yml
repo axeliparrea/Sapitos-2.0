@@ -157,7 +157,8 @@ jobs:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
         run: |
-          echo "Environment variables set dynamically from GitHub secrets."      - name: Debug Environment Variables
+          echo "Environment variables set dynamically from GitHub secrets."
+      - name: Debug Environment Variables
         env:
           HANA_HOST: ${{ secrets.HANA_HOST }}
           HANA_USER: ${{ secrets.HANA_USER }}
@@ -168,7 +169,7 @@ jobs:
           echo "ACCESS_TOKENCLOUD: $ACCESS_TOKENCLOUD"
           echo "HANA_HOST: $HANA_HOST"
           echo "HANA_USER: $HANA_USER"
-          echo "HANA_PASSWORD is set: $(test -n \"$HANA_PASSWORD\" && echo true || echo false)"
+          echo "HANA_PASSWORD is set: $(test -n \\"$HANA_PASSWORD\\" && echo true || echo false)"
 
       - name: Set environment variables for Cloud Foundry app
         env:
@@ -189,8 +190,33 @@ jobs:
           cf set-env Sapitos-backend DB_PASSWORD "$DB_PASSWORD"
           cf set-env Sapitos-backend JWT_SECRET "$JWT_SECRET"
           cf set-env Sapitos-backend BACK_PORT "$BACK_PORT"
+          cf restage Sapitos-backend || true # Ensure env changes are applied
 
       - name: Deploy Backend
         run: |
           cd backend
-          cf push
+          # Update manifest to disable MLOps in Cloud Foundry and set other env vars
+          # This will overwrite the existing backend/manifest.yml
+          cat > manifest.yml << EOL
+          applications:
+            - name: Sapitos-backend
+              memory: 512M
+              buildpacks:
+                - nodejs_buildpack
+              path: .
+              command: node server.js
+              env:
+                NODE_ENV: production
+                DISABLE_MLOPS: true
+                HANA_HOST: ${{ secrets.HANA_HOST }}
+                HANA_USER: ${{ secrets.HANA_USER }}
+                HANA_PASSWORD: ${{ secrets.HANA_PASSWORD }}
+                SERVER_NODE: ${{ secrets.SERVER_NODE }}
+                DB_USERNAME: ${{ secrets.DB_USERNAME }}
+                DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+                JWT_SECRET: ${{ secrets.JWT_SECRET }}
+                BACK_PORT: ${{ secrets.BACK_PORT }}
+          EOL
+          # Push with manifest which includes environment variables
+          cf push --no-start
+          cf start Sapitos-backend
