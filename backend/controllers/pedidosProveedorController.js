@@ -344,7 +344,6 @@ const enviarPedido = async (req, res) => {
           });
         });
 
-        
         res.status(200).json({ 
           message: "Pedido enviado exitosamente y stock actualizado",
           productosEnviados: productos.length,

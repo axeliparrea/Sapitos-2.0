@@ -17,7 +17,7 @@ jobs:
       - name: Set up Cloud Foundry CLI
         run: |
           sudo apt-get update && sudo apt-get install -y wget
-          wget -O cf-cli.deb https://packages.cloudfoundry.org/stable?release=debian64&source=github
+          wget -O cf-cli.deb https://github.com/cloudfoundry/cli/releases/download/v8.14.0/cf8-cli-installer_8.14.0_x86-64.deb
           sudo dpkg -i cf-cli.deb
 
       - name: Login to Cloud Foundry
@@ -44,7 +44,7 @@ jobs:
       - name: Set up Cloud Foundry CLI
         run: |
           sudo apt-get update && sudo apt-get install -y wget
-          wget -O cf-cli.deb https://packages.cloudfoundry.org/stable?release=debian64&source=github
+          wget -O cf-cli.deb https://github.com/cloudfoundry/cli/releases/download/v8.14.0/cf8-cli-installer_8.14.0_x86-64.deb
           sudo dpkg -i cf-cli.deb
 
       - name: Login to Cloud Foundry

@@ -12,7 +12,6 @@ const InvoiceProveedor = () => {
   const [showDetails, setShowDetails] = useState(false);
   const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
-
   useEffect(() => {
     fetchPedidos();
   }, []);
@@ -55,7 +54,7 @@ const InvoiceProveedor = () => {
       }
 
 
-      
+
       const url = `${API_BASE_URL}/proveedor/pedidos/${locationId}`;
       const response = await fetch(url, {
         method: 'GET',
