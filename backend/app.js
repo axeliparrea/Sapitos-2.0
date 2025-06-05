@@ -11,6 +11,7 @@ const pedidosHRoutes = require("./routes/pedidosH.js");
 const pedidosProveedorRoutes = require("./routes/pedidosProveedor.js");
 const rolRoutes = require("./routes/rol.js");
 const locationRoutes = require("./routes/location"); // al inicio
+const mlRoutes = require("./routes/ml");
 
 const app = express();
 
@@ -21,7 +22,7 @@ const corsOptions = {
   ],
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'], "Cache-Control", "Pragma", "Expires"],
 };
 app.use(cors(corsOptions));
 
@@ -36,6 +37,8 @@ app.use("//users/getUsers", userRoutes);
 app.use("/users/logoutUser", userRoutes);
 app.use("/users/logoutUser", userRoutes);
 
+// ML model routes
+app.use("/ml", mlRoutes);
 
 // inventory routes
 app.use("/inventory", inventoryRoutes);

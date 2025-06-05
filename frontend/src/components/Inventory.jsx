@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Form, InputGroup, Button, Modal, Dropdown, Badge } from 'react-bootstrap';
+import { Icon } from "@iconify/react/dist/iconify.js";
 import axios from 'axios';
 
 const Inventory = () => {
@@ -8,6 +9,7 @@ const Inventory = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
+  const itemsPerPage = 15;
   const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   
   // Estados del filtro 
@@ -18,10 +20,13 @@ const Inventory = () => {
     stockStatus: [] 
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [filterOptions, setFilterOptions] = useState({
-    categorias: [],
-    locations: [],
-    temporadas: []
+  const [filters, setFilters] = useState({
+    categoria: '',
+    ubicacion: '',
+    stockStatus: '',
+    temporada: '',
+    precioMin: '',
+    precioMax: ''
   });
 
   useEffect(() => {
@@ -59,17 +64,14 @@ const Inventory = () => {
 
     fetchInventory();
   }, []);
-
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allIds = filteredItems.map(item => item.inventarioId);
+      const allIds = currentItems.map(item => item.inventarioId);
       setSelectedItems(allIds);
     } else {
       setSelectedItems([]);
     }
-  };
-
-  const handleSelectItem = (id) => {
+  };  const handleSelectItem = (id) => {
     if (selectedItems.includes(id)) {
       setSelectedItems(selectedItems.filter(itemId => itemId !== id));
     } else {
@@ -77,33 +79,36 @@ const Inventory = () => {
     }
   };
 
-  const toggleFilter = (type, value) => {
-    setFilters(prevFilters => {
-      if (prevFilters[type].includes(value)) {
-        return {
-          ...prevFilters,
-          [type]: prevFilters[type].filter(item => item !== value)
-        };
-      } else {
-        return {
-          ...prevFilters,
-          [type]: [...prevFilters[type], value]
-        };
-      }
-    });
+  // Función para manejar cambios en filtros
+  const handleFilterChange = (filterName, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+    setCurrentPage(1); // Reset pagination when filtering
   };
 
-  const clearFilters = () => {
+  // Función para limpiar todos los filtros
+  const clearAllFilters = () => {
     setFilters({
-      categoria: [],
-      location: [],
-      temporada: [],
-      stockStatus: []
+      categoria: '',
+      ubicacion: '',
+      stockStatus: '',
+      temporada: '',
+      precioMin: '',
+      precioMax: ''
     });
+    setSearchTerm('');
+    setCurrentPage(1);
   };
 
-  const filteredItems = Array.isArray(inventory) 
+  // Función para obtener valores únicos para filtros
+  const getUniqueValues = (field) => {
+    const values = inventory.map(item => item[field]).filter(Boolean);
+    return [...new Set(values)].sort();
+  };  const filteredItems = Array.isArray(inventory) 
     ? inventory.filter(item => {
+        // Filtro de búsqueda general
         const matchesSearch = 
           item.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (item.inventarioId?.toString() || '').includes(searchTerm) ||
@@ -111,38 +116,38 @@ const Inventory = () => {
           item.categoria?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.locationNombre?.toLowerCase().includes(searchTerm.toLowerCase());
         
-        // categoría
-        const matchesCategoria = filters.categoria.length === 0 || 
-          filters.categoria.includes(item.categoria);
+        // Filtros por columna
+        const matchesCategory = !filters.categoria || item.categoria === filters.categoria;
+        const matchesLocation = !filters.ubicacion || item.locationNombre === filters.ubicacion;
+        const matchesTemporada = !filters.temporada || item.temporada === filters.temporada;
+          // Filtro por estado de stock
+        let matchesStockStatus = true;
+        if (filters.stockStatus) {
+          const stockStatus = item.stockActual < item.stockMinimo ? 'bajo' : 
+                             item.stockActual >= (item.stockMinimo * 2) ? 'alto' : 'normal';
+          matchesStockStatus = stockStatus === filters.stockStatus;
+        }
         
-        // ubicación
-        const matchesLocation = filters.location.length === 0 || 
-          filters.location.includes(item.locationNombre);
+        // Filtros por precio
+        const precio = parseFloat(item.precioVenta || 0);
+        const matchesPrecioMin = !filters.precioMin || precio >= parseFloat(filters.precioMin);
+        const matchesPrecioMax = !filters.precioMax || precio <= parseFloat(filters.precioMax);
         
-        // temporada
-        const matchesTemporada = filters.temporada.length === 0 || 
-          filters.temporada.includes(item.temporada);
-        
-        // estado de stock
-        const matchesStockStatus = filters.stockStatus.length === 0 || 
-          (filters.stockStatus.includes('bajo') && item.stockActual <= item.stockMinimo) ||
-          (filters.stockStatus.includes('normal') && item.stockActual > item.stockMinimo && item.stockActual <= item.stockRecomendado) ||
-          (filters.stockStatus.includes('alto') && item.stockActual > item.stockRecomendado);
-        
-        return matchesSearch && matchesCategoria && matchesLocation && matchesTemporada && matchesStockStatus;
+        return matchesSearch && matchesCategory && matchesLocation && 
+               matchesTemporada && matchesStockStatus && matchesPrecioMin && matchesPrecioMax;
       })
     : [];
-
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES');
   };
-  
-  // Contador de filtros activos
-  const activeFilterCount = Object.values(filters).reduce(
-    (count, filterArray) => count + filterArray.length, 0
-  );
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const idxLast = currentPage * itemsPerPage;
+  const idxFirst = idxLast - itemsPerPage;
+  const currentItems = filteredItems.slice(idxFirst, idxLast);
 
   if (loading) return <div className="text-center p-4">Cargando inventario...</div>;
   if (error) return <div className="alert alert-danger">{error}</div>;
@@ -151,8 +156,7 @@ const Inventory = () => {
     const headers = [
       'ID Inventario', 'ID Artículo', 'Nombre', 'Categoría', 'Ubicación',
       'Stock Actual', 'Stock Mínimo', 'Stock Recomendado', 'Precio Venta', 'Temporada'
-    ];
-    const rows = filteredItems.map(item => [
+    ];    const rows = filteredItems.map(item => [
       item.inventarioId,
       item.articuloId,
       item.nombre,
@@ -173,307 +177,320 @@ const Inventory = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-  
-  return (
-    <div className="inventory-container mb-5">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <InputGroup className="w-50">
-          <InputGroup.Text>
-            <i className="bi bi-search"></i>
-          </InputGroup.Text>
-          <Form.Control
-            id="buscadorInventario" 
-            placeholder="Buscar por nombre, ID, categoría o ubicación..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </InputGroup>
-        <div>
+  };    return (
+    <div className='card h-100 p-0 radius-12' style={{minHeight: '80vh'}}>      <div className='card-header d-flex justify-content-between align-items-center py-16 px-24'>        <div className='d-flex flex-wrap align-items-center gap-3'>          <div className='icon-field'>
+            <input
+              type='text'
+              name='search'
+              className='form-control form-control-sm'
+              style={{ minWidth: '280px' }}
+              placeholder='Buscar productos...'
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <span className='icon'>
+              <Icon icon='ion:search-outline' />
+            </span>
+          </div>
+        </div>        <div className='d-flex flex-wrap align-items-center gap-3'>
           <Button 
             id="btnExportarCSV"
             variant="success" 
             onClick={exportToCSV}
-            className="me-5 p-3"
+            className="btn-sm"
+            size="sm"
           >
-            <i className="bi bi-download"></i> Exportar CSV
+            <Icon icon="bi:download" /> Exportar CSV
           </Button>
-          
           <Button 
-            id="btnFiltrarInventario" 
-            variant={activeFilterCount > 0 ? "primary" : "outline-secondary"} 
+            variant="outline-primary" 
             onClick={() => setShowFilters(!showFilters)}
-            className="position-relative p-3"
+            className="btn-sm"
+            size="sm"
           >
-            <i className="bi bi-funnel"></i> Filtrar
-            {activeFilterCount > 0 && (
-              <Badge bg="danger" pill className="position-absolute top-0 start-100 translate-middle">
-                {activeFilterCount}
-              </Badge>
-            )}
+            <Icon icon="bi:funnel" /> Filtros
           </Button>
-        </div>
-      </div>
+        </div>      </div>
 
-      {/* Panel de filtros */}
+      {/* Pestaña de filtros colapsible */}
       {showFilters && (
-        <div className="filter-panel p-4 mb-3 border rounded shadow-sm bg-light">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h5 className="m-0 text-primary">Filtros</h5>
-            <Button id="btnLimpiarFiltros" variant="link" size="sm" onClick={clearFilters} className="text-danger">
-              Limpiar filtros
+        <div className="card-header border-top bg-light">
+          <div className="row g-3">
+            <div className="col-md-3">
+              <Form.Group>
+                <Form.Label className="small text-muted mb-1">Categoría</Form.Label>
+                <Form.Select 
+                  size="sm"
+                  value={filters.categoria}
+                  onChange={(e) => handleFilterChange('categoria', e.target.value)}
+                >
+                  <option value="">Todas las categorías</option>
+                  {getUniqueValues('categoria').map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </div>
+            <div className="col-md-3">
+              <Form.Group>
+                <Form.Label className="small text-muted mb-1">Ubicación</Form.Label>
+                <Form.Select 
+                  size="sm"
+                  value={filters.ubicacion}
+                  onChange={(e) => handleFilterChange('ubicacion', e.target.value)}
+                >
+                  <option value="">Todas las ubicaciones</option>
+                  {getUniqueValues('locationNombre').map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </div>
+            <div className="col-md-2">
+              <Form.Group>
+                <Form.Label className="small text-muted mb-1">Estado Stock</Form.Label>                <Form.Select 
+                  size="sm"
+                  value={filters.stockStatus}
+                  onChange={(e) => handleFilterChange('stockStatus', e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  <option value="bajo">Stock Crítico (Menor al mínimo)</option>
+                  <option value="normal">Stock Moderado (Entre mín. y 2x mín.)</option>
+                  <option value="alto">Stock Abundante (2x mínimo o más)</option>
+                </Form.Select>
+              </Form.Group>
+            </div>
+            <div className="col-md-2">
+              <Form.Group>
+                <Form.Label className="small text-muted mb-1">Temporada</Form.Label>
+                <Form.Select 
+                  size="sm"
+                  value={filters.temporada}
+                  onChange={(e) => handleFilterChange('temporada', e.target.value)}
+                >
+                  <option value="">Todas</option>
+                  {getUniqueValues('temporada').map(temp => (
+                    <option key={temp} value={temp}>{temp}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </div>
+            <div className="col-md-2">
+              <Form.Group>
+                <Form.Label className="small text-muted mb-1">Precio</Form.Label>
+                <div className="d-flex gap-1">
+                  <Form.Control
+                    type="number"
+                    size="sm"
+                    placeholder="Min"
+                    value={filters.precioMin}
+                    onChange={(e) => handleFilterChange('precioMin', e.target.value)}
+                  />
+                  <Form.Control
+                    type="number"
+                    size="sm"
+                    placeholder="Max"
+                    value={filters.precioMax}
+                    onChange={(e) => handleFilterChange('precioMax', e.target.value)}
+                  />
+                </div>
+              </Form.Group>
+            </div>
+          </div>
+          <div className="d-flex justify-content-between align-items-center mt-3">
+            <small className="text-muted">
+              {Object.values(filters).some(f => f !== '') ? 
+                `Filtros activos: ${Object.entries(filters).filter(([k,v]) => v !== '').length}` : 
+                'Sin filtros aplicados'
+              }
+            </small>
+            <Button 
+              variant="outline-secondary" 
+              size="sm"
+              onClick={clearAllFilters}
+              disabled={!Object.values(filters).some(f => f !== '') && !searchTerm}
+            >
+              <Icon icon="bi:x-circle" /> Limpiar filtros
             </Button>
           </div>
-          
-          <div className="row">
-            {/* Filtro de Categorías */}
-            <div className="col-md-3 mb-3">
-              <h6 className="fw-bold text-muted">Categoría</h6>
-              <div className="filter-options" style={{maxHeight: '250px', overflowY: 'auto', paddingRight: '10px'}}>
-                {filterOptions.categorias.map(categoria => (
-                  <Form.Check 
-                    key={categoria}
-                    type="checkbox"
-                    id={`filter-cat-${categoria}`}
-                    label={categoria}
-                    checked={filters.categoria.includes(categoria)}
-                    onChange={() => toggleFilter('categoria', categoria)}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            {/* Filtro de Ubicaciones */}
-            <div className="col-md-3 mb-3">
-              <h6 className="fw-bold text-muted">Ubicación</h6>
-              <div className="filter-options" style={{maxHeight: '250px', overflowY: 'auto', paddingRight: '10px'}}>
-                {filterOptions.locations.map(location => (
-                  <Form.Check 
-                    key={location}
-                    type="checkbox"
-                    id={`filter-loc-${location}`}
-                    label={location}
-                    checked={filters.location.includes(location)}
-                    onChange={() => toggleFilter('location', location)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Filtro de Temporadas */}
-            <div className="col-md-3 mb-3">
-              <h6 className="fw-bold text-muted">Temporada</h6>
-              <div className="filter-options" style={{maxHeight: '250px', overflowY: 'auto', paddingRight: '10px'}}>
-                {filterOptions.temporadas.map(temporada => (
-                  <Form.Check 
-                    key={temporada}
-                    type="checkbox"
-                    id={`filter-temp-${temporada}`}
-                    label={temporada}
-                    checked={filters.temporada.includes(temporada)}
-                    onChange={() => toggleFilter('temporada', temporada)}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            {/* Filtro de Estado de Stock */}
-            <div className="col-md-3 mb-3">
-              <h6 className="fw-bold text-muted">Estado de Stock</h6>
-              <Form.Check 
-                type="checkbox"
-                id="filter-stock-bajo"
-                label="Bajo stock (≤ mínimo)"
-                checked={filters.stockStatus.includes('bajo')}
-                onChange={() => toggleFilter('stockStatus', 'bajo')}
-              />
-              <Form.Check 
-                type="checkbox"
-                id="filter-stock-normal"
-                label="Stock normal"
-                checked={filters.stockStatus.includes('normal')}
-                onChange={() => toggleFilter('stockStatus', 'normal')}
-              />
-              <Form.Check 
-                type="checkbox"
-                id="filter-stock-alto"
-                label="Stock alto (> recomendado)"
-                checked={filters.stockStatus.includes('alto')}
-                onChange={() => toggleFilter('stockStatus', 'alto')}
-              />
+        </div>
+      )}{/* Tabla con filtros de columna alineados y estilizados */}
+      <div className='card-body p-24'>        {loading ? (
+          <div className="text-center py-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Cargando inventario...</span>
             </div>
           </div>
-        </div>
-      )}
-
-      <Table responsive bordered hover className="sapitos-table-styles"> {/* Added custom class */}
-        <thead className="table-light">
-          <tr>
-            <th>
-              <Form.Check
-                type="checkbox"
-                onChange={handleSelectAll}
-                checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
-              />
-            </th>
-            <th>ID Inv.</th>
-            <th>ID Art.</th>
-            <th>Nombre</th>
-            <th>
-              Categoría
-              <Dropdown className="d-inline-block ms-1">
-                <Dropdown.Toggle variant="light" size="sm" id="dropdown-categoria" style={{padding: '0 5px'}}>
-                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  {filterOptions.categorias.map(categoria => (
-                    <Dropdown.Item key={categoria} onClick={() => toggleFilter('categoria', categoria)}>
-                      <Form.Check 
-                        type="checkbox"
-                        checked={filters.categoria.includes(categoria)}
-                        label={categoria}
-                        onChange={() => {}}
-                        onClick={e => e.stopPropagation()}
-                      />
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Menu>
-              </Dropdown>
-            </th>
-            <th>
-              Ubicación
-              <Dropdown className="d-inline-block ms-1">
-                <Dropdown.Toggle variant="light" size="sm" id="dropdown-location" style={{padding: '0 5px'}}>
-                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  {filterOptions.locations.map(location => (
-                    <Dropdown.Item key={location} onClick={() => toggleFilter('location', location)}>
-                      <Form.Check 
-                        type="checkbox"
-                        checked={filters.location.includes(location)}
-                        label={location}
-                        onChange={() => {}}
-                        onClick={e => e.stopPropagation()}
-                      />
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Menu>
-              </Dropdown>
-            </th>
-            <th>
-              Stock Actual
-              <Dropdown className="d-inline-block ms-1">
-                <Dropdown.Toggle variant="light" size="sm" id="dropdown-stock" style={{padding: '0 5px'}}>
-                  <i className="bi bi-funnel-fill" style={{fontSize: '0.7rem'}}></i>
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'bajo')}>
-                    <Form.Check 
-                      type="checkbox"
-                      checked={filters.stockStatus.includes('bajo')}
-                      label="Bajo stock"
-                      onChange={() => {}}
-                      onClick={e => e.stopPropagation()}
-                    />
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'normal')}>
-                    <Form.Check 
-                      type="checkbox"
-                      checked={filters.stockStatus.includes('normal')}
-                      label="Stock normal"
-                      onChange={() => {}}
-                      onClick={e => e.stopPropagation()}
-                    />
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => toggleFilter('stockStatus', 'alto')}>
-                    <Form.Check 
-                      type="checkbox"
-                      checked={filters.stockStatus.includes('alto')}
-                      label="Stock alto"
-                      onChange={() => {}}
-                      onClick={e => e.stopPropagation()}
-                    />
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </th>
-            <th>Stock Mín.</th>
-            <th>Stock Rec.</th>
-            <th>Precio Venta</th>
-            <th>Temporada</th>
-            {/* Removed: Precio Prov., Margen %, Última Import., Última Export. */}
-          </tr>
-        </thead>
-        <tbody>
-          {filteredItems.length > 0 ? (
-            filteredItems.map((item) => {
-              let stockStatus = 'normal';
-              let rowClass = '';
-              
-              if (item.stockActual <= item.stockMinimo) {
-                stockStatus = 'bajo';
-                rowClass = 'table-danger';
-              } else if (item.stockActual > item.stockRecomendado) {
-                stockStatus = 'alto';
-                rowClass = 'table-success';
-              }
-              
-              return (
-                <tr key={item.inventarioId} className={rowClass}>
-                  <td>
+        ) : (
+          <>
+            <div className="table-responsive scroll-sm">
+            <table className='table bordered-table sm-table mb-0'><thead>
+                <tr>
+                  <th>
                     <Form.Check
                       type="checkbox"
-                      checked={selectedItems.includes(item.inventarioId)}
-                      onChange={() => handleSelectItem(item.inventarioId)}
+                      onChange={handleSelectAll}
+                      checked={selectedItems.length === currentItems.length && currentItems.length > 0}
                     />
-                  </td>
-                  <td>{item.inventarioId}</td>
-                  <td>{item.articuloId}</td>
-                  <td>{item.nombre}</td>
-                  <td>{item.categoria}</td>
-                  <td>
-                    {item.locationNombre}
-                    {item.locationTipo && (
-                      <small className="text-muted d-block">({item.locationTipo})</small>
-                    )}
-                  </td>
-                  <td>
-                    <span className={`badge ${stockStatus === 'bajo' ? 'bg-danger' : stockStatus === 'alto' ? 'bg-success' : 'bg-secondary'}`}>
-                      {item.stockActual}
-                    </span>
-                  </td>
-                  <td>{item.stockMinimo}</td>
-                  <td>{item.stockRecomendado}</td>
-                  <td>${parseFloat(item.precioVenta || 0)?.toFixed(2)}</td>
-                  <td>{item.temporada || '-'}</td>
-                  {/* Removed: precioProveedor, margenGanancia, fechaUltimaImportacion, fechaUltimaExportacion */}
+                  </th>
+                  <th>ID Inv.</th>
+                  <th>ID Art.</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Ubicación</th>
+                  <th>Stock Actual</th>
+                  <th>Stock Mín.</th>
+                  <th>Stock Rec.</th>
+                  <th>Precio Venta</th>
+                  <th>Temporada</th>
                 </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td colSpan="11" className="text-center">No se encontraron items</td> {/* Adjusted colSpan */}
-            </tr>
-          )}
-        </tbody>
-      </Table>
+              </thead><tbody>
+                {currentItems.length > 0 ? (                  currentItems.map((item) => {
+                    let stockStatus = 'normal';
+                    let rowClass = '';
+                    
+                    // Nueva lógica de colores según los criterios especificados
+                    if (item.stockActual < item.stockMinimo) {
+                      stockStatus = 'bajo';
+                      rowClass = 'table-danger';
+                    } else if (item.stockActual >= (item.stockMinimo * 2)) {
+                      stockStatus = 'alto';
+                      rowClass = 'table-success';
+                    } else {
+                      // Entre stock mínimo y el doble del stock mínimo
+                      stockStatus = 'normal';
+                      rowClass = '';
+                    }
+                    
+                    return (
+                      <tr key={item.inventarioId} className={rowClass}>
+                        <td>
+                          <Form.Check
+                            type="checkbox"
+                            checked={selectedItems.includes(item.inventarioId)}
+                            onChange={() => handleSelectItem(item.inventarioId)}
+                          />
+                        </td>
+                        <td>{item.inventarioId}</td>
+                        <td>{item.articuloId}</td>
+                        <td><h6 className='text-md mb-0 fw-medium'>{item.nombre}</h6></td>
+                        <td>{item.categoria}</td>
+                        <td>
+                          {item.locationNombre}
+                          {item.locationTipo && (
+                            <small className="text-muted d-block">({item.locationTipo})</small>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`px-12 py-1 rounded-pill fw-medium text-xs ${stockStatus === 'bajo' ? 'bg-danger text-white' : stockStatus === 'alto' ? 'bg-success text-white' : 'bg-secondary text-white'}`}>
+                            {item.stockActual}
+                          </span>
+                        </td>
+                        <td>{item.stockMinimo}</td>
+                        <td>{item.stockRecomendado}</td>
+                        <td>${parseFloat(item.precioVenta || 0)?.toFixed(2)}</td>
+                        <td>{item.temporada || '-'}</td>
+                      </tr>
+                    );
+                  })                ) : (
+                  <tr>
+                    <td colSpan="11" className="text-center py-3">No se encontraron items</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-      {/* Estadísticas de resultados filtrados */}
-      <div className="d-flex justify-content-between align-items-center mt-3">
-        <div>
-          <small className="text-muted">
-            Mostrando {filteredItems.length} de {inventory.length} productos
-            {activeFilterCount > 0 ? ` (${activeFilterCount} filtros aplicados)` : ''}
-          </small>
-        </div>
-        <div>
-          {selectedItems.length > 0 && (
-            <Button variant="outline-danger" size="sm">
-              <i className="bi bi-trash"></i> Eliminar seleccionados ({selectedItems.length})
-            </Button>
+          {/* Estadísticas de resultados filtrados y paginación */}
+          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+            <span>
+              Mostrando {idxFirst + 1} a {Math.min(idxLast, filteredItems.length)} de {filteredItems.length} productos
+            </span>
+            
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <ul className="pagination d-flex flex-wrap align-items-center gap-2 justify-content-center">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button 
+                    className="page-link"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    <Icon icon="lucide:chevron-first" />
+                  </button>
+                </li>
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button 
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <Icon icon="lucide:chevron-left" />
+                  </button>
+                </li>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    const delta = 2;
+                    return (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - delta && page <= currentPage + delta)
+                    );
+                  })
+                  .reduce((acc, page) => {
+                    const last = acc[acc.length - 1];
+                    if (last && page - last > 1) {
+                      acc.push('...');
+                    }
+                    acc.push(page);
+                    return acc;
+                  }, [])
+                  .map((page, index) => (
+                    page === '...' ? (
+                      <li key={`ellipsis-${index}`} className="page-item disabled">
+                        <span className="page-link">...</span>
+                      </li>
+                    ) : (
+                      <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                        <button 
+                          className="page-link"
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </button>
+                      </li>
+                    )
+                  ))}
+                
+                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                  <button 
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <Icon icon="lucide:chevron-right" />
+                  </button>
+                </li>
+                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                  <button 
+                    className="page-link"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <Icon icon="lucide:chevron-last" />
+                  </button>
+                </li>              </ul>
+            )}
+          </div>          {selectedItems.length > 0 && (
+            <div className="mt-3">
+              <Button variant="outline-danger" size="sm">
+                <Icon icon="mingcute:delete-2-line" className="me-1" /> Eliminar seleccionados ({selectedItems.length})
+              </Button>
+            </div>
           )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

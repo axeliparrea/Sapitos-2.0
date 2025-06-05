@@ -119,29 +119,24 @@ const InvoiceListProveedor = () => {
   }) : [];
 
   return (
-    <div className='card'>
-      <div className='card-header d-flex flex-wrap align-items-center justify-content-between gap-3'>
-        <div className='d-flex flex-wrap align-items-center gap-3'>
-          <div className='d-flex align-items-center gap-2'>
-            <span>Historial de Pedidos</span>
-          </div>
-          <div className='icon-field'>
-            <input
-              type='text'
-              name='search'
-              className='form-control form-control-sm w-auto'
-              placeholder='Buscar por cliente o ID'
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <span className='icon'>
-              <Icon icon='ion:search-outline' />
-            </span>
-          </div>
+    <div className="card h-100 p-0 radius-12">
+      <div className="card-header d-flex justify-content-between align-items-center py-16 px-24">
+        <span className="text-md fw-medium mb-0">Historial de Pedidos</span>
+        <div className="icon-field">
+          <input
+            type="text"
+            className="form-control form-control-sm w-auto"
+            placeholder="Buscar por cliente o ID"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <span className="icon">
+            <Icon icon="ion:search-outline" />
+          </span>
         </div>
       </div>
 
-      <div className='card-body'>
+      <div className="card-body p-24">
         {loading ? (
           <div className="text-center py-4">
             <div className="spinner-border text-primary" role="status">
@@ -149,67 +144,64 @@ const InvoiceListProveedor = () => {
             </div>
           </div>
         ) : (
-          <table className='table bordered-table mb-0'>
-            <thead>
-              <tr>
-                <th>Número</th>
-                <th>ID Pedido</th>
-                <th>Cliente</th>
-                <th>Fecha Pedido</th>
-                <th>Fecha Entrega</th>
-                <th>Cantidad Productos</th>
-                <th>Precio Total</th>
-                <th>Método Pago</th>
-                <th>Estado</th>
-                <th>Descripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pedidosFiltrados.length > 0 ? (
-                pedidosFiltrados.map((pedido) => (
-                  <tr key={`pedido-${pedido.id}`}>
-                    <td>{pedido.numero}</td>
-                    <td>#{pedido.id}</td>
-                    <td>{pedido.solicitadoPor}</td>
-                    <td>{pedido.fechaCreacion}</td>
-                    <td>{pedido.fechaEntrega}</td>
-                    <td>{pedido.cantidadProductos}</td>
-                    <td>${pedido.cantidad}</td>
-                    <td>{pedido.metodoPago}</td>
-                    <td className={getEstadoClass(pedido.estado)}>
-                      {pedido.estado}
-                    </td>
-                    <td>
-                      <button 
-                        className="btn btn-sm btn-outline-info"
-                        title="Ver detalles"
-                        onClick={() => {
-                          Swal.fire({
-                            title: `Detalles del Pedido #${pedido.id}`,
-                            text: pedido.descripcion || 'Sin descripción disponible',
-                            icon: 'info'
-                          });
-                        }}
-                      >
-                        <Icon icon="ion:information-circle-outline" />
-                      </button>
+          <div className="table-responsive scroll-sm">
+            <table className="table bordered-table sm-table mb-0">
+              <thead>
+                <tr>
+                  <th>Número</th>
+                  <th>ID Pedido</th>
+                  <th>Cliente</th>
+                  <th>Fecha Pedido</th>
+                  <th>Fecha Entrega</th>
+                  <th>Cantidad Productos</th>
+                  <th>Precio Total</th>
+                  <th>Método Pago</th>
+                  <th>Estado</th>
+                  <th>Descripción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pedidosFiltrados.length > 0 ? (
+                  pedidosFiltrados.map((pedido) => (
+                    <tr key={`pedido-${pedido.id}`}>
+                      <td>{pedido.numero}</td>
+                      <td>#{pedido.id}</td>
+                      <td>{pedido.solicitadoPor}</td>
+                      <td>{pedido.fechaCreacion}</td>
+                      <td>{pedido.fechaEntrega}</td>
+                      <td>{pedido.cantidadProductos}</td>
+                      <td>${pedido.cantidad}</td>
+                      <td>{pedido.metodoPago}</td>
+                      <td className={getEstadoClass(pedido.estado)}>
+                        {pedido.estado}
+                      </td>
+                      <td className="align-middle">
+                        <button
+                          onClick={() => Swal.fire({ title: `Detalles del Pedido #${pedido.id}`, text: pedido.descripcion || 'Sin descripción disponible', icon: 'info' })}
+                          className="w-24-px h-24-px bg-info-light text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                          style={{ border: 'none' }}
+                          title="Ver detalles"
+                        >
+                          <Icon icon="ion:information-circle-outline" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="10" className="text-center py-4">
+                      {searchTerm ? 
+                        `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
+                        "No hay pedidos registrados"
+                      }
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="10" className="text-center py-4">
-                    {searchTerm ? 
-                      `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
-                      "No hay pedidos registrados"
-                    }
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+         )}
+       </div>
     </div>
   );
 };
