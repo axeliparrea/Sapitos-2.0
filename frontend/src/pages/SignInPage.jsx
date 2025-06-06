@@ -13,7 +13,7 @@ const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingSession, setCheckingSession] = useState(true);
-  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     if (hasCheckedSession.current) return;
