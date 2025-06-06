@@ -30,6 +30,7 @@ import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
 import Articulos from "./pages/admin/Articulos";
+import Location from "./pages/admin/Location";
 
 const App = () => {
   const [role, setRole] = useState(null); 
@@ -180,6 +181,13 @@ const App = () => {
   path="/articulos" 
   element={
     role === "admin" ? <Articulos /> :
+    <Navigate to="/" />
+  }
+/>
+<Route 
+  path="/Location" 
+  element={
+    role === "admin" ? <Location /> :
     <Navigate to="/" />
   }
 />
