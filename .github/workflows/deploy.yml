@@ -167,8 +167,6 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           echo "Debugging environment variables..."
-          echo "CF_USERNAME: $CF_USERNAME"
-          echo "ACCESS_TOKENCLOUD: $ACCESS_TOKENCLOUD"
           echo "SERVER_NODE: $SERVER_NODE"
           echo "DB_USERNAME: $DB_USERNAME"
           echo "DB_PASSWORD is set: $(test -n \"$DB_PASSWORD\" && echo true || echo false)"
@@ -191,7 +189,7 @@ jobs:
       - name: Deploy Backend
         run: |
           cd backend
-          # Update manifest to disable MLOps in Cloud Foundry and set other env vars
+          # Update manifest to include necessary environment variables
           cat > manifest.yml << EOL
           applications:
             - name: Sapitos-backend
