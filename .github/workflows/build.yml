@@ -22,7 +22,7 @@ jobs:
           projectBaseDir: backend  # Carpeta donde está sonar-project.properties
           args: >
             -Dsonar.projectKey=SAPitos_back
-            -Dsonar.sources=src
+            -Dsonar.sources=.
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
