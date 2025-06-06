@@ -72,9 +72,10 @@ const LocationListLayer = () => {
             <Icon icon="ion:search-outline" className="icon" />
           </form>
         </div>
-        <Link to="/agregar-ubicacion" className="btn btn-primary btn-sm">
-          <Icon icon="ic:baseline-plus" className="icon text-xl" /> Agregar Ubicación
-        </Link>
+        <Link to="/agregar-Location" className="btn btn-primary btn-sm">
+  <Icon icon="ic:baseline-plus" className="icon text-xl" /> Agregar Ubicación
+</Link>
+
       </div>
 
       <div className="card-body p-24">

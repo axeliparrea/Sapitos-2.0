@@ -30,7 +30,9 @@ import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
 import Articulos from "./pages/admin/Articulos";
+import AddArticuloLayer from "./components/AddArticuloLayer";
 import Location from "./pages/admin/Location";
+import AddLocationLayer from "./components/AddLocationLayer";
 
 const App = () => {
   const [role, setRole] = useState(null); 
@@ -198,7 +200,22 @@ const App = () => {
             role === "admin" ? <AddUserLayer /> :
             <Navigate to="/" />
           } 
-        />        <Route 
+        />
+        <Route 
+          path="/agregar-articulo"
+          element={
+            role === "admin" ? <AddArticuloLayer /> :
+            <Navigate to="/" />
+          }
+        />
+        <Route 
+          path="/agregar-Location"
+          element={
+            role === "admin" ? <AddLocationLayer /> :
+            <Navigate to="/" />
+          }
+        />
+                <Route 
           path="/editar-usuario/:userId" 
           element={
             role === "admin" ? <EditUserLayer /> :
