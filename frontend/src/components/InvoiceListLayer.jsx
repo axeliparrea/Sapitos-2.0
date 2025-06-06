@@ -42,6 +42,11 @@ const InvoiceListLayer = () => {
         cantidad: pedido.total,
         estatus: pedido.estatus
       }));
+      formattedPedidos.sort((a, b) => {
+        const idA = parseInt(a.id.replace('#', ''));
+        const idB = parseInt(b.id.replace('#', ''));
+        return idB - idA; 
+      });
       setPedidos(formattedPedidos);
       // Extraer opciones únicas para filtros
       setFilterOptions(prev => ({
