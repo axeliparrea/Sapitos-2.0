@@ -4,55 +4,23 @@ const logger = require('../utils/logger');
 
 const getHanaCredentials = () => {
   try {
-    // Para Cloud Foundry (producción)
-    if (process.env.VCAP_SERVICES) {
-      const vcap = JSON.parse(process.env.VCAP_SERVICES);
-      
-      // Buscar en diferentes servicios posibles donde podría estar HANA
-      // Verificando cada paso para evitar errores "undefined"
-      if (vcap.hana && vcap.hana[0] && vcap.hana[0].credentials) {
-        const hanaCredentials = vcap.hana[0].credentials;
-        console.log('Found HANA credentials in VCAP_SERVICES.hana');
-        return {
-          serverNode: `${hanaCredentials.host}:${hanaCredentials.port}`,
-          uid: hanaCredentials.user,
-          pwd: hanaCredentials.password,
-          encrypt: 'true',
-          sslValidateCertificate: 'false'
-        };
-      }
-      
-      // Buscar en user-provided-service (si se configuró uno)
-      if (vcap['user-provided'] && vcap['user-provided'][0] && vcap['user-provided'][0].credentials) {
-        const upsCredentials = vcap['user-provided'][0].credentials;
-        console.log('Found HANA credentials in user-provided service');
-        return {
-          serverNode: `${upsCredentials.host}:${upsCredentials.port}`,
-          uid: upsCredentials.user || upsCredentials.username,
-          pwd: upsCredentials.password,
-          encrypt: 'true',
-          sslValidateCertificate: 'false'
-        };
-      }
-    }
-
     // Usar variables de entorno directas (desde GitHub Secrets)
-    const hanaHost = process.env.HANA_HOST;
-    const hanaUser = process.env.HANA_USER;
-    const hanaPassword = process.env.HANA_PASSWORD;
+    const serverNode = process.env.SERVER_NODE;
+    const dbUsername = process.env.DB_USERNAME;
+    const dbPassword = process.env.DB_PASSWORD;
 
-    if (hanaHost && hanaUser && hanaPassword) {
+    if (serverNode && dbUsername && dbPassword) {
       console.log('Using direct environment variables for HANA connection');
       return {
-        serverNode: hanaHost,
-        uid: hanaUser,
-        pwd: hanaPassword,
+        serverNode,
+        uid: dbUsername,
+        pwd: dbPassword,
         encrypt: 'true',
         sslValidateCertificate: 'false'
       };
     }
 
-    throw new Error('No HANA credentials found in environment or VCAP_SERVICES');
+    throw new Error('No HANA credentials found in environment variables');
   } catch (error) {
     console.error('Error retrieving HANA credentials:', error.message);
     throw error;
