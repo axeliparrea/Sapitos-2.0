@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import ErrorDialog from "../components/ErrorDialog";
 
 const SignInPage = () => {
   const [email, setEmail] = useState("");
@@ -12,6 +13,8 @@ const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingSession, setCheckingSession] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (hasCheckedSession.current) return;
@@ -79,14 +82,9 @@ const SignInPage = () => {
     event.preventDefault();
     setIsLoading(true);
     setError('');
+    setErrorMessage("");
 
     try {
-      // // Primero limpiar cualquier sesión previa
-      // await fetch("http://localhost:5000/users/logoutUser", {
-      //   method: "POST",
-      //   credentials: "include",
-      // });
-
       const response = await fetch("http://localhost:5000/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,10 +95,20 @@ const SignInPage = () => {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || "Error en el inicio de sesión");
+        let message = "Error en el inicio de sesión";
+        if (data.error === "Usuario no encontrado") {
+          message = "El usuario no existe en el sistema";
+        } else if (data.error === "Contraseña incorrecta") {
+          message = "La contraseña ingresada es incorrecta";
+        }
+        setErrorMessage(message);
+        setDialogOpen(true);
+        throw new Error(data.error || message);
       }
 
       if (!data.usuario) {
+        setErrorMessage("Datos de sesión incompletos");
+        setDialogOpen(true);
         throw new Error("Datos de sesión incompletos");
       }
 
@@ -116,6 +124,10 @@ const SignInPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
   };
 
   if (checkingSession) {
@@ -193,13 +205,6 @@ const SignInPage = () => {
                   </>
                 )}
               </button>
-
-              {error && (
-                <div className="alert alert-danger d-flex align-items-center p-3 mb-0">
-                  <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
-                  <div className="text-sm">{error}</div>
-                </div>
-              )}
             </div>
           </form>
         </div>
@@ -209,6 +214,12 @@ const SignInPage = () => {
           <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
         </div>
       </div>
+
+      <ErrorDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        errorMessage={errorMessage}
+      />
     </section>
   );
 };
