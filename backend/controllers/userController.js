@@ -141,7 +141,8 @@ const loginUser = (req, res) => {
         rol: usuario.ROLNOMBRE, // solo esta propiedad para rol
         correo: usuario.CORREO,
         username: usuario.USERNAME,
-        locationId: usuario.LOCATION_ID
+        locationId: usuario.LOCATION_ID,
+        authTimestamp: Date.now() // Add authTimestamp to track login time
       };
 
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -156,10 +157,15 @@ const loginUser = (req, res) => {
         path: "/",
       });
 
+      // Check if OTP is required (based on environment variable)
+      const otpRequired = process.env.AUTH_OTP === 'true';
+      console.log(`OTP requirement check: ${otpRequired ? 'OTP required' : 'OTP not required'}`);
+
       // SOLO ENVIAR LOS DATOS NECESARIOS AL FRONTEND
       res.json({ 
-        message: "Login exitoso", 
+        mensaje: "Login exitoso", 
         token, 
+        requiresOtp: otpRequired,  // Add this flag
         usuario: {
           id: usuario.USUARIO_ID,
           nombre: usuario.NOMBRE,
@@ -500,6 +506,36 @@ const getLocations = async (req, res) => {
   }
 };
 
+/**
+ * Get user by ID
+ * @param {number} id - User ID
+ * @returns {Promise<Object|null>} - User data or null if not found
+ */
+const getUserById = async (id) => {
+  return new Promise((resolve, reject) => {
+    const query = `
+      SELECT u.*, r.NOMBRE as ROLNOMBRE
+      FROM USUARIO u
+      LEFT JOIN ROL r ON u.ROL_ID = r.ROL_ID
+      WHERE u.USUARIO_ID = ?
+    `;
+    
+    connection.execute(query, [id], (err, results) => {
+      if (err) {
+        console.error("Error fetching user by ID:", err);
+        return reject(err);
+      }
+      
+      if (results.length === 0) {
+        return resolve(null);
+      }
+      
+      console.log("Usuario encontrado:", results[0]);
+      resolve(results[0]);
+    });
+  });
+};
+
 module.exports = { 
   registerUser, 
   loginUser, 
@@ -511,5 +547,6 @@ module.exports = {
   getUserByEmail,
   getProfileImage,
   updateProfileImage,
-  getLocations
+  getLocations,
+  getUserById
 };

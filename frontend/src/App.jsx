@@ -30,6 +30,8 @@ import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
 import Articulos from "./pages/admin/Articulos";
+import OtpPage from "./pages/OtpPage";
+import AuthHandler from './components/AuthHandler';
 
 const App = () => {
   const [role, setRole] = useState(null); 
@@ -76,6 +78,7 @@ const App = () => {
   return (
 
     <BrowserRouter>
+      <AuthHandler>
       <Routes>
         <Route path="/" element={<SignInPage />} />
         <Route
@@ -223,8 +226,9 @@ const App = () => {
             <Navigate to="/" />
           }
         />
+        <Route path="/otp" element={<OtpPage />} />
       </Routes> 
-
+      </AuthHandler>
     </BrowserRouter>
 
   );

@@ -4,6 +4,7 @@ const router = express.Router();
 
 const { auth } = require('../middleware/auth');
 const fileUpload = require("express-fileupload");
+const { checkAuthTimestamp } = require('../controllers/otpController');
 router.use(fileUpload());
 
 /**
@@ -148,7 +149,7 @@ router.post("/login", loginUser);
  */
 
 // router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
-router.get("/getUsers", getUsers);
+router.get('/getUsers', auth(), checkAuthTimestamp, getUsers); // Apply middleware to enforce OTP logic
 
 /**
  * @swagger

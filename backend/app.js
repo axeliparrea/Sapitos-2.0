@@ -13,6 +13,7 @@ const rolRoutes = require("./routes/rol.js");
 const locationRoutes = require("./routes/location"); // al inicio
 const mlRoutes = require("./routes/ml");
 const articuloRoutes = require("./routes/articulo");
+const otpRoutes = require("./routes/otp"); // Added OTP routes
 
 const app = express();
 
@@ -35,6 +36,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 app.use("//users/getUsers", userRoutes); 
 app.use("/users/logoutUser", userRoutes);
 app.use("/users/logoutUser", userRoutes);
+
+// OTP routes
+app.use("/api/otp", otpRoutes); // Using explicit /api/otp prefix for OTP routes
 
 // ML model routes
 app.use("/ml", mlRoutes);

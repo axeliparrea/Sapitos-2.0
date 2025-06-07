@@ -7,6 +7,7 @@ const auth = (roles = []) => (req, res, next) => {
 
   try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Decoded JWT:', decoded); // Log the decoded JWT
       req.user = decoded; // Attach user to request
       // Cambiar a req.user.rol (minúsculas)
       if (roles.length && !roles.includes(req.user.rol)) {
@@ -15,6 +16,7 @@ const auth = (roles = []) => (req, res, next) => {
       }
       next();
   } catch (error) {
+      console.error('JWT verification error:', error); // Log verification errors
       return res.status(401).json({ message: "Invalid token" });
   }
 };
