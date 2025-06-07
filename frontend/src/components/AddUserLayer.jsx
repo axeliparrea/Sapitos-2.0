@@ -1,16 +1,18 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const AddUserLayer = () => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const [locations, setLocations] = useState([]);
   const [nuevoUsuario, setNuevoUsuario] = useState({
     nombre: "",
     correo: "",
     organizacion: "",
     contrasena: "",
     rol: "",
+    location_id: "",
     diasordenprom: 0,
     valorordenprom: 0,
   });
@@ -18,6 +20,21 @@ const AddUserLayer = () => {
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
+
+  // Fetch locations from the backend
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/users/locations");
+        setLocations(response.data);
+      } catch (error) {
+        console.error("Error al cargar ubicaciones:", error);
+        setError("Error al cargar ubicaciones");
+      }
+    };
+
+    fetchLocations();
+  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -38,11 +55,14 @@ const AddUserLayer = () => {
     setLoading(true);
     setError(null);
     try {
-      await axios.post('http://localhost:5000/users/register', nuevoUsuario);
-      navigate("/usuarios"); // redirige automáticamente al guardar
+      await axios.post("http://localhost:5000/users/register", nuevoUsuario);
+      navigate("/usuarios"); // Redirect after successful registration
     } catch (error) {
       console.error("Error al agregar usuario:", error);
-      setError('Error al agregar usuario: ' + (error.response?.data?.error || error.message));
+      setError(
+        "Error al agregar usuario: " +
+          (error.response?.data?.error || error.message)
+      );
     } finally {
       setLoading(false);
     }
@@ -59,7 +79,7 @@ const AddUserLayer = () => {
                   Imagen de perfil
                 </h6>
 
-                {/* Cargar Imagen */}
+                {/* Upload Image */}
                 <div className="mb-24 mt-16">
                   <div className="avatar-upload">
                     <div className="avatar-edit position-absolute bottom-0 end-0 me-24 mt-16 z-1 cursor-pointer">
@@ -81,17 +101,27 @@ const AddUserLayer = () => {
                       <div
                         id="imagePreview"
                         style={{
-                          backgroundImage: imagePreviewUrl ? `url(${imagePreviewUrl})` : "",
+                          backgroundImage: imagePreviewUrl
+                            ? `url(${imagePreviewUrl})`
+                            : "",
                         }}
                       ></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Formulario */}
-                <form onSubmit={(e) => { e.preventDefault(); agregarUsuario(); }}>
+                {/* Form */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    agregarUsuario();
+                  }}
+                >
                   <div className="mb-20">
-                    <label htmlFor="name" className="form-label fw-semibold text-primary-light text-sm mb-8">
+                    <label
+                      htmlFor="name"
+                      className="form-label fw-semibold text-primary-light text-sm mb-8"
+                    >
                       Nombre completo <span className="text-danger-600">*</span>
                     </label>
                     <input
@@ -107,8 +137,12 @@ const AddUserLayer = () => {
                   </div>
 
                   <div className="mb-20">
-                    <label htmlFor="email" className="form-label fw-semibold text-primary-light text-sm mb-8">
-                      Correo electrónico <span className="text-danger-600">*</span>
+                    <label
+                      htmlFor="email"
+                      className="form-label fw-semibold text-primary-light text-sm mb-8"
+                    >
+                      Correo electrónico{" "}
+                      <span className="text-danger-600">*</span>
                     </label>
                     <input
                       type="email"
@@ -123,7 +157,10 @@ const AddUserLayer = () => {
                   </div>
 
                   <div className="mb-20">
-                    <label htmlFor="contrasena" className="form-label fw-semibold text-primary-light text-sm mb-8">
+                    <label
+                      htmlFor="contrasena"
+                      className="form-label fw-semibold text-primary-light text-sm mb-8"
+                    >
                       Contraseña <span className="text-danger-600">*</span>
                     </label>
                     <input
@@ -139,7 +176,10 @@ const AddUserLayer = () => {
                   </div>
 
                   <div className="mb-20">
-                    <label htmlFor="organizacion" className="form-label fw-semibold text-primary-light text-sm mb-8">
+                    <label
+                      htmlFor="organizacion"
+                      className="form-label fw-semibold text-primary-light text-sm mb-8"
+                    >
                       Organización
                     </label>
                     <input
@@ -154,8 +194,11 @@ const AddUserLayer = () => {
                   </div>
 
                   <div className="mb-20">
-                    <label htmlFor="rol" className="form-label fw-semibold text-primary-light text-sm mb-8">
-                      Rol
+                    <label
+                      htmlFor="rol"
+                      className="form-label fw-semibold text-primary-light text-sm mb-8"
+                    >
+                      Rol <span className="text-danger-600">*</span>
                     </label>
                     <select
                       className="form-control radius-8 form-select"
@@ -163,6 +206,7 @@ const AddUserLayer = () => {
                       name="rol"
                       value={nuevoUsuario.rol}
                       onChange={handleInputChange}
+                      required
                     >
                       <option value="">Seleccionar rol</option>
                       <option value="admin">Admin</option>
@@ -171,6 +215,36 @@ const AddUserLayer = () => {
                       <option value="dueno">Dueño</option>
                     </select>
                   </div>
+
+                  {/* Location Dropdown */}
+                  {nuevoUsuario.rol === "proveedor" && (
+                    <div className="mb-20">
+                      <label
+                        htmlFor="location_id"
+                        className="form-label fw-semibold text-primary-light text-sm mb-8"
+                      >
+                        Ubicación <span className="text-danger-600">*</span>
+                      </label>
+                      <select
+                        className="form-control radius-8 form-select"
+                        id="locationSelect"
+                        name="location_id"
+                        value={nuevoUsuario.location_id}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Seleccionar ubicación</option>
+                        {locations.map((location) => (
+                          <option
+                            key={location.Location_ID}
+                            value={location.Location_ID}
+                          >
+                            {location.Location_ID} - {location.Nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div className="d-flex align-items-center justify-content-center gap-3">
                     <button
@@ -190,7 +264,11 @@ const AddUserLayer = () => {
                     >
                       {loading ? (
                         <>
-                          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                          <span
+                            className="spinner-border spinner-border-sm"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
                           Guardando...
                         </>
                       ) : (
@@ -200,12 +278,9 @@ const AddUserLayer = () => {
                   </div>
 
                   {error && (
-                    <div className="mt-3 text-danger text-center">
-                      {error}
-                    </div>
+                    <div className="mt-3 text-danger text-center">{error}</div>
                   )}
                 </form>
-
               </div>
             </div>
           </div>

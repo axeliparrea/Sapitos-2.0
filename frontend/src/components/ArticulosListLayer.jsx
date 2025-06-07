@@ -1,0 +1,169 @@
+import { useState, useEffect } from "react";
+import { Icon } from "@iconify/react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+
+const ArticulosListLayer = () => {
+  const [articulos, setArticulos] = useState([]);
+  const [articulosFiltrados, setArticulosFiltrados] = useState([]);
+  const [terminoBusqueda, setTerminoBusqueda] = useState("");
+  const [paginaActual, setPaginaActual] = useState(1);
+  const articulosPorPagina = 10;
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("http://localhost:5000/articulo", {
+        withCredentials: true,
+      });
+      setArticulos(response.data);
+      setArticulosFiltrados(response.data);
+    } catch (error) {
+      console.error("Error al obtener artículos:", error);
+      alert("Error al obtener artículos: " + (error.response?.data?.error || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const eliminarArticulo = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/articulo/${id}`);
+      fetchAllData();
+    } catch (error) {
+      console.error("Error al eliminar artículo:", error);
+    }
+  };
+
+  useEffect(() => {
+    const filtrados = articulos.filter((art) =>
+      art.NOMBRE?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+      art.CATEGORIA?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+      art.TEMPORADA?.toLowerCase().includes(terminoBusqueda.toLowerCase())
+    );
+    setArticulosFiltrados(filtrados);
+    setPaginaActual(1);
+  }, [terminoBusqueda, articulos]);
+
+  const indiceUltimo = paginaActual * articulosPorPagina;
+  const indicePrimero = indiceUltimo - articulosPorPagina;
+  const articulosActuales = articulosFiltrados.slice(indicePrimero, indiceUltimo);
+  const totalPaginas = Math.ceil(articulosFiltrados.length / articulosPorPagina);
+
+  return (
+    <div className="card h-100 p-0 radius-12">
+      <div className="card-header d-flex justify-content-between align-items-center py-16 px-24">
+        <div className="d-flex align-items-center gap-3">
+          <span className="text-md fw-medium text-secondary-light mb-0">Mostrar</span>
+          <form className="navbar-search">
+            <input
+              type="text"
+              className="bg-base h-40-px w-auto"
+              placeholder="Buscar artículos..."
+              value={terminoBusqueda}
+              onChange={(e) => setTerminoBusqueda(e.target.value)}
+            />
+            <Icon icon="ion:search-outline" className="icon" />
+          </form>
+        </div>
+        <Link to="/agregar-articulo" className="btn btn-primary btn-sm">
+          <Icon icon="ic:baseline-plus" className="icon text-xl" /> Agregar Artículo
+        </Link>
+      </div>
+
+      <div className="card-body p-24">
+        {loading ? (
+          <div className="text-center">Cargando artículos...</div>
+        ) : (
+          <>
+            <div className="table-responsive scroll-sm">
+              <table className="table bordered-table sm-table mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Precio Proveedor</th>
+                    <th>Precio Venta</th>
+                    <th>Temporada</th>
+                    <th className="text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {articulosActuales.length > 0 ? (
+                    articulosActuales.map((art, index) => (
+                      <tr key={art.ARTICULO_ID}>
+                        <td>{indicePrimero + index + 1}</td>
+                        <td>{art.NOMBRE}</td>
+                        <td>{art.CATEGORIA}</td>
+                        <td>${art.PRECIOPROVEEDOR}</td>
+                        <td>${art.PRECIOVENTA}</td>
+                        <td>{art.TEMPORADA}</td>
+                        <td className="text-center">
+                          <div className="d-flex align-items-center gap-10 justify-content-center">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/editar-articulo/${art.ARTICULO_ID}`)}
+                              className="bg-success-focus text-success-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                            >
+                              <Icon icon="lucide:edit" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => eliminarArticulo(art.ARTICULO_ID)}
+                              className="bg-danger-focus text-danger-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                            >
+                              <Icon icon="fluent:delete-24-regular" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="text-center text-muted py-4">
+                        No se encontraron artículos.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+              <span>
+                Mostrando {indicePrimero + 1} a {Math.min(indiceUltimo, articulosFiltrados.length)} de {articulosFiltrados.length} registros
+              </span>
+              <ul className="pagination d-flex flex-wrap align-items-center gap-2 justify-content-center">
+                {Array.from({ length: totalPaginas }, (_, idx) => (
+                  <li key={idx} className="page-item">
+                    <button
+                      type="button"
+                      onClick={() => setPaginaActual(idx + 1)}
+                      className={`page-link ${
+                        paginaActual === idx + 1
+                          ? "bg-primary-600 text-white"
+                          : "bg-neutral-200 text-secondary-light"
+                      } fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md`}
+                    >
+                      {idx + 1}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ArticulosListLayer;

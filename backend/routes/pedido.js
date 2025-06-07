@@ -12,7 +12,9 @@ const {
   getDetallesPedido,
   enviarAInventario,
   getProveedoresInventario,
-  getProductosInventarioPorProveedor
+  getProductosInventarioPorProveedor,
+  getAvailableLocations,
+  actualizarEstatus
 } = require('../controllers/pedidosController');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
@@ -605,5 +607,91 @@ router.get("/inventario/proveedores", getProveedoresInventario);
  */
 router.get("/inventario/productos/:nombreProveedor", getProductosInventarioPorProveedor);
 // router.get("/inventario/productos/:nombreProveedor", auth(["admin", "dueno", "empleado"]), getProductosInventarioPorProveedor);
+
+/**
+ * @swagger
+ * /pedido/locations:
+ *   get:
+ *     summary: Obtener ubicaciones disponibles para envío al inventario
+ *     tags: [Pedidos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de ubicaciones disponibles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     description: ID de la ubicación
+ *                   nombre:
+ *                     type: string
+ *                     description: Nombre de la ubicación
+ *                   tipo:
+ *                     type: string
+ *                     description: Tipo de ubicación
+ *                   direccion:
+ *                     type: string
+ *                     description: Dirección de la ubicación
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/locations", getAvailableLocations);
+// router.get("/locations", auth(["admin", "dueno"]), getAvailableLocations);
+
+/**
+ * @swagger
+ * /pedido/{id}/estatus:
+ *   patch:
+ *     summary: Actualizar estatus del pedido (para administradores)
+ *     tags: [Pedidos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - estatus
+ *             properties:
+ *               estatus:
+ *                 type: string
+ *                 enum: [Pendiente, Aprobado, En Reparto, Completado]
+ *                 description: Nuevo estatus del pedido
+ *     responses:
+ *       200:
+ *         description: Estatus actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 estatus:
+ *                   type: string
+ *       400:
+ *         description: ID inválido o estatus requerido
+ *       404:
+ *         description: Pedido no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.patch("/:id/estatus", actualizarEstatus);
+
 
 module.exports = router;

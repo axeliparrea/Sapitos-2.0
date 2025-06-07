@@ -8,13 +8,19 @@ const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
 const pedidosHRoutes = require("./routes/pedidosH.js");
+const pedidosProveedorRoutes = require("./routes/pedidosProveedor.js");
+const rolRoutes = require("./routes/rol.js");
+const locationRoutes = require("./routes/location"); // al inicio
+const mlRoutes = require("./routes/ml");
+const articuloRoutes = require("./routes/articulo");
 
 const app = express();
 
 const corsOptions = {
     origin: "http://localhost:5173", // Your frontend's origin
-    methods: "GET,POST,PUT,DELETE",             // Specify methods you want to allow
+    methods: "GET,POST,PUT,DELETE,PATCH,PATCH",             // Specify methods you want to allow
     credentials: true,               // Allow credentials (cookies)
+    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma", "Expires"],  
     allowedHeaders: ["Content-Type", "Authorization"],  
   };
 
@@ -26,15 +32,32 @@ app.use(cors(corsOptions));
 // login, register, and logout routes
 app.use("/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs)); 
-app.use("/users/getUsers", userRoutes); 
+app.use("//users/getUsers", userRoutes); 
+app.use("/users/logoutUser", userRoutes);
+app.use("/users/logoutUser", userRoutes);
 
+// ML model routes
+app.use("/ml", mlRoutes);
 
 // inventory routes
 app.use("/inventory", inventoryRoutes);
+
+// roles routes
+app.use("/rol", rolRoutes);
+
+// locations routes
+app.use("/location2", locationRoutes); // junto a tus otras rutas
+
+// articulo routes
+app.use("/articulo", articuloRoutes);
 
 // pedidos routes
 app.use("/pedido", pedidoRoutes);
 app.use("/proveedores", pedidoRoutes);
 app.use("/pedidosH", pedidosHRoutes);
+app.use("/proveedor", pedidosProveedorRoutes);
+app.use("/proveedores", pedidoRoutes);
+app.use("/pedidosH", pedidosHRoutes);
+app.use("/proveedor", pedidosProveedorRoutes);
 
 module.exports = app;

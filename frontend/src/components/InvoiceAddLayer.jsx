@@ -70,72 +70,71 @@ const InvoiceAddLayer = () => {
     }
   }, [sessionLoading]);
 
+  const validatePedidoData = (pedidoData) => {
+    const errors = [];
+    
+    if (!pedidoData.creadoPorId || isNaN(pedidoData.creadoPorId)) {
+      errors.push("ID de usuario inválido");
+    }
+    
+    if (!pedidoData.organizacion) {
+      errors.push("Proveedor no seleccionado");
+    }
+    
+    if (!pedidoData.productos?.length) {
+      errors.push("No hay productos seleccionados");
+    }
+    
+    if (!pedidoData.total || pedidoData.total <= 0) {
+      errors.push("Total inválido");
+    }
+    
+    return errors;
+  };
+
   const handleEnviarPedido = async (productos, proveedorSeleccionado, total) => {
-    if (!session) {
-      setError("Error: No se pudo obtener la información de sesión");
-      return;
-    }
+      const productosFormateados = productos
+        .filter(p => p.cantidad > 0)
+        .map(p => ({
+          articuloId: p.articuloId || p.id,
+          cantidad: parseInt(p.cantidad),
+          precio: parseFloat(p.precioCompra || p.precio || 0)
+        }));
 
-    if (!proveedorSeleccionado) {
-      setError("Debe seleccionar un proveedor");
-      return;
-    }
-
-    const productosParaEnviar = productos.filter(p => p.cantidad > 0);
-      
-    if (productosParaEnviar.length === 0) {
-      setError("Debe agregar al menos un producto con cantidad mayor a 0");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const productosFormateados = productosParaEnviar.map(producto => ({
-        articuloId: producto.id || producto.articuloId,
-        cantidad: parseInt(producto.cantidad),
-        precio: parseFloat(producto.precioCompra || producto.precio)
-      }));
-
-      // Updated payload structure to match Ordenes2 table
       const pedidoData = {
         creadoPorId: parseInt(session.userId),
         tipoOrden: 'Compra',
         organizacion: proveedorSeleccionado,
-        fechaCreacion: new Date().toISOString().split('T')[0],
-        estado: 'Pendiente',
         total: parseFloat(total),
         metodoPagoId: 1,
         descuentoAplicado: 0,
         productos: productosFormateados
       };
-
-      console.log('Enviando pedido:', pedidoData);
-
-      const response = await axios.post("http://localhost:5000/pedido", pedidoData);
-
-      if (response.data && response.data.ordenId) {
-        setPedidoID(response.data.ordenId);
-        setPedidoEnviado(true);
-
-        setTimeout(() => {
-          navigate("/pedidos");
-        }, 2500);
-      } else {
-        throw new Error("No se recibió el ID del pedido");
+      const validationErrors = validatePedidoData(pedidoData);
+      if (validationErrors.length > 0) {
+        setError(validationErrors.join(". "));
+        return;
       }
 
-    } catch (err) {
-      console.error("Error al enviar pedido:", err);
-      const errorMessage = err.response?.data?.error || 
-                          err.response?.data?.message || 
-                          err.message || 
-                          "Error al enviar el pedido";
-      setError(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
+      setIsSubmitting(true);
+      setError(null);
+
+      try {
+        const response = await axios.post("http://localhost:5000/pedido", pedidoData);
+        
+        if (response.data?.ordenId) {
+          setPedidoID(response.data.ordenId);
+          setPedidoEnviado(true);
+          setTimeout(() => navigate("/pedidos"), 2500);
+        } else {
+          throw new Error("No se recibió el ID del pedido");
+        }
+      } catch (err) {
+        console.error("Error al enviar pedido:", err);
+        setError(err.response?.data?.error || err.message);
+      } finally {
+        setIsSubmitting(false);
+      }
   };
 
   const handleNuevoPedido = () => {

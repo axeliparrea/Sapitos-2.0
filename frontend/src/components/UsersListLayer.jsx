@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { Link, useNavigate } from "react-router-dom"; // IMPORTANTE: useNavigate agregado
+import { Link, useNavigate } from "react-router-dom"; 
 import axios from "axios";
 
 const UsersListLayer = () => {
@@ -11,29 +11,61 @@ const UsersListLayer = () => {
   const usuariosPorPagina = 10;
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate(); // Usamos navigate para movernos a AddUserLayer
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchUsuarios();
-  }, []);
-
-  const fetchUsuarios = async () => {
+  const fetchAllData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/users/getUsers');
-      setUsuarios(response.data || []);
-      setUsuariosFiltrados(response.data || []);
+      const usuariosResponse = await axios.get('http://localhost:5000/users/getUsers', {
+        withCredentials: true
+      });
+
+      const rolesResponse = await axios.get('http://localhost:5000/rol/getRoles');
+      const rolesMap = {};
+      rolesResponse.data.forEach((r) => {
+        rolesMap[r.ROL_ID?.toString()] = r.NOMBRE;
+      });
+
+      const locationsResponse = await axios.get('http://localhost:5000/location2');
+      const locationsMap = {};
+      locationsResponse.data.forEach((l) => {
+        locationsMap[l.LOCATION_ID?.toString()] = l.NOMBRE;
+      });
+
+      const usuariosConDatos = usuariosResponse.data.map(usuario => {
+        const rolId = usuario.rolId;
+        const locationId = usuario.locationId;
+
+        return {
+          ...usuario,
+          rol: rolesMap[rolId?.toString()] || "Sin rol",
+          locationNombre: locationsMap[locationId?.toString()] || "Sin ubicación"
+        };
+      });
+
+      setUsuarios(usuariosConDatos);
+      setUsuariosFiltrados(usuariosConDatos);
     } catch (error) {
-      console.error("Error al obtener usuarios:", error);
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        alert("No autorizado. Por favor inicia sesión como administrador o dueño.");
+        window.location.href = "/";
+      } else {
+        console.error("Error al obtener usuarios:", error);
+        alert("Error al obtener usuarios: " + (error.response?.data?.error || error.message));
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
   const eliminarUsuario = async (correo) => {
     try {
       await axios.delete('http://localhost:5000/users/deleteUser', { data: { correo } });
-      fetchUsuarios();
+      fetchAllData();
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
     }
@@ -44,7 +76,7 @@ const UsersListLayer = () => {
       usuario.nombre?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
       usuario.correo?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
       usuario.rol?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-      usuario.organizacion?.toLowerCase().includes(terminoBusqueda.toLowerCase())
+      usuario.locationNombre?.toLowerCase().includes(terminoBusqueda.toLowerCase())
     );
     setUsuariosFiltrados(filtrados);
     setPaginaActual(1);
@@ -76,7 +108,7 @@ const UsersListLayer = () => {
             <Icon icon="ion:search-outline" className="icon" />
           </form>
         </div>
-        <Link to="/agregar-usuario" id="agregarUsuarioBtn"  className="btn btn-primary btn-sm">
+        <Link to="/agregar-usuario" id="agregarUsuarioBtn" className="btn btn-primary btn-sm">
           <Icon icon="ic:baseline-plus" className="icon text-xl" /> Agregar Usuario
         </Link>
       </div>
@@ -93,7 +125,7 @@ const UsersListLayer = () => {
                     <th>#</th>
                     <th>Nombre</th>
                     <th>Correo</th>
-                    <th>Organización</th>
+                    <th>Ubicación</th>
                     <th>Rol</th>
                     <th className="text-center">Acciones</th>
                   </tr>
@@ -105,21 +137,18 @@ const UsersListLayer = () => {
                         <td>{indicePrimerUsuario + index + 1}</td>
                         <td>{usuario.nombre}</td>
                         <td>{usuario.correo}</td>
-                        <td>{usuario.organizacion || "No especificada"}</td>
+                        <td>{usuario.locationNombre}</td>
                         <td>{usuario.rol}</td>
                         <td className="text-center">
                           <div className="d-flex align-items-center gap-10 justify-content-center">
-                            {/* Botón Editar */}
                             <button
                               id={`editarUsuario-${index}`} 
                               type="button"
-                              onClick={() => navigate(`/editar-usuario/${usuario.correo || usuario.CORREO}`)}
+                              onClick={() => navigate(`/editar-usuario/${usuario.correo}`)}
                               className="bg-success-focus bg-hover-success-200 text-success-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                             >
                               <Icon icon="lucide:edit" className="menu-icon" />
                             </button>
-
-                            {/* Botón Eliminar */}
                             <button
                               id={`eliminarUsuario-${index}`}
                               type="button"
@@ -143,7 +172,6 @@ const UsersListLayer = () => {
               </table>
             </div>
 
-            {/* Paginación */}
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
               <span>Mostrando {indicePrimerUsuario + 1} a {Math.min(indiceUltimoUsuario, usuariosFiltrados.length)} de {usuariosFiltrados.length} registros</span>
               <ul className="pagination d-flex flex-wrap align-items-center gap-2 justify-content-center">

@@ -1,9 +1,11 @@
 const { connection } = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
+const path = require("path");
 
 const getSession = async (req, res) => {
-  const token = req.cookies.token || req.cookies.Auth;
+  const token = req.cookies.Auth;
   
   if (!token) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -19,10 +21,18 @@ const getSession = async (req, res) => {
         nombre: decoded.nombre || decoded.NOMBRE,
         rol: decoded.rol || decoded.ROL,
         correo: decoded.correo || decoded.CORREO,
-        username: decoded.username || decoded.USERNAME
+        username: decoded.username || decoded.USERNAME,
+        locationId: decoded.locationId || decoded.LOCATION_ID
       }
     });
   } catch (err) {
+    // Si el token es inválido, limpiar la cookie
+    res.clearCookie("Auth", { 
+      path: "/", 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax" 
+    });
     return res.status(401).json({ error: "Invalid token" });
   }
 };
@@ -84,13 +94,20 @@ const registerUser = async (req, res) => {
   }
 };
 
-
 const loginUser = (req, res) => {
   const { correo, contrasena } = req.body;
   
   if (!correo || !contrasena) {
     return res.status(400).json({ error: "Correo/Usuario y contraseña son requeridos" });
   }
+  
+  // Primero limpiar cualquier cookie existente
+  res.clearCookie("Auth", { 
+    path: "/", 
+    httpOnly: true, 
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax" 
+  });
   
   const query = `SELECT u.*, r.Nombre as RolNombre FROM Usuario2 u 
                 LEFT JOIN Rol2 r ON u.Rol_ID = r.Rol_ID 
@@ -117,39 +134,39 @@ const loginUser = (req, res) => {
         return res.status(401).json({ error: "Contraseña incorrecta" });
       }
 
+      // SOLO USAR 'rol' en minúsculas en el payload
       const payload = {
         id: usuario.USUARIO_ID,
         nombre: usuario.NOMBRE,
-        rol: usuario.ROLNOMBRE || usuario.ROL_ID, 
+        rol: usuario.ROLNOMBRE, // solo esta propiedad para rol
         correo: usuario.CORREO,
         username: usuario.USERNAME,
-        USUARIO_ID: usuario.USUARIO_ID, 
-        ROL: usuario.ROLNOMBRE 
+        locationId: usuario.LOCATION_ID
       };
 
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || "1d",
       });
 
-      res.cookie("token", token, {
+      res.cookie("Auth", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", 
-        sameSite: "strict",
-        maxAge: 24 * 60 * 60 * 1000,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "Lax",
+        maxAge: 24 * 60 * 60 * 1000, // 1 día
         path: "/",
       });
 
-      res.cookie("Auth", token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "Lax",
-        maxAge: 24 * 60 * 60 * 1000,
-      });
-
+      // SOLO ENVIAR LOS DATOS NECESARIOS AL FRONTEND
       res.json({ 
         message: "Login exitoso", 
         token, 
-        usuario: payload 
+        usuario: {
+          id: usuario.USUARIO_ID,
+          nombre: usuario.NOMBRE,
+          rol: usuario.ROLNOMBRE,
+          correo: usuario.CORREO,
+          username: usuario.USERNAME
+        }
       });
     } catch (error) {
       console.error("Error comparing password:", error);
@@ -166,6 +183,7 @@ const getUsers = async (req, res) => {
         u.Nombre,
         u.Correo,
         u.Username,
+        u.Rol_ID,
         u.RFC,
         u.FechaEmpiezo,
         u.Location_ID,
@@ -185,6 +203,7 @@ const getUsers = async (req, res) => {
         correo: usuario.CORREO,
         nombre: usuario.NOMBRE,
         username: usuario.USERNAME,
+        rolId: usuario.ROL_ID, // <-- ESTO ESTÁ BIEN
         rol: usuario.ROLNombre ,
         rfc: usuario.RFC,
         fechaEmpiezo: usuario.FECHAEMPIEZO,
@@ -288,9 +307,33 @@ const updateUserRecord = async (correo, nombre, rolId, contrasena, username, rfc
 };
 
 const logoutUser = async (req, res) => {
-  res.clearCookie("token", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
-  res.clearCookie("Auth", { path: "/", httpOnly: true, secure: false, sameSite: "Lax" });
-  res.status(200).json({ message: "Sesión cerrada" });
+  try {
+    // Limpiar la cookie con todas las opciones posibles para asegurar que se elimine
+    res.clearCookie("Auth", { 
+      path: "/", 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax" 
+    });
+    
+    // También intentar limpiar sin las opciones por si acaso
+    res.clearCookie("Auth");
+    
+    // Enviar headers adicionales para asegurar que no se cache
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
+    res.status(200).json({ 
+      message: "Sesión cerrada correctamente",
+      success: true 
+    });
+  } catch (error) {
+    console.error("Error en logout:", error);
+    res.status(500).json({ error: "Error cerrando sesión" });
+  }
 };
 
 const getUserByEmail = async (req, res) => {
@@ -344,6 +387,119 @@ const getUserByEmail = async (req, res) => {
   }
 };
 
+const getProfileImage = (req, res) => {
+  const { correo } = req.params;
+  
+  try {
+    const query = "SELECT IMAGEN FROM USUARIO2 WHERE CORREO = ?";
+    
+    connection.exec(query, [correo], (err, result) => {
+      if (err) {
+        console.error("Error obteniendo imagen:", err);
+        return res.status(500).json({ error: "Error del servidor" });
+      }
+      
+      if (!result || result.length === 0) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      const imagenData = result[0].IMAGEN;
+      
+      if (!imagenData) {
+        return res.status(404).json({ error: "Imagen no encontrada" });
+      }
+      
+      // Si la imagen está almacenada como array de bytes, convertirla a Buffer
+      let buffer;
+      if (Array.isArray(imagenData)) {
+        buffer = Buffer.from(imagenData);
+      } else if (imagenData instanceof Buffer) {
+        buffer = imagenData;
+      } else {
+        // Si es un string o algo más, intentar convertirlo
+        buffer = Buffer.from(imagenData);
+      }
+      
+      // Enviar la imagen como respuesta
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Content-Length': buffer.length,
+        'Cache-Control': 'public, max-age=31536000' // Cache por 1 año
+      });
+      
+      res.send(buffer);
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+// Función para actualizar imagen de perfil en la base de datos
+const updateProfileImage = (req, res) => {
+  const { correo, imageData, contentType } = req.body;
+  
+  if (!correo || !imageData) {
+    return res.status(400).json({ error: "Faltan datos requeridos" });
+  }
+  
+  try {
+    // Convertir el array de bytes a Buffer
+    const buffer = Buffer.from(imageData);
+    
+    const query = "UPDATE USUARIO2 SET IMAGEN = ? WHERE CORREO = ?";
+    
+    connection.exec(query, [buffer, correo], (err, result) => {
+      if (err) {
+        console.error("Error actualizando imagen:", err);
+        return res.status(500).json({ error: "Error del servidor" });
+      }
+      
+      res.status(200).json({ message: "Imagen actualizada correctamente" });
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+const getLocations = async (req, res) => {
+  try {
+    console.log("getLocations endpoint called"); // Log when the endpoint is hit
+
+    const query = `
+      SELECT Location_ID, Nombre, Tipo
+      FROM Location2
+      ORDER BY Nombre
+    `;
+
+    connection.exec(query, [], (err, result) => {
+      if (err) {
+        console.error("Error al obtener ubicaciones:", err);
+        return res.status(500).json({ error: "Error al obtener ubicaciones" });
+      }
+
+      if (!result || result.length === 0) {
+        console.warn("No locations found in the database");
+        return res.status(404).json({ error: "No se encontraron ubicaciones" });
+      }
+
+      console.log("Query executed successfully, result:", result); // Log the query result
+
+      const locations = result.map(location => ({
+        Location_ID: location.LOCATION_ID,
+        Nombre: location.NOMBRE,
+        Tipo: location.TIPO
+      }));
+
+      res.status(200).json(locations);
+    });
+  } catch (error) {
+    console.error("Error in getLocations:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
 module.exports = { 
   registerUser, 
   loginUser, 
@@ -352,5 +508,8 @@ module.exports = {
   logoutUser, 
   deleteUser, 
   updateUser, 
-  getUserByEmail 
+  getUserByEmail,
+  getProfileImage,
+  updateProfileImage,
+  getLocations
 };

@@ -1,14 +1,14 @@
 import MasterLayout from "../../components/masterLayout";
 import InvoiceListProveedor from "../../components/InvoiceListProveedor";
 
-const Pedidos = () => {
+const InvoiceListProveedorPage = ({ aceptadas }) => {
   return (
     <>
-      <MasterLayout role="admin">
-        <InvoiceListProveedor/>
+      <MasterLayout role="proveedor">
+        <InvoiceListProveedor aceptadas={aceptadas}/>
       </MasterLayout>
     </>
   );
 };
 
-export default Pedidos;
+export default InvoiceListProveedorPage;
