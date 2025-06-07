@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import { ToastContainer } from "react-toastify";
 
 import SignInPage from "./pages/SignInPage";
 import Profile from "./components/UserPerfil";
@@ -77,181 +78,182 @@ const App = () => {
   }
 
   return (
-
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<SignInPage />} />
-        <Route
-          path="/dashboard"
-          element={
-            role === "admin" ? <HomeAdmin /> :
-            role === "dueno" ? <HomeDueno /> :
-            role === "cliente" ? <HomeCliente /> :
-            role === "proveedor" ? <HomeProveedor /> :
-            <Navigate to="/" />
-          }
-        />
-        <Route 
-          path="/inventario" 
-          element={
-            role === "admin" ? <InventarioAdmin /> :
-            role === "dueno" ? <InventarioDueno /> :
-            role === "cliente" ? <InventarioCliente/> :
-            <Navigate to="/" />
-          } 
-        />
-
-        <Route 
-          path="/profile" 
-          element={
-            role ? <Profile /> : <Navigate to="/" />
-          } 
-        />
-        <Route 
-          path="/profile/:id" 
-          element={
-            role ? <Profile /> : <Navigate to="/" />
-          } 
-        />
-        
-        <Route 
-          path="/preview" 
-          element={
-            role === "admin" ? <InvoicePreviewPage /> :
-            role === "dueno" ? <InvoicePreviewPage/> :
-            role === "cliente" ? <InvoicePreviewPage/> :
-            <Navigate to="/" />
-          } 
-        />
-        <Route 
-          path="/ordenes-proveedores" 
-          element={
-            role === "dueno" ? <InvoiceProveedorPage/> :
-            <Navigate to="/"/>
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<SignInPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              role === "admin" ? <HomeAdmin /> :
+              role === "dueno" ? <HomeDueno /> :
+              role === "cliente" ? <HomeCliente /> :
+              role === "proveedor" ? <HomeProveedor /> :
+              <Navigate to="/" />
             }
           />
-        <Route 
-          path="/ordenes-clientes" 
-          element={
-            role === "dueno" ? <OrdenesClientesDueno/> :
-            <Navigate to="/"/>
+          <Route 
+            path="/inventario" 
+            element={
+              role === "admin" ? <InventarioAdmin /> :
+              role === "dueno" ? <InventarioDueno /> :
+              role === "cliente" ? <InventarioCliente/> :
+              <Navigate to="/" />
+            } 
+          />
+
+          <Route 
+            path="/profile" 
+            element={
+              role ? <Profile /> : <Navigate to="/" />
+            } 
+          />
+          <Route 
+            path="/profile/:id" 
+            element={
+              role ? <Profile /> : <Navigate to="/" />
+            } 
+          />
+          
+          <Route 
+            path="/preview" 
+            element={
+              role === "admin" ? <InvoicePreviewPage /> :
+              role === "dueno" ? <InvoicePreviewPage/> :
+              role === "cliente" ? <InvoicePreviewPage/> :
+              <Navigate to="/" />
+            } 
+          />
+          <Route 
+            path="/ordenes-proveedores" 
+            element={
+              role === "dueno" ? <InvoiceProveedorPage/> :
+              <Navigate to="/"/>
+              }
+            />
+          <Route 
+            path="/ordenes-clientes" 
+            element={
+              role === "dueno" ? <OrdenesClientesDueno/> :
+              <Navigate to="/"/>
+              }
+            />
+          <Route 
+            path="/recomendaciones-IA" 
+            element={
+              role === "dueno" ? <RecomendacionesIADueno/> :
+              <Navigate to="/"/>
+              }
+            />
+          <Route 
+            path="/ordenes" 
+            element={
+              role === "proveedor" ? <InvoiceProveedorPage/> :
+              <Navigate to="/"/>
+              }
+            />
+          <Route 
+            path="/ordenes-aceptadas" 
+            element={
+              role === "proveedor" ? <InvoiceListProveedorPage aceptadas={true}/> :
+              <Navigate to="/"/>
+              }
+            />
+          <Route 
+            path="/ordenes/:id" 
+            element={
+              role === "proveedor" ? <InvoiceProveedorPage/> :
+              <Navigate to="/"/>
+              }
+            />
+          <Route 
+            path="/pedidos" 
+            element={
+              role === "admin" ? <Pedidos/> :
+              <Navigate to="/"/>
+              }
+            />
+          <Route 
+            path="/usuarios" 
+            element={
+              role === "admin" ? <UsuariosShec /> :
+              <Navigate to="/" />
+            } 
+          />
+          <Route 
+    path="/articulos" 
+    element={
+      role === "admin" ? <Articulos /> :
+      <Navigate to="/" />
+    }
+  />
+  <Route 
+    path="/Location" 
+    element={
+      role === "admin" ? <Location /> :
+      <Navigate to="/" />
+    }
+  />
+
+          <Route 
+            path="/agregar-usuario" 
+            element={
+              role === "admin" ? <AddUserLayer /> :
+              <Navigate to="/" />
+            } 
+          />
+          <Route 
+            path="/agregar-articulo"
+            element={
+              role === "admin" ? <AddArticuloLayer /> :
+              <Navigate to="/" />
             }
           />
-        <Route 
-          path="/recomendaciones-IA" 
-          element={
-            role === "dueno" ? <RecomendacionesIADueno/> :
-            <Navigate to="/"/>
+          <Route 
+            path="/agregar-Location"
+            element={
+              role === "admin" ? <AddLocationLayer /> :
+              <Navigate to="/" />
             }
           />
-        <Route 
-          path="/ordenes" 
-          element={
-            role === "proveedor" ? <InvoiceProveedorPage/> :
-            <Navigate to="/"/>
+                  <Route 
+            path="/editar-usuario/:userId" 
+            element={
+              role === "admin" ? <EditUserLayer /> :
+              <Navigate to="/" />
             }
           />
-        <Route 
-          path="/ordenes-aceptadas" 
-          element={
-            role === "proveedor" ? <InvoiceListProveedorPage aceptadas={true}/> :
-            <Navigate to="/"/>
+
+          <Route 
+            path="/modelo-prediccion" 
+            element={
+              role === "admin" ? <ModelManagement /> :
+              <Navigate to="/" />
             }
           />
-        <Route 
-          path="/ordenes/:id" 
-          element={
-            role === "proveedor" ? <InvoiceProveedorPage/> :
-            <Navigate to="/"/>
+
+          <Route 
+            path="/crearpedido" 
+            element={
+              role === "admin" ? <InvoiceAddLayer /> :
+              <Navigate to="/" />
+            } 
+          />
+
+          <Route
+            path="/detalle-pedido/:id"
+            element={
+              role === "admin" ? <InvoicePreviewPage /> :
+              role === "dueno" ? <InvoicePreviewPage/> :
+              role === "cliente" ? <InvoicePreviewPage/> :
+              <Navigate to="/" />
             }
           />
-        <Route 
-          path="/pedidos" 
-          element={
-            role === "admin" ? <Pedidos/> :
-            <Navigate to="/"/>
-            }
-          />
-        <Route 
-          path="/usuarios" 
-          element={
-            role === "admin" ? <UsuariosShec /> :
-            <Navigate to="/" />
-          } 
-        />
-        <Route 
-  path="/articulos" 
-  element={
-    role === "admin" ? <Articulos /> :
-    <Navigate to="/" />
-  }
-/>
-<Route 
-  path="/Location" 
-  element={
-    role === "admin" ? <Location /> :
-    <Navigate to="/" />
-  }
-/>
+        </Routes> 
 
-        <Route 
-          path="/agregar-usuario" 
-          element={
-            role === "admin" ? <AddUserLayer /> :
-            <Navigate to="/" />
-          } 
-        />
-        <Route 
-          path="/agregar-articulo"
-          element={
-            role === "admin" ? <AddArticuloLayer /> :
-            <Navigate to="/" />
-          }
-        />
-        <Route 
-          path="/agregar-Location"
-          element={
-            role === "admin" ? <AddLocationLayer /> :
-            <Navigate to="/" />
-          }
-        />
-                <Route 
-          path="/editar-usuario/:userId" 
-          element={
-            role === "admin" ? <EditUserLayer /> :
-            <Navigate to="/" />
-          }
-        />
-
-        <Route 
-          path="/modelo-prediccion" 
-          element={
-            role === "admin" ? <ModelManagement /> :
-            <Navigate to="/" />
-          }
-        />
-
-        <Route 
-          path="/crearpedido" 
-          element={
-            role === "admin" ? <InvoiceAddLayer /> :
-            <Navigate to="/" />
-          } 
-        />
-
-        <Route
-          path="/detalle-pedido/:id"
-          element={
-            role === "admin" ? <InvoicePreviewPage /> :
-            role === "dueno" ? <InvoicePreviewPage/> :
-            role === "cliente" ? <InvoicePreviewPage/> :
-            <Navigate to="/" />
-          }
-        />
-      </Routes> 
-
-    </BrowserRouter>
-
+      </BrowserRouter>
+      <ToastContainer />
+    </>
   );
 };
 
