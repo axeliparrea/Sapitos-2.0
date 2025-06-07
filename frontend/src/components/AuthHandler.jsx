@@ -17,14 +17,34 @@ const AuthHandler = ({ children }) => {
         // If the response is successful, just return it
         return response;
       },
-      error => {
-        // Check if error response indicates OTP is required
+      error => {        // Check if error response indicates OTP is required
         if (error.response && error.response.status === 401) {
           const { requiresOtp } = error.response.data;
           
           if (requiresOtp) {
             console.log('OTP verification required, redirecting to OTP page');
-            navigate('/otp');
+            
+            // Generate OTP if possible
+            try {
+              fetch("http://localhost:5000/api/otp/generate", {
+                method: "GET",
+                credentials: "include",
+              })
+              .then(res => res.json())
+              .then(data => {
+                if (data.secret) {
+                  // Store secret in sessionStorage for the OTP page
+                  sessionStorage.setItem('otpSecret', data.secret);
+                }
+                // Redirect to OTP page
+                navigate('/otp');
+              })
+              .catch(err => console.error("Error generating OTP:", err));
+            } catch (e) {
+              console.error("Failed to generate OTP:", e);
+              navigate('/otp');
+            }
+            
             // Don't reject the promise in this case
             return new Promise(() => {});
           }

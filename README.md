@@ -128,6 +128,83 @@ Content-Type: application/json
 
 ---
 
+## 🔒 Two-Factor Authentication (OTP)
+
+Sapitos 2.0 implements a robust Two-Factor Authentication (2FA) system using Time-based One-Time Passwords (TOTP) to enhance security for user accounts.
+
+![OTP Verification Screen](frontend/public/assets/images/otp-verification.png)
+
+### Implementation Details
+
+- **TOTP Algorithm**: Leverages industry-standard time-based verification with 6-digit codes.
+- **200-Second Validity**: Each code expires after 200 seconds for optimal security and user convenience.
+- **Email Delivery**: Authentication codes are securely delivered to the user's registered email.
+- **Secure Storage**: OTP secrets are temporarily stored in sessionStorage and cleared upon successful verification.
+
+### Technology Stack
+
+- **Speakeasy**: Powers the core TOTP implementation (RFC 6238 compliant)
+- **Nodemailer**: Handles secure email delivery of verification codes
+- **JWT**: Tracks authentication timestamps for periodic OTP verification
+- **React**: Creates an accessible, user-friendly verification interface
+
+### OTP Flow Diagram
+
+```
+┌─────────────┐     ┌───────────────┐     ┌─────────────┐     ┌─────────────────┐
+│ Login Form  │────►│ Authentication │────►│ OTP Request │────►│ Email Delivery  │
+└─────────────┘     │ Valid          │     │ Generation  │     └─────────────────┘
+                    └───────────────┘     └──────┬──────┘              │
+                            │                    │                      │
+                            │                    ▼                      ▼
+┌─────────────────┐   ┌────┴───────┐      ┌─────────────┐     ┌─────────────────┐
+│ Protected Route │◄──│ Successful │◄─────│ OTP         │◄────│ User Receives   │
+│ Access Granted  │   │ Validation │      │ Verification │     │ & Enters Code   │
+└─────────────────┘   └────────────┘      └─────────────┘     └─────────────────┘
+```
+
+### User Experience
+
+- **Intuitive Interface**: Individual input fields with automatic focus advancement.
+- **Accessibility Features**: Support for clipboard pasting and keyboard navigation.
+- **Visual Feedback**: Countdown timer indicates code validity period.
+- **Automatic Submission**: Codes are verified instantly when all digits are entered.
+
+### Technical Implementation
+
+The OTP system is implemented through several coordinated components:
+
+1. **OTP Generation (`backend/utils/otp.js`)**:
+   - Utilizes Speakeasy to create a secure random secret for each session
+   - Generates a time-based 6-digit code valid for 200 seconds
+   - Returns both the secret and code (secret sent to client, code to email)
+
+2. **Email Service (`backend/utils/emailService.js`)**:
+   - Uses Nodemailer to send professionally formatted emails
+   - Supports both development (testing) and production environments
+   - Includes the OTP code in a clearly formatted HTML template
+
+3. **Controller Logic (`backend/controllers/otpController.js`)**:
+   - Handles API endpoints for OTP generation and verification
+   - Manages authentication timestamps in JWT tokens
+   - Implements security policies like expiration and rate limiting
+
+4. **Frontend Verification (`frontend/src/pages/OtpPage.jsx`)**:
+   - Provides a user-friendly interface for code entry
+   - Handles automatic verification when all digits are entered
+   - Manages resend functionality with cooldown periods
+
+### Security Benefits
+
+- **Protection Against Credential Theft**: Even if passwords are compromised, attackers cannot access accounts without the time-sensitive code.
+- **Replay Attack Prevention**: TOTP's time-based algorithm prevents the reuse of captured codes.
+- **Configurable Enforcement**: Can be mandated for all users or specific user roles through environment variables.
+- **Brute Force Protection**: Rate limiting and lockout features prevent systematic guessing attempts.
+
+This implementation strikes an optimal balance between enhanced security and seamless user experience, following best practices for multi-factor authentication.
+
+---
+
 ## 🏆 Why Sapitos 2.0?
 - **Lightning Fast:** Vite + React for instant feedback
 - **Enterprise-Ready:** SAP HANA backend, JWT security, modular code

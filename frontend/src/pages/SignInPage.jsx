@@ -12,11 +12,7 @@ const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingSession, setCheckingSession] = useState(true);
-
-  // Estados para OTP
-  const [showOTPModal, setShowOTPModal] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [otpSecret, setOtpSecret] = useState("");
+  // No longer need OTP states as they are handled in OtpPage.jsx
 
   useEffect(() => {
     if (hasCheckedSession.current) return;
@@ -123,18 +119,20 @@ const SignInPage = () => {
       }
 
       console.log("Login exitoso:", data.usuario);
-      
-      // OTP
+        // OTP
       if (data.requiresOtp) {
         console.log("OTP verification required");
-        if (data.otpSecret) {
-          setOtpSecret(data.otpSecret);
+        
+        // Generate OTP and store secret in session storage instead of state
+        const otpData = await generateOTP();
+        if (otpData && otpData.secret) {
+          sessionStorage.setItem('otpSecret', otpData.secret);
         }
         
-        await generateOTP();
-        setShowOTPModal(true);
+        // Redirect to OTP page instead of showing a modal
+        navigate('/otp');
       } else {
-        // Reenvia si no se requiere el OTP como siempre
+        // Redirect if OTP is not required
         setTimeout(() => {
           window.location.href = "/dashboard";
         }, 100);
@@ -170,11 +168,7 @@ const SignInPage = () => {
         devMode: process.env.NODE_ENV === 'development',
         authOtp: data.authOtpEnabled // El backend debe enviar este valor
       });
-      
-      if (data.secret) {
-        setOtpSecret(data.secret);
-        console.log("OTP secret establecido correctamente");
-      }
+        // We'll store the secret in sessionStorage in the login function instead
       
       // En desarrollo, podemos mostrar el OTP en consola
       if (process.env.NODE_ENV === 'development' && data.otp) {
@@ -188,46 +182,7 @@ const SignInPage = () => {
       return null;
     }
   };
-
-  // Función para verificar OTP
-  const handleOTPSubmit = async (event) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch("http://localhost:5000/api/otp/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          otp: otpCode, 
-          secret: otpSecret 
-        }),
-        credentials: "include",
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || "Error verificando OTP");
-      }
-
-      if (data.verified) {
-        setShowOTPModal(false);
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 100);
-      } else {
-        throw new Error("Código OTP inválido");
-      }
-      
-    } catch (error) {
-      console.error("Error verificando OTP:", error);
-      setError(error.message || "Error verificando OTP");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // OTP verification now handled in OtpPage.jsx
 
   if (checkingSession) {
     return (
@@ -322,66 +277,7 @@ const SignInPage = () => {
             </form>
           </div>
         </div>
-      </section>
-
-      {showOTPModal && (
-        <div className="modal show d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Verificación de Seguridad</h5>
-              </div>
-              <div className="modal-body">
-                <p className="mb-3">Se requiere verificación adicional. Ingresa el código OTP:</p>
-                <form onSubmit={handleOTPSubmit}>
-                  <div className="icon-field mb-16">
-                    <span className="icon top-50 translate-middle-y">
-                      <Icon icon="mdi:shield-key" className="text-muted" />
-                    </span>
-                    <input
-                      type="text"
-                      className="form-control h-56-px bg-neutral-50 radius-12"
-                      placeholder="Código OTP (6 dígitos)"
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value)}
-                      maxLength={6}
-                      required
-                      autoComplete="one-time-code"
-                    />
-                  </div>
-                  
-                  {error && (
-                    <div className="alert alert-danger d-flex align-items-center p-3 mb-3">
-                      <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
-                      <div className="text-sm">{error}</div>
-                    </div>
-                  )}
-                  
-                  <div className="d-grid">
-                    <button 
-                      type="submit" 
-                      className="btn btn-primary h-48-px d-flex align-items-center justify-content-center radius-12"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                          <span>Verificando...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Icon icon="mdi:shield-check" className="me-2" />
-                          <span>Verificar</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </section>      {/* OTP verification moved to OtpPage.jsx */}
     </>
   );
 };

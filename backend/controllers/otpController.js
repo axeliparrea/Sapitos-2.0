@@ -133,10 +133,6 @@ const generateOTPHandler = async (req, res) => {
                 authOtpEnabled: process.env.AUTH_OTP === 'true'
             });
             
-            // Log OTP in development environment only
-            if (process.env.NODE_ENV === 'development') {
-                console.log(`[DEV MODE] OTP for ${userEmail}: ${otp} (NOT SHOWN IN PROD)`);
-            }
         } catch (error) {
             console.error("Error in OTP generation process:", error);
             res.status(500).json({ 
@@ -175,8 +171,6 @@ const verifyOTPHandler = async (req, res) => {    try {
             if (!decoded) {
                 return res.status(401).json({ message: 'Invalid token' });
             }
-              // Create a new token with updated timestamp
-            // Remove any existing exp property to avoid conflicts
             const { exp, ...decodedWithoutExp } = decoded;
             
             const payload = {
@@ -187,8 +181,6 @@ const verifyOTPHandler = async (req, res) => {    try {
             const newToken = jwt.sign(payload, process.env.JWT_SECRET, {
                 expiresIn: process.env.JWT_EXPIRES_IN || "1d",
             });
-            
-            // Set the new token in cookie
             res.cookie("Auth", newToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
@@ -200,7 +192,7 @@ const verifyOTPHandler = async (req, res) => {    try {
             res.json({ 
                 verified: true, 
                 message: 'OTP verified successfully',
-                token: newToken // Include token in response body as well
+                token: newToken 
             });
         } else {
             res.status(400).json({ 
