@@ -322,8 +322,10 @@ const InvoiceListLayer = () => {
                 >
                   <option value="">Todos los estatus</option>
                   <option value="Pendiente">Pendiente</option>
+                  <option value="Aprobado">Aprobado</option>
                   <option value="En Reparto">En Reparto</option>
                   <option value="Completado">Completado</option>
+                  <option value="Rechazado">Rechazado</option>
                 </Form.Select>
               </Form.Group>
             </div>
@@ -424,7 +426,9 @@ const InvoiceListLayer = () => {
                       <td>
                         <span className={`px-12 py-1 rounded-pill fw-medium text-xs ${
                           pedido.estatus === 'Completado' ? 'bg-success-focus text-success-main' : 
-                          pedido.estatus === 'En Reparto' ? 'bg-success-focus text-success-main' : 
+                          pedido.estatus === 'En Reparto' ? 'bg-primary-focus text-primary-main' :
+                          pedido.estatus === 'Aprobado' ? 'bg-info-focus text-info-main' :
+                          pedido.estatus === 'Rechazado' ? 'bg-danger-focus text-danger-main' :
                           'bg-warning-focus text-warning-main'
                         }`}>
                           {pedido.estatus}
@@ -476,85 +480,67 @@ const InvoiceListLayer = () => {
         )}
       </div>
       {/* Estadísticas de resultados filtrados y paginación */}
-      <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24 p-24">        <div>
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24 p-24">
+        <div>
           <small className="text-muted">
             Mostrando {idxFirst + 1} a {Math.min(idxLast, pedidosFiltrados.length)} de {pedidosFiltrados.length} pedidos
           </small>
         </div>
-        {/* Paginación */}
         {totalPages > 1 && (
-          <nav>
-            <ul className="pagination pagination-sm mb-0">
-              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                >
-                  <Icon icon="lucide:chevron-first" />
-                </button>
-              </li>
-              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <Icon icon="lucide:chevron-left" />
-                </button>
-              </li>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page => {
-                  const delta = 2;
-                  return (
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - delta && page <= currentPage + delta)
-                  );
-                })
-                .reduce((acc, page) => {
-                  const last = acc[acc.length - 1];
-                  if (last && page - last > 1) {
-                    acc.push('...');
-                  }
-                  acc.push(page);
-                  return acc;
-                }, [])
-                .map((page, index) => (
-                  page === '...' ? (
-                    <li key={`ellipsis-${index}`} className="page-item disabled">
-                      <span className="page-link">...</span>
-                    </li>
-                  ) : (
-                    <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
-                      <button 
-                        className="page-link"
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </button>
-                    </li>
-                  )
-                ))}
-              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  <Icon icon="lucide:chevron-right" />
-                </button>
-              </li>
-              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  <Icon icon="lucide:chevron-last" />
-                </button>
-              </li>
-            </ul>
+          <nav className="d-flex align-items-center gap-2">
+            <button
+              className="btn btn-outline-primary btn-sm px-3"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <Icon icon="mdi:chevron-double-left" />
+            </button>
+            <button
+              className="btn btn-outline-primary btn-sm px-3"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <Icon icon="mdi:chevron-left" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(page => Math.abs(page - currentPage) <= 2 || page === 1 || page === totalPages)
+              .map((page, index, array) => {
+                if (index > 0 && array[index - 1] !== page - 1) {
+                  return [
+                    <span key={`ellipsis-${page}`} className="px-2">...</span>,
+                    <button
+                      key={page}
+                      className={`btn ${currentPage === page ? 'btn-primary' : 'btn-outline-primary'} btn-sm px-3`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ];
+                }
+                return (
+                  <button
+                    key={page}
+                    className={`btn ${currentPage === page ? 'btn-primary' : 'btn-outline-primary'} btn-sm px-3`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            <button
+              className="btn btn-outline-primary btn-sm px-3"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <Icon icon="mdi:chevron-right" />
+            </button>
+            <button
+              className="btn btn-outline-primary btn-sm px-3"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <Icon icon="mdi:chevron-double-right" />
+            </button>
           </nav>
         )}
       </div>

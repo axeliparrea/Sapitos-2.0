@@ -131,27 +131,69 @@ const LocationListLayer = () => {
               </table>
             </div>
 
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
-              <span>
-                Mostrando {indicePrimero + 1} a {Math.min(indiceUltimo, filtradas.length)} de {filtradas.length} registros
-              </span>
-              <ul className="pagination d-flex flex-wrap align-items-center gap-2 justify-content-center">
-                {Array.from({ length: totalPaginas }, (_, idx) => (
-                  <li key={idx} className="page-item">
-                    <button
-                      type="button"
-                      onClick={() => setPaginaActual(idx + 1)}
-                      className={`page-link ${
-                        paginaActual === idx + 1
-                          ? "bg-primary-600 text-white"
-                          : "bg-neutral-200 text-secondary-light"
-                      } fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md`}
-                    >
-                      {idx + 1}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24 p-24">
+              <div>
+                <small className="text-muted">
+                  Mostrando {indicePrimero + 1} a {Math.min(indiceUltimo, filtradas.length)} de {filtradas.length} registros
+                </small>
+              </div>
+              {totalPaginas > 1 && (
+                <nav className="d-flex align-items-center gap-2">
+                  <button
+                    className="btn btn-outline-primary btn-sm px-2.5 py-1"
+                    onClick={() => setPaginaActual(1)}
+                    disabled={paginaActual === 1}
+                  >
+                    <Icon icon="mdi:chevron-double-left" width="16" />
+                  </button>
+                  <button
+                    className="btn btn-outline-primary btn-sm px-2.5 py-1"
+                    onClick={() => setPaginaActual(paginaActual - 1)}
+                    disabled={paginaActual === 1}
+                  >
+                    <Icon icon="mdi:chevron-left" width="16" />
+                  </button>
+                  {Array.from({ length: totalPaginas }, (_, i) => i + 1)
+                    .filter(page => Math.abs(page - paginaActual) <= 2 || page === 1 || page === totalPaginas)
+                    .map((page, index, array) => {
+                      if (index > 0 && array[index - 1] !== page - 1) {
+                        return [
+                          <span key={`ellipsis-${page}`} className="px-1">...</span>,
+                          <button
+                            key={page}
+                            className={`btn ${paginaActual === page ? 'btn-primary' : 'btn-outline-primary'} btn-sm px-2.5 py-1`}
+                            onClick={() => setPaginaActual(page)}
+                          >
+                            {page}
+                          </button>
+                        ];
+                      }
+                      return (
+                        <button
+                          key={page}
+                          className={`btn ${paginaActual === page ? 'btn-primary' : 'btn-outline-primary'} btn-sm px-2.5 py-1`}
+                          onClick={() => setPaginaActual(page)}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                  <button
+                    className="btn btn-outline-primary btn-sm px-2.5 py-1"
+                    onClick={() => setPaginaActual(paginaActual + 1)}
+                    disabled={paginaActual === totalPaginas}
+                  >
+                    <Icon icon="mdi:chevron-right" width="16" />
+                  </button>
+                  <button
+                    className="btn btn-outline-primary btn-sm px-2.5 py-1"
+                    onClick={() => setPaginaActual(totalPaginas)}
+                    disabled={paginaActual === totalPaginas}
+                  >
+                    <Icon icon="mdi:chevron-double-right" width="16" />
+                  </button>
+                </nav>
+              )}
             </div>
           </>
         )}
