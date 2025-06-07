@@ -128,11 +128,6 @@ const SignInPage = () => {
 
   return (
     <section className='auth bg-base d-flex flex-wrap'>
-      <div className='auth-left d-lg-block d-none'>
-        <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
-          <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
-        </div>
-      </div>
       <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center'>
         <div className='max-w-464-px mx-auto w-100'>
           <div>
@@ -144,7 +139,7 @@ const SignInPage = () => {
               Por favor ingrese sus datos
             </p>
           </div>
-          
+           
           <form onSubmit={handleLogin} className='needs-validation' noValidate>
             <div className='icon-field mb-16'>
               <span className='icon top-50 translate-middle-y'>
@@ -179,7 +174,7 @@ const SignInPage = () => {
                 />
               </div>
             </div>
-            
+             
             <div className='d-grid gap-3'>
               <button 
                 id='loginButton' 
@@ -194,7 +189,6 @@ const SignInPage = () => {
                   </>
                 ) : (
                   <>
-                    <Icon icon="solar:login-2-outline" className="me-2" />
                     <span>Iniciar sesión</span>
                   </>
                 )}
@@ -208,6 +202,11 @@ const SignInPage = () => {
               )}
             </div>
           </form>
+        </div>
+      </div>
+      <div className='auth-left d-lg-block d-none'>
+        <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
+          <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
         </div>
       </div>
     </section>
