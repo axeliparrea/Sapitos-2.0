@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Button, Form, Badge } from 'react-bootstrap';
+import { notify, NotificationType } from "./NotificationService";
 
 const InvoiceListLayer = () => {
   const [pedidos, setPedidos] = useState([]);
@@ -136,51 +137,42 @@ const InvoiceListLayer = () => {
 
   const handleDelete = async (id) => {
     const pedidoId = id.replace("#", "");
-    
+  
     try {
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          title: "¿Estás seguro?",
-          text: "No podrás revertir esta acción",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#3085d6",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Sí, eliminar",
-          cancelButtonText: "Cancelar"
-        }).then(async (result) => {
-          if (result.isConfirmed) {
-            await axios.delete(`http://localhost:5000/pedido/${pedidoId}`);
-            
-            Swal.fire(
-              "Eliminado",
-              "El pedido ha sido eliminado correctamente",
-              "success"
-            );
-            
-            fetchPedidos();
-          }
-        });
-      } else {
-        if (confirm("¿Estás seguro de que deseas eliminar este pedido?")) {
-          await axios.delete(`http://localhost:5000/pedido/${pedidoId}`);
-          alert("El pedido ha sido eliminado correctamente");
-          fetchPedidos();
-        }
+      const result = await Swal.fire({
+        title: "¿Eliminar pedido?",
+        text: "Esta acción no se puede deshacer",
+        icon: "warning",
+        iconColor: '#dc3545',
+        showCancelButton: true,
+        confirmButtonText: "Sí, borrar",
+        cancelButtonText: "Cancelar",
+        customClass: {
+          popup: 'swal-compact',
+          title: 'text-lg mb-2',
+          htmlContainer: 'text-sm mb-3',
+          actions: 'd-flex gap-3 justify-content-center mt-3', // separación entre botones
+          confirmButton: 'px-4 py-2 border border-2 border-danger-600 bg-danger-600 text-white text-sm fw-semibold rounded', // más espacio y borde
+          cancelButton: 'px-4 py-2 border border-2 border-secondary-600 bg-white text-secondary-600 text-sm fw-semibold rounded'
+        },
+        buttonsStyling: false,
+        width: '330px',
+        padding: '1rem'
+      });
+  
+      if (result.isConfirmed) {
+        await axios.delete(`http://localhost:5000/pedido/${pedidoId}`);
+        notify("Pedido eliminado exitosamente", NotificationType.SUCCESS);
+        fetchPedidos();
       }
     } catch (error) {
       console.error("Error al eliminar el pedido:", error);
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No se pudo eliminar el pedido"
-        });
-      } else {
-        alert("Error: No se pudo eliminar el pedido");
-      }
+      notify("No se pudo eliminar el pedido", NotificationType.ERROR);
     }
   };
+  
+  
+  
   const enviarAInventario = async (pedido) => {
     if (pedido.estatus === "Completado") {
       try {
