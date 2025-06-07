@@ -38,6 +38,7 @@ const {
 } = mlController;
 
 const { auth } = require('../middleware/auth');
+const { requireOtpVerification } = require('../middleware/requireOtp');
 
 /**
  * @swagger
@@ -55,7 +56,7 @@ const { auth } = require('../middleware/auth');
  *       500:
  *         description: Server error
  */
-router.post('/update', auth(['admin']), runModelUpdate);
+router.post('/update', auth(['admin'], true), requireOtpVerification, runModelUpdate);
 
 /**
  * @swagger
@@ -75,7 +76,7 @@ router.post('/update', auth(['admin']), runModelUpdate);
  *       500:
  *         description: Server error
  */
-router.get('/logs', auth(['admin']), getModelUpdateLogs);
+router.get('/logs', auth(['admin'], true), requireOtpVerification, getModelUpdateLogs);
 
 /**
  * @swagger
@@ -91,7 +92,7 @@ router.get('/logs', auth(['admin']), getModelUpdateLogs);
  *       500:
  *         description: Server error
  */
-router.get('/schedule', auth(['admin']), getNextScheduledUpdate);
+router.get('/schedule', auth(['admin'], true), requireOtpVerification, getNextScheduledUpdate);
 
 /**
  * @swagger
@@ -109,7 +110,7 @@ router.get('/schedule', auth(['admin']), getNextScheduledUpdate);
  *       500:
  *         description: Server error
  */
-router.get('/status', auth(['admin']), getModelStatus);
+router.get('/status', auth(['admin'], true), requireOtpVerification, getModelStatus);
 
 /**
  * @swagger
@@ -140,9 +141,9 @@ router.get('/status', auth(['admin']), getModelStatus);
  *       500:
  *         description: Server error
  */
-router.post('/toggle-status', auth(['admin']), toggleModelStatus);
+router.post('/toggle-status', auth(['admin'], true), requireOtpVerification, toggleModelStatus);
 
 // Add route for model metrics
-router.get('/metrics', auth(['admin']), mlController.getModelMetrics);
+router.get('/metrics', auth(['admin'], true), requireOtpVerification, mlController.getModelMetrics);
 
 module.exports = router;

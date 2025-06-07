@@ -32,6 +32,7 @@ import EditUserLayer from "./components/EditUser";
 import Articulos from "./pages/admin/Articulos";
 import OtpPage from "./pages/OtpPage";
 import AuthHandler from './components/AuthHandler';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App = () => {
   const [role, setRole] = useState(null); 
@@ -74,37 +75,43 @@ const App = () => {
     console.log("Loading...");
     return <div>Loading...</div>;
   }
-
   return (
 
     <BrowserRouter>
       <AuthHandler>
       <Routes>
         <Route path="/" element={<SignInPage />} />
+        <Route path="/otp" element={<OtpPage />} />
         <Route
           path="/dashboard"
           element={
-            role === "admin" ? <HomeAdmin /> :
-            role === "dueno" ? <HomeDueno /> :
-            role === "cliente" ? <HomeCliente /> :
-            role === "proveedor" ? <HomeProveedor /> :
-            <Navigate to="/" />
+            <ProtectedRoute requireOtp={true}>
+              {role === "admin" ? <HomeAdmin /> :
+               role === "dueno" ? <HomeDueno /> :
+               role === "cliente" ? <HomeCliente /> :
+               role === "proveedor" ? <HomeProveedor /> :
+               <Navigate to="/" />}
+            </ProtectedRoute>
           }
         />
         <Route 
           path="/inventario" 
           element={
-            role === "admin" ? <InventarioAdmin /> :
-            role === "dueno" ? <InventarioDueno /> :
-            role === "cliente" ? <InventarioCliente/> :
-            <Navigate to="/" />
+            <ProtectedRoute requireOtp={true} allowedRoles={["admin", "dueno", "cliente"]}>
+              {role === "admin" ? <InventarioAdmin /> :
+               role === "dueno" ? <InventarioDueno /> :
+               role === "cliente" ? <InventarioCliente /> :
+               <Navigate to="/dashboard" />}
+            </ProtectedRoute>
           } 
         />
 
         <Route 
           path="/profile" 
           element={
-            role ? <Profile /> : <Navigate to="/" />
+            <ProtectedRoute requireOtp={true}>
+              <Profile />
+            </ProtectedRoute>
           } 
         />
         <Route 

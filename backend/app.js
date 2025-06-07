@@ -30,15 +30,18 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(cors(corsOptions));
 
+// OTP routes - No auth required
+app.use("/api/otp", otpRoutes); // Using explicit /api/otp prefix for OTP routes
+
+// Settings routes - No auth required
+const settingsRoutes = require("./routes/settings");
+app.use("/api/settings", settingsRoutes);
+
 // login, register, and logout routes
 app.use("/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs)); 
 app.use("//users/getUsers", userRoutes); 
 app.use("/users/logoutUser", userRoutes);
-app.use("/users/logoutUser", userRoutes);
-
-// OTP routes
-app.use("/api/otp", otpRoutes); // Using explicit /api/otp prefix for OTP routes
 
 // ML model routes
 app.use("/ml", mlRoutes);

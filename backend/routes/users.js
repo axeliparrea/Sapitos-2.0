@@ -3,6 +3,7 @@ const { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, u
 const router = express.Router();
 
 const { auth } = require('../middleware/auth');
+const { requireOtpVerification } = require('../middleware/requireOtp');
 const fileUpload = require("express-fileupload");
 const { checkAuthTimestamp } = require('../controllers/otpController');
 router.use(fileUpload());
@@ -149,7 +150,7 @@ router.post("/login", loginUser);
  */
 
 // router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
-router.get('/getUsers', auth(), checkAuthTimestamp, getUsers); // Apply middleware to enforce OTP logic
+router.get('/getUsers', auth(), requireOtpVerification, getUsers); // Apply middleware to enforce OTP verification
 
 /**
  * @swagger

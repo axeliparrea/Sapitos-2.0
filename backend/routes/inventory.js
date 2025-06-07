@@ -15,6 +15,7 @@ const {
 const router = express.Router();
 
 const { auth } = require('../middleware/auth');
+const { requireOtpVerification } = require('../middleware/requireOtp');
 
 // Rutas principales de inventario
 /**
@@ -50,7 +51,7 @@ router.get("/", getInventory);
  *       500:
  *         description: Error del servidor
  */
-router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
+router.get("/:id", auth(["admin", "dueno", "empleado"], true), requireOtpVerification, getInventoryById);
 
 /**
  * @swagger
@@ -79,7 +80,7 @@ router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
  *       500:
  *         description: Error del servidor
  */
-router.post("/", auth(["admin", "dueno"]), insertInventory);
+router.post("/", auth(["admin", "dueno"], true), requireOtpVerification, insertInventory);
 
 /**
  * @swagger
@@ -109,7 +110,7 @@ router.post("/", auth(["admin", "dueno"]), insertInventory);
  *       500:
  *         description: Error del servidor
  */
-router.put("/:id", auth(["admin", "dueno"]), updateInventory);
+router.put("/:id", auth(["admin", "dueno"], true), requireOtpVerification, updateInventory);
 
 /**
  * @swagger
@@ -130,7 +131,7 @@ router.put("/:id", auth(["admin", "dueno"]), updateInventory);
  *       500:
  *         description: Error del servidor
  */
-router.delete("/:id", auth(["admin", "dueno"]), deleteInventory);
+router.delete("/:id", auth(["admin", "dueno"], true), requireOtpVerification, deleteInventory);
 
 // Rutas adicionales de inventario
 /**

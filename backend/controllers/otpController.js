@@ -20,12 +20,22 @@ const checkAuthTimestamp = (req, res, next) => {
     }
     
     try {
-        // Check if user exists in request (should be added by auth middleware)
+    // Check if user exists in request (should be added by auth middleware)
         if (!req.user) {
             console.log('No user in request, authentication middleware may not be executed first');
             return res.status(401).json({ 
                 requiresAuth: true,
                 message: 'Authentication required' 
+            });
+        }
+        
+        // Check for OTP verification status
+        const otpVerified = req.user.otpVerified;
+        if (!otpVerified) {
+            console.log('User has not completed OTP verification');
+            return res.status(401).json({ 
+                requiresOtp: true,
+                message: 'OTP verification required'
             });
         }
         
@@ -163,37 +173,48 @@ const verifyOTPHandler = async (req, res) => {    try {
         const isValid = verifyOTP(otp, secret);
         console.log("OTP verification result:", isValid);
         
-        if (isValid) {
-            // Get user info from token
+        if (isValid) {            // Get user info from token
             const token = req.cookies.Auth;
-            const decoded = jwt.decode(token);
             
-            if (!decoded) {
+            try {
+                // Verify token to ensure it's valid
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                
+                if (!decoded) {
+                    return res.status(401).json({ message: 'Invalid token' });
+                }
+                
+                const { exp, ...decodedWithoutExp } = decoded;
+                
+                const payload = {
+                    ...decodedWithoutExp,
+                    otpVerified: true, // Add OTP verification flag
+                    authTimestamp: Date.now() // Update timestamp
+                };
+            
+                const newToken = jwt.sign(payload, process.env.JWT_SECRET, {
+                    expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+                });
+                
+                res.cookie("Auth", newToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: "Lax",
+                    maxAge: 24 * 60 * 60 * 1000, // 1 day
+                    path: "/",
+                });
+                
+                console.log("OTP verification successful, token updated with otpVerified=true");
+                
+                res.json({ 
+                    verified: true, 
+                    message: 'OTP verified successfully',
+                    token: newToken 
+                });
+            } catch (tokenError) {
+                console.error("Token verification failed:", tokenError);
                 return res.status(401).json({ message: 'Invalid token' });
             }
-            const { exp, ...decodedWithoutExp } = decoded;
-            
-            const payload = {
-                ...decodedWithoutExp,
-                authTimestamp: Date.now() // Update timestamp
-            };
-            
-            const newToken = jwt.sign(payload, process.env.JWT_SECRET, {
-                expiresIn: process.env.JWT_EXPIRES_IN || "1d",
-            });
-            res.cookie("Auth", newToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "Lax",
-                maxAge: 24 * 60 * 60 * 1000, // 1 day
-                path: "/",
-            });
-            
-            res.json({ 
-                verified: true, 
-                message: 'OTP verified successfully',
-                token: newToken 
-            });
         } else {
             res.status(400).json({ 
                 verified: false, 

@@ -132,9 +132,7 @@ const loginUser = (req, res) => {
       const passwordCorrecta = await bcrypt.compare(contrasena, usuario.CLAVE);
       if (!passwordCorrecta) {
         return res.status(401).json({ error: "Contraseña incorrecta" });
-      }
-
-      // SOLO USAR 'rol' en minúsculas en el payload
+      }      // SOLO USAR 'rol' en minúsculas en el payload
       const payload = {
         id: usuario.USUARIO_ID,
         nombre: usuario.NOMBRE,
@@ -142,6 +140,7 @@ const loginUser = (req, res) => {
         correo: usuario.CORREO,
         username: usuario.USERNAME,
         locationId: usuario.LOCATION_ID,
+        otpVerified: !(process.env.AUTH_OTP === 'true'), // Only set to true if OTP is not required
         authTimestamp: Date.now() // Add authTimestamp to track login time
       };
 

@@ -141,13 +141,16 @@ const OtpPage = () => {
       
       if (!response.ok) {
         throw new Error(data.message || "Error verificando código");
-      }
-
-      if (data.verified) {
+      }      if (data.verified) {
         sessionStorage.removeItem('otpSecret');
         
+        // Check if we have a saved return URL
+        const returnUrl = sessionStorage.getItem('returnUrl');
+        sessionStorage.removeItem('returnUrl');
+        
         setTimeout(() => {
-          window.location.href = "/dashboard";
+          // Redirect to saved URL or dashboard as fallback
+          window.location.href = returnUrl || "/dashboard";
         }, 500);
       } else {
         throw new Error("Código de verificación inválido");
