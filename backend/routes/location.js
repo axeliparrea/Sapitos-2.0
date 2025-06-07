@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { getLocations, createLocation } = require("../controllers/locationController");
+const {
+  getLocations,
+  createLocation,
+  updateLocation,
+  deleteLocation
+} = require("../controllers/locationController");
 
 /**
  * @swagger
@@ -43,5 +48,56 @@ router.get("/", getLocations);
  *         description: Ubicación creada
  */
 router.post("/", createLocation);
+
+/**
+ * @swagger
+ * /location2/{id}:
+ *   put:
+ *     summary: Actualizar una ubicación por ID
+ *     tags: [Location2]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               Nombre:
+ *                 type: string
+ *               Tipo:
+ *                 type: string
+ *               PosicionX:
+ *                 type: integer
+ *               PosicionY:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Ubicación actualizada
+ */
+router.put("/:id", updateLocation);
+
+/**
+ * @swagger
+ * /location2/{id}:
+ *   delete:
+ *     summary: Eliminar una ubicación por ID
+ *     tags: [Location2]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Ubicación eliminada
+ */
+router.delete("/:id", deleteLocation);
 
 module.exports = router;

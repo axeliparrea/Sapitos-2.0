@@ -33,6 +33,9 @@ import Articulos from "./pages/admin/Articulos";
 import AddArticuloLayer from "./components/AddArticuloLayer";
 import Location from "./pages/admin/Location";
 import AddLocationLayer from "./components/AddLocationLayer";
+import EditArticuloLayer from "./components/EditArticuloLayer";
+import EditLocationLayer from "./components/EditarLocation";
+
 
 const App = () => {
   const [role, setRole] = useState(null); 
@@ -222,6 +225,20 @@ const App = () => {
             <Navigate to="/" />
           }
         />
+        <Route 
+  path="/editar-articulo/:id" 
+  element={
+    role === "admin" ? <EditArticuloLayer /> :
+    <Navigate to="/" />
+  }
+/>
+<Route 
+  path="/editar-Location/:id"
+  element={
+    role === "admin" ? <EditLocationLayer /> :
+    <Navigate to="/" />
+  }
+/>
 
         <Route 
           path="/modelo-prediccion" 
