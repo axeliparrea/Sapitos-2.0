@@ -22,6 +22,7 @@ import HomeProveedor from "./pages/proveedor/Home";
 import InvoiceListProveedorPage from "./pages/proveedor/InvoiceListProveedorPage";
 import InvoiceProveedorPage from "./pages/proveedor/InvoiceProveedorPage";
 import InvoicePreviewPage from "./pages/InvoicePreviewPage";
+import Notificaciones from "./pages/admin/Notificaciones";
 
 import Pedidos from "./pages/admin/Pedidos"
 
@@ -156,6 +157,13 @@ const App = () => {
             path="/ordenes-aceptadas" 
             element={
               role === "proveedor" ? <InvoiceListProveedorPage aceptadas={true}/> :
+              <Navigate to="/"/>
+              }
+            />
+           <Route 
+            path="/notificaciones" 
+            element={
+              role === "admin" ? <Notificaciones /> :
               <Navigate to="/"/>
               }
             />
