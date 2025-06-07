@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import ErrorDialog from "../components/ErrorDialog";
 
 const SignInPage = () => {
   const [email, setEmail] = useState("");
@@ -12,6 +13,8 @@ const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingSession, setCheckingSession] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (hasCheckedSession.current) return;
@@ -79,14 +82,9 @@ const SignInPage = () => {
     event.preventDefault();
     setIsLoading(true);
     setError('');
+    setErrorMessage("");
 
     try {
-      // // Primero limpiar cualquier sesión previa
-      // await fetch("http://localhost:5000/users/logoutUser", {
-      //   method: "POST",
-      //   credentials: "include",
-      // });
-
       const response = await fetch("http://localhost:5000/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,10 +95,20 @@ const SignInPage = () => {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || "Error en el inicio de sesión");
+        let message = "Error en el inicio de sesión";
+        if (data.error === "Usuario no encontrado") {
+          message = "El usuario no existe en el sistema";
+        } else if (data.error === "Contraseña incorrecta") {
+          message = "La contraseña ingresada es incorrecta";
+        }
+        setErrorMessage(message);
+        setDialogOpen(true);
+        throw new Error(data.error || message);
       }
 
       if (!data.usuario) {
+        setErrorMessage("Datos de sesión incompletos");
+        setDialogOpen(true);
         throw new Error("Datos de sesión incompletos");
       }
 
@@ -118,6 +126,10 @@ const SignInPage = () => {
     }
   };
 
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
+
   if (checkingSession) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
@@ -128,11 +140,6 @@ const SignInPage = () => {
 
   return (
     <section className='auth bg-base d-flex flex-wrap'>
-      <div className='auth-left d-lg-block d-none'>
-        <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
-          <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
-        </div>
-      </div>
       <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center'>
         <div className='max-w-464-px mx-auto w-100'>
           <div>
@@ -144,7 +151,7 @@ const SignInPage = () => {
               Por favor ingrese sus datos
             </p>
           </div>
-          
+           
           <form onSubmit={handleLogin} className='needs-validation' noValidate>
             <div className='icon-field mb-16'>
               <span className='icon top-50 translate-middle-y'>
@@ -179,7 +186,7 @@ const SignInPage = () => {
                 />
               </div>
             </div>
-            
+             
             <div className='d-grid gap-3'>
               <button 
                 id='loginButton' 
@@ -194,22 +201,25 @@ const SignInPage = () => {
                   </>
                 ) : (
                   <>
-                    <Icon icon="solar:login-2-outline" className="me-2" />
                     <span>Iniciar sesión</span>
                   </>
                 )}
               </button>
-
-              {error && (
-                <div className="alert alert-danger d-flex align-items-center p-3 mb-0">
-                  <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
-                  <div className="text-sm">{error}</div>
-                </div>
-              )}
             </div>
           </form>
         </div>
       </div>
+      <div className='auth-left d-lg-block d-none'>
+        <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
+          <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
+        </div>
+      </div>
+
+      <ErrorDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        errorMessage={errorMessage}
+      />
     </section>
   );
 };
