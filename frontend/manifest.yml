@@ -1,6 +1,6 @@
 ---
 applications:
-  - name: Sapitos-frontend
+  - name: sapitos-frontend
     memory: 64M
     buildpacks:
       - staticfile_buildpack
