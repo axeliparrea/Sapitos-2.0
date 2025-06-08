@@ -547,6 +547,57 @@ const getInventoryByCategory = async (req, res) => {
   }
 };
 
+// Obtener productos en riesgo (stock actual <= stock mínimo)
+const getProductosEnRiesgo = async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        i.Inventario_ID,
+        a.Articulo_ID,
+        a.Nombre AS ArticuloNombre,
+        a.Categoria,
+        i.StockActual,
+        i.StockMinimo
+      FROM Inventario2 i
+      INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+      WHERE i.StockActual <= i.StockMinimo
+      ORDER BY a.Nombre
+    `;
+
+    connection.exec(query, [], (err, result) => {
+      if (err) {
+        console.error("Error al obtener productos en riesgo", err);
+        return res.status(500).json({ error: "Error al obtener productos en riesgo" });
+      }
+
+      // Clasificación de riesgo y porcentaje
+      const productos = (result || []).map(item => {
+        const porcentaje = item.StockMinimo > 0 ? Math.round((item.StockActual / item.StockMinimo) * 100) : 0;
+        let riesgo = "MEDIO";
+        if (porcentaje < 50) {
+          riesgo = "CRITICO";
+        } else if (porcentaje < 80) {
+          riesgo = "ALTO";
+        }
+        return {
+          inventarioId: item.INVENTARIO_ID,
+          articuloId: item.ARTICULO_ID,
+          nombre: item.ARTICULONOMBRE,
+          categoria: item.CATEGORIA,
+          stockActual: item.STOCKACTUAL,
+          stockMinimo: item.STOCKMINIMO,
+          porcentaje,
+          riesgo
+        };
+      });
+      res.status(200).json(productos);
+    });
+  } catch (error) {
+    console.error("Error general:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
 module.exports = {
   getInventory,
   insertInventory,
@@ -556,5 +607,6 @@ module.exports = {
   getLocaciones,
   getInventoryByLocation,
   getArticulos,
-  getInventoryByCategory
+  getInventoryByCategory,
+  getProductosEnRiesgo
 };

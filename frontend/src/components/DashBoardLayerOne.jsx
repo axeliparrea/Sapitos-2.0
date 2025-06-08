@@ -1,6 +1,7 @@
 import SalesStatisticOne from "./general/child/SalesStatisticOne";
-import TotalSubscriberOne from "./general/child/TotalSubscriberOne";
+// import TotalSubscriberOne from "./general/child/TotalSubscriberOne";
 import UnitCountOne from "./general/child/UnitCountOne";
+import RiskProductsOne from "./general/child/RiskProductsOne";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import getCookie from "../utils/cookies";
@@ -89,8 +90,8 @@ const DashBoardLayerOne = () => {
         {/* SalesStatisticOne */}
         <SalesStatisticOne />
 
-        {/* TotalSubscriberOne */}
-        <TotalSubscriberOne />
+        {/* RiskProductsOne */}
+        <RiskProductsOne />
 
       </section>
     </>

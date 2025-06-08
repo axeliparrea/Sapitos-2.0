@@ -12,17 +12,20 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
     const fetchUserData = async () => {
       try {
         const cookieData = getCookie("UserData");
-        if (cookieData) {
-          const parsedData = JSON.parse(cookieData);
-          setUserData(parsedData);
+        let parsedData;
+        if (typeof cookieData === "string") {
+          parsedData = JSON.parse(cookieData);
+        } else {
+          parsedData = cookieData;
+        }
+        setUserData(parsedData);
 
-          // Fetch location details if user has a location ID
-          if (parsedData.LOCATION_ID) {
-            const locationResponse = await fetch(`http://localhost:5000/location2/${parsedData.LOCATION_ID}`);
-            if (locationResponse.ok) {
-              const locationData = await locationResponse.json();
-              setUserLocation(locationData);
-            }
+        // Fetch location details if user has a location ID
+        if (parsedData.LOCATION_ID) {
+          const locationResponse = await fetch(`http://localhost:5000/location2/${parsedData.LOCATION_ID}`);
+          if (locationResponse.ok) {
+            const locationData = await locationResponse.json();
+            setUserLocation(locationData);
           }
         }
       } catch (error) {
