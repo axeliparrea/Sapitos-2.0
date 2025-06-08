@@ -236,7 +236,6 @@ const initializeOpenAI = async () => {
 
     logger.info(`Conectando con OpenAI usando la clave API configurada`);
 
-    // Test básico de la conexión con OpenAI
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       store: true,
@@ -263,7 +262,7 @@ const generateSQLQuery = async (question) => {
     const messages = [
       {
         role: "system",
-        content: `Eres un experto en SQL para bases de datos SAP HANA, especializado en convertir preguntas en lenguaje natural a consultas SQL. Tu tarea es generar consultas SQL válidas basadas en el siguiente esquema de base de datos:
+        content: `Eres un experto en SQL para bases de datos SAP 4 HANA, especializado en convertir preguntas en lenguaje natural a consultas SQL. Tu tarea es generar consultas SQL válidas basadas en el siguiente esquema de base de datos si no entiendes algo te recomiendo volver a preguntar y dar preguntas que te orienten a poder resolver tu duda NO ALUCINES NI INVENTES COSAS, solo puedes usar lo de la DB:
         
 ${DB_SCHEMA}
 
