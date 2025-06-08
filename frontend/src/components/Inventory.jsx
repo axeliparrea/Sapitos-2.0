@@ -6,50 +6,44 @@ import axios from 'axios';
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState(null);  const [searchTerm, setSearchTerm] = useState('');  const [selectedItems, setSelectedItems] = useState([]);  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+  
+  // Estados para filtros por columna
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    categoria: '',
+    ubicacion: '',
+    stockStatus: '',
+    temporada: '',
+    precioMin: '',
+    precioMax: ''
+  });
+
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   const [filterOptions, setFilterOptions] = useState({
     categorias: [],
     locations: [],
     temporadas: []
   });
-  const itemsPerPage = 15;
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
-  
-  // Estados del filtro 
-  const [filters, setFilters] = useState({
-    categoria: [],
-    location: [],
-    temporada: [],
-    stockStatus: [] 
-  });
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const fetchInventory = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/inventory`, {
-          credentials: "include",
+        const response = await axios.get(`${API_BASE_URL}/inventory`, {
+          withCredentials: true
         });
-        
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText || 'Error al cargar el inventario'}`);
-        }
-        
-        const data = await response.json();
-        console.log('Datos del inventario:', data);
+        console.log('Datos del inventario:', response.data);
         
         // Ensure data is an array before setting it
-        if (Array.isArray(data)) {
-          setInventory(data);
+        if (Array.isArray(response.data)) {
+          setInventory(response.data);
           
           // Extract filter options
-          const categorias = [...new Set(data.map(item => item.categoria).filter(Boolean))];
-          const locations = [...new Set(data.map(item => item.locationNombre).filter(Boolean))];
-          const temporadas = [...new Set(data.map(item => item.temporada).filter(Boolean))];
+          const categorias = [...new Set(response.data.map(item => item.categoria).filter(Boolean))];
+          const locations = [...new Set(response.data.map(item => item.locationNombre).filter(Boolean))];
+          const temporadas = [...new Set(response.data.map(item => item.temporada).filter(Boolean))];
           
           setFilterOptions({
             categorias,
@@ -57,7 +51,7 @@ const Inventory = () => {
             temporadas
           });
         } else {
-          console.error('La respuesta no es un array:', data);
+          console.error('La respuesta no es un array:', response.data);
           setInventory([]);
           setError('Formato de datos inesperado del servidor');
         }
@@ -74,7 +68,6 @@ const Inventory = () => {
 
     fetchInventory();
   }, [API_BASE_URL]);
-
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       const allIds = currentItems.map(item => item.inventarioId);
@@ -82,8 +75,7 @@ const Inventory = () => {
     } else {
       setSelectedItems([]);
     }
-  }; 
-  const handleSelectItem = (id) => {
+  };  const handleSelectItem = (id) => {
     if (selectedItems.includes(id)) {
       setSelectedItems(selectedItems.filter(itemId => itemId !== id));
     } else {
@@ -118,8 +110,7 @@ const Inventory = () => {
   const getUniqueValues = (field) => {
     const values = inventory.map(item => item[field]).filter(Boolean);
     return [...new Set(values)].sort();
-  }; 
-  const filteredItems = Array.isArray(inventory) 
+  };  const filteredItems = Array.isArray(inventory) 
     ? inventory.filter(item => {
         // Filtro de búsqueda general
         const matchesSearch = 

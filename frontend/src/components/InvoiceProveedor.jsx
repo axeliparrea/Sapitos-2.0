@@ -21,7 +21,10 @@ const InvoiceProveedor = () => {
   const fetchPedidos = async () => {
     try {
       setLoading(true);
-      const sessionResponse = await fetch("http://localhost:5000/users/getSession", {
+      console.log("Loading...");
+      
+      // Intentar obtener la sesión utilizando el mismo API_BASE_URL
+      const sessionResponse = await fetch(`${API_BASE_URL}/users/getSession`, {
         credentials: "include", 
       });
 
@@ -30,12 +33,10 @@ const InvoiceProveedor = () => {
       }
 
       const sessionData = await sessionResponse.json();
-      console.log("Datos de sesión completos:", sessionData);
-      console.log("Usuario en sesión:", sessionData.usuario || "No hay objeto usuario");
-      console.log("Token en sesión:", sessionData.token ? "Presente" : "No hay token");
+      console.log("Session Data: ", sessionData);
+      
       let locationId;
       let roleId;
-
 
       if (sessionData.usuario && sessionData.usuario.locationId) {
         locationId = sessionData.usuario.locationId; 
@@ -54,9 +55,10 @@ const InvoiceProveedor = () => {
         throw new Error("Location ID no encontrado en la sesión");
       }
 
-
-
+      // Usar el URL correcto para obtener los pedidos del proveedor
       const url = `${API_BASE_URL}/proveedor/pedidos/${locationId}`;
+      console.log("Fetching orders from:", url);
+      
       const response = await fetch(url, {
         method: 'GET',
         credentials: 'include', 
@@ -71,6 +73,12 @@ const InvoiceProveedor = () => {
       }
 
       const data = await response.json();
+      
+      if (!Array.isArray(data)) {
+        console.error("Los datos recibidos no son un array:", data);
+        throw new Error("Formato de datos inesperado del servidor");
+      }
+      
       const formattedPedidos = data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),
         id: pedido.id,
@@ -135,14 +143,22 @@ const InvoiceProveedor = () => {
       console.log("Actualizando pedido:", id, "a estado:", nuevoEstatus);
       console.log("Endpoint:", endpoint);
       
-      const response = await axios.put(endpoint, {}, {
+      // Usar fetch en lugar de axios para mantener consistencia con otros llamados
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        credentials: 'include',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         }
       });
       
-      console.log("Respuesta de actualización:", response.data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'No se pudo actualizar el pedido');
+      }
+      
+      const responseData = await response.json();
+      console.log("Respuesta de actualización:", responseData);
       
       Swal.fire({
         icon: "success",
@@ -155,16 +171,11 @@ const InvoiceProveedor = () => {
       
     } catch (error) {
       console.error("Error al actualizar el pedido:", error);
-      console.error("Respuesta completa del error:", error.response);
-      
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.message || 
-                          "No se pudo actualizar el pedido";
       
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: errorMessage
+        text: error.message || "No se pudo actualizar el pedido"
       });
     }
   };
@@ -186,21 +197,29 @@ const InvoiceProveedor = () => {
         return;
       }
 
-      const response = await axios.put(
+      // Usar fetch en lugar de axios para mantener consistencia con otros llamados
+      const response = await fetch(
         `${API_BASE_URL}/proveedor/pedido/${id}/enviar`, 
-        {}, 
         {
+          method: 'PUT',
+          credentials: 'include',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
           }
         }
       );
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'No se pudo enviar el pedido');
+      }
+      
+      const responseData = await response.json();
+      
       Swal.fire({
         icon: "success",
         title: "Pedido Enviado",
-        text: response.data.message
+        text: responseData.message || "Pedido enviado exitosamente"
       });
       
       fetchPedidos();
@@ -208,32 +227,38 @@ const InvoiceProveedor = () => {
     } catch (error) {
       console.error("Error al enviar el pedido:", error);
       
-      const errorMessage = error.response?.data?.error || 
-                          "No se pudo enviar el pedido";
-      
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: errorMessage
+        text: error.message || "No se pudo enviar el pedido"
       });
     }
   };
 
   const handleVerDetalles = async (id) => {
     try {
-      const response = await axios.get(
+      // Usar fetch en lugar de axios para mantener consistencia con otros llamados
+      const response = await fetch(
         `${API_BASE_URL}/proveedor/pedido/${id}/detalle`,
         {
+          method: 'GET',
+          credentials: 'include',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
           }
         }
       );
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'No se pudieron cargar los detalles');
+      }
+      
+      const responseData = await response.json();
+      
       setSelectedPedido({
         id,
-        detalles: response.data
+        detalles: responseData
       });
       setShowDetails(true);
       
@@ -243,7 +268,7 @@ const InvoiceProveedor = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "No se pudieron cargar los detalles del pedido"
+        text: error.message || "No se pudieron cargar los detalles del pedido"
       });
     }
   };

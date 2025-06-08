@@ -19,8 +19,9 @@ const InvoiceListProveedor = () => {
   const fetchPedidos = async () => {
     try {
       setLoading(true);
+      console.log("Loading...");
       
-      const sessionResponse = await fetch("http://localhost:5000/users/getSession", {
+      const sessionResponse = await fetch(`${API_BASE_URL}/users/getSession`, {
         credentials: "include", 
       });
 
@@ -29,7 +30,7 @@ const InvoiceListProveedor = () => {
       }
 
       const sessionData = await sessionResponse.json();
-      console.log("Datos de sesión completos:", sessionData);
+      console.log("Datos de sesión:", sessionData);
       
       let locationId;
       let roleId;
@@ -54,7 +55,7 @@ const InvoiceListProveedor = () => {
 
       console.log("Usando locationId:", locationId);
 
-      const endpoint = `http://localhost:5000/proveedor/pedidos-aceptados/${locationId}`;
+      const endpoint = `${API_BASE_URL}/proveedor/pedidos-aceptados/${locationId}`;
 
       console.log("Fetch endpoint:", endpoint);
 
@@ -62,7 +63,6 @@ const InvoiceListProveedor = () => {
         method: 'GET',
         credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });

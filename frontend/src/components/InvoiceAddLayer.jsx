@@ -5,25 +5,35 @@ import axios from "axios";
 import { notify, NotificationType } from "./NotificationService";
 import Swal from "sweetalert2";
 
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+
 const useUserSession = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     const fetchSession = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/users/getSession`, {
-          withCredentials: true
+          credentials: 'include'
         });
         
-        if (response.data && response.data.usuario) {
+        if (!response.ok) {
+          throw new Error(`Error al obtener sesión: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data && data.usuario) {
           setSession({
-            userId: response.data.usuario.id,
-            nombre: response.data.usuario.nombre,
-            email: response.data.usuario.correo,
-            rol: response.data.usuario.rol
+            userId: data.usuario.id,
+            nombre: data.usuario.nombre,
+            email: data.usuario.correo,
+            rol: data.usuario.rol
           });
+        } else {
+          console.warn('Respuesta de sesión sin datos de usuario:', data);
+          setSession(null);
         }
       } catch (error) {
         console.error('Error al obtener sesión:', error);
