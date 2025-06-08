@@ -342,7 +342,8 @@ const getLocaciones = async (req, res) => {
         Tipo,
         PosicionX,
         PosicionY,
-        FechaCreado
+        FechaCreado,
+        Organizacion
       FROM Location2
       ORDER BY Nombre
     `;
@@ -359,7 +360,8 @@ const getLocaciones = async (req, res) => {
         tipo: item.TIPO,
         posicionX: item.POSICIONX,
         posicionY: item.POSICIONY,
-        fechaCreado: item.FECHACREADO
+        fechaCreado: item.FECHACREADO,
+        organizacion: item.ORGANIZACION
       }));
       
       res.status(200).json(locaciones);

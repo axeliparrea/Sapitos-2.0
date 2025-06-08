@@ -963,7 +963,7 @@ const getProductosInventarioPorProveedor = async (req, res) => {
 const getAvailableLocations = async (req, res) => {
   try {
     const query = `
-      SELECT Location_ID as ID, Nombre, Tipo
+      SELECT Location_ID as ID, Nombre, Tipo, Organizacion
       FROM Location2
       WHERE Tipo IN ('Almacen', 'Almacén', 'Principal', 'Tienda', 'Sucursal', 'Proveedor') 
       ORDER BY Nombre
@@ -978,7 +978,8 @@ const getAvailableLocations = async (req, res) => {
       const locationsFormateadas = (result || []).map(location => ({
         id: location.ID,
         nombre: location.NOMBRE,
-        tipo: location.TIPO
+        tipo: location.TIPO,
+        organizacion: location.ORGANIZACION
       }));
       
       res.status(200).json(locationsFormateadas);

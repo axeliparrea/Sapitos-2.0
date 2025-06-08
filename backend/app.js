@@ -2,17 +2,19 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require('cookie-parser');  
+const { swaggerUi, specs } = require("./docs/swagger");
+const { connection } = require("./config/db");
 
-const { swaggerUi, specs } = require("./docs/swagger"); 
 const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const pedidoRoutes = require("./routes/pedido");
 const pedidosHRoutes = require("./routes/pedidosH.js");
 const pedidosProveedorRoutes = require("./routes/pedidosProveedor.js");
 const rolRoutes = require("./routes/rol.js");
-const locationRoutes = require("./routes/location"); // al inicio
+const locationRoutes = require("./routes/location");
 const mlRoutes = require("./routes/ml");
 const articuloRoutes = require("./routes/articulo");
+const pedidosHelperRoutes = require("./routes/pedidosH");
 
 const app = express();
 
@@ -31,8 +33,8 @@ app.use(cors(corsOptions));
 
 // login, register, and logout routes
 app.use("/users", userRoutes);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs)); 
-app.use("//users/getUsers", userRoutes); 
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+app.use("/users/getUsers", userRoutes); 
 app.use("/users/logoutUser", userRoutes);
 app.use("/users/logoutUser", userRoutes);
 
@@ -59,5 +61,12 @@ app.use("/proveedor", pedidosProveedorRoutes);
 app.use("/proveedores", pedidoRoutes);
 app.use("/pedidosH", pedidosHRoutes);
 app.use("/proveedor", pedidosProveedorRoutes);
+app.use("/helpers", pedidosHelperRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Something broke!" });
+});
 
 module.exports = app;

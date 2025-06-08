@@ -49,6 +49,7 @@ const getLocations = async (req, res) => {
         PosicionX,
         PosicionY,
         FechaCreado,
+        Organizacion,
         (SELECT COUNT(*) FROM Usuario2 WHERE Location_ID = l.Location_ID) as totalUsuarios,
         (SELECT COUNT(*) FROM Inventario2 WHERE Location_ID = l.Location_ID) as totalProductos
       FROM Location2 l
@@ -68,6 +69,7 @@ const getLocations = async (req, res) => {
         posicionX: location.PosicionX,
         posicionY: location.PosicionY,
         fechaCreado: location.FechaCreado,
+        organizacion: location.Organizacion,
         totalUsuarios: location.totalUsuarios || 0,
         totalProductos: location.totalProductos || 0
       }));
@@ -97,6 +99,7 @@ const getLocationsPorTipo = async (req, res) => {
         PosicionX,
         PosicionY,
         FechaCreado,
+        Organizacion,
         (SELECT COUNT(*) FROM Usuario2 WHERE Location_ID = l.Location_ID) as totalUsuarios,
         (SELECT COUNT(*) FROM Inventario2 WHERE Location_ID = l.Location_ID) as totalProductos,
         (SELECT COUNT(*) FROM Fabricacion2 WHERE Location_ID = l.Location_ID) as totalFabricacion
@@ -118,6 +121,7 @@ const getLocationsPorTipo = async (req, res) => {
         posicionX: location.PosicionX,
         posicionY: location.PosicionY,
         fechaCreado: location.FechaCreado,
+        organizacion: location.Organizacion,
         totalUsuarios: location.totalUsuarios || 0,
         totalProductos: location.totalProductos || 0,
         totalFabricacion: location.totalFabricacion || 0
@@ -142,12 +146,13 @@ const getLocationById = async (req, res) => {
   try {
     const query = `
       SELECT 
-        Location_ID as id,
-        Nombre as nombre,
-        Tipo as tipo,
-        PosicionX,
-        PosicionY,
-        FechaCreado
+        Location_ID as ID,
+        Nombre as NOMBRE,
+        Tipo as TIPO,
+        PosicionX as POSICIONX,
+        PosicionY as POSICIONY,
+        FechaCreado as FECHACREADO,
+        Organizacion as ORGANIZACION
       FROM Location2 
       WHERE Location_ID = ?
     `;
@@ -164,12 +169,13 @@ const getLocationById = async (req, res) => {
       
       const location = result[0];
       const locationFormateada = {
-        id: location.id,
-        nombre: location.nombre,
-        tipo: location.tipo,
-        posicionX: location.PosicionX,
-        posicionY: location.PosicionY,
-        fechaCreado: location.FechaCreado
+        id: location.ID,
+        nombre: location.NOMBRE,
+        tipo: location.TIPO,
+        posicionX: location.POSICIONX,
+        posicionY: location.POSICIONY,
+        fechaCreado: location.FECHACREADO,
+        organizacion: location.ORGANIZACION
       };
       
       res.status(200).json(locationFormateada);
@@ -183,7 +189,7 @@ const getLocationById = async (req, res) => {
 // Función para crear nueva location
 const insertLocation = async (req, res) => {
   try {
-    const { nombre, tipo, posicionX, posicionY } = req.body;
+    const { nombre, tipo, posicionX, posicionY, organizacion } = req.body;
     
     // Validaciones
     if (!nombre || !tipo) {
@@ -196,6 +202,10 @@ const insertLocation = async (req, res) => {
     
     if (tipo.length > 50) {
       return res.status(400).json({ error: "El tipo no puede exceder 50 caracteres" });
+    }
+    
+    if (organizacion && organizacion.length > 100) {
+      return res.status(400).json({ error: "La organización no puede exceder 100 caracteres" });
     }
     
     // Verificar que no exista una location con el mismo nombre
@@ -213,15 +223,16 @@ const insertLocation = async (req, res) => {
       
       // Insertar nueva location
       const insertQuery = `
-        INSERT INTO Location2 (Nombre, Tipo, PosicionX, PosicionY, FechaCreado)
-        VALUES (?, ?, ?, ?, CURRENT_DATE)
+        INSERT INTO Location2 (Nombre, Tipo, PosicionX, PosicionY, FechaCreado, Organizacion)
+        VALUES (?, ?, ?, ?, CURRENT_DATE, ?)
       `;
       
       const valores = [
         nombre,
         tipo,
         posicionX || null,
-        posicionY || null
+        posicionY || null,
+        organizacion || null
       ];
       
       connection.exec(insertQuery, valores, (insertErr, result) => {
@@ -233,7 +244,8 @@ const insertLocation = async (req, res) => {
         res.status(201).json({ 
           message: "Location creada exitosamente",
           nombre: nombre,
-          tipo: tipo
+          tipo: tipo,
+          organizacion: organizacion
         });
       });
     });
@@ -246,7 +258,7 @@ const insertLocation = async (req, res) => {
 // Función para actualizar location
 const updateLocation = async (req, res) => {
   const { id } = req.params;
-  const { nombre, tipo, posicionX, posicionY } = req.body;
+  const { nombre, tipo, posicionX, posicionY, organizacion } = req.body;
   
   if (!id || isNaN(id)) {
     return res.status(400).json({ error: "ID de location inválido" });
@@ -295,6 +307,14 @@ const updateLocation = async (req, res) => {
         campos.push("PosicionY = ?");
         valores.push(posicionY);
       }
+
+      if (organizacion !== undefined) {
+        if (organizacion && organizacion.length > 100) {
+          return res.status(400).json({ error: "La organización no puede exceder 100 caracteres" });
+        }
+        campos.push("Organizacion = ?");
+        valores.push(organizacion);
+      }
       
       if (campos.length === 0) {
         return res.status(400).json({ error: "No hay datos para actualizar" });
@@ -313,7 +333,7 @@ const updateLocation = async (req, res) => {
       });
     });
   } catch (error) {
-    console.error("Error al actualizar location:", error);
+    console.error("Error general:", error);
     res.status(500).json({ error: "Error del servidor" });
   }
 };
