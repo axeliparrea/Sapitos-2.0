@@ -16,7 +16,7 @@ const {
 
 /**
  * @swagger
- * /articulo/GetArticulos:
+ * /articulo:
  *   get:
  *     summary: Obtener todos los artículos
  *     tags: [Articulo]
@@ -30,24 +30,24 @@ const {
  *               items:
  *                 type: object
  *                 properties:
- *                   Articulo_ID:
+ *                   ARTICULO_ID:
  *                     type: integer
- *                   Nombre:
+ *                   NOMBRE:
  *                     type: string
- *                   Categoria:
+ *                   CATEGORIA:
  *                     type: string
- *                   PrecioProveedor:
+ *                   PRECIOPROVEEDOR:
  *                     type: number
- *                   PrecioVenta:
+ *                   PRECIOVENTA:
  *                     type: number
- *                   Temporada:
+ *                   TEMPORADA:
  *                     type: string
  */
 router.get("/", getArticulos);
 
 /**
  * @swagger
- * /articulo/postArticulo:
+ * /articulo:
  *   post:
  *     summary: Crear un nuevo artículo
  *     tags: [Articulo]
@@ -58,21 +58,21 @@ router.get("/", getArticulos);
  *           schema:
  *             type: object
  *             required:
- *               - Nombre
- *               - Categoria
- *               - PrecioProveedor
- *               - PrecioVenta
- *               - Temporada
+ *               - NOMBRE
+ *               - CATEGORIA
+ *               - PRECIOPROVEEDOR
+ *               - PRECIOVENTA
+ *               - TEMPORADA
  *             properties:
- *               Nombre:
+ *               NOMBRE:
  *                 type: string
- *               Categoria:
+ *               CATEGORIA:
  *                 type: string
- *               PrecioProveedor:
+ *               PRECIOPROVEEDOR:
  *                 type: number
- *               PrecioVenta:
+ *               PRECIOVENTA:
  *                 type: number
- *               Temporada:
+ *               TEMPORADA:
  *                 type: string
  *     responses:
  *       201:
@@ -100,21 +100,21 @@ router.post("/", createArticulo);
  *           schema:
  *             type: object
  *             required:
- *               - Nombre
- *               - Categoria
- *               - PrecioProveedor
- *               - PrecioVenta
- *               - Temporada
+ *               - NOMBRE
+ *               - CATEGORIA
+ *               - PRECIOPROVEEDOR
+ *               - PRECIOVENTA
+ *               - TEMPORADA
  *             properties:
- *               Nombre:
+ *               NOMBRE:
  *                 type: string
- *               Categoria:
+ *               CATEGORIA:
  *                 type: string
- *               PrecioProveedor:
+ *               PRECIOPROVEEDOR:
  *                 type: number
- *               PrecioVenta:
+ *               PRECIOVENTA:
  *                 type: number
- *               Temporada:
+ *               TEMPORADA:
  *                 type: string
  *     responses:
  *       200:
@@ -124,8 +124,25 @@ router.post("/", createArticulo);
  */
 router.put("/:id", updateArticulo);
 
-// ejemplo en backend/rutas/articulo2.js
+/**
+ * @swagger
+ * /articulo/{id}:
+ *   delete:
+ *     summary: Eliminar un artículo por ID
+ *     tags: [Articulo]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID del artículo a eliminar
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Artículo eliminado correctamente
+ *       500:
+ *         description: Error del servidor
+ */
 router.delete("/:id", deleteArticulo);
-
 
 module.exports = router;

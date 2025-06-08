@@ -11,9 +11,8 @@ def test_hana_ml_connection():
     """Test hana_ml connection configuration"""
     print("🧪 TESTING HANA_ML CONNECTION CONFIGURATION")
     print("=" * 50)
-    
-    # Load environment variables
-    load_dotenv('../.env')
+      # Load environment variables
+    load_dotenv('../../backend/.env')
     
     # Get connection parameters
     host = os.getenv('HANA_HOST')

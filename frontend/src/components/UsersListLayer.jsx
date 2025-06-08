@@ -16,31 +16,32 @@ const UsersListLayer = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      // Obtener usuarios
       const usuariosResponse = await axios.get('http://localhost:5000/users/getUsers', {
         withCredentials: true
       });
 
-      // Obtener roles
       const rolesResponse = await axios.get('http://localhost:5000/rol/getRoles');
       const rolesMap = {};
       rolesResponse.data.forEach((r) => {
-        rolesMap[r.ROL_ID] = r.NOMBRE;
+        rolesMap[r.ROL_ID?.toString()] = r.NOMBRE;
       });
 
-      // Obtener ubicaciones
       const locationsResponse = await axios.get('http://localhost:5000/location2');
       const locationsMap = {};
       locationsResponse.data.forEach((l) => {
-        locationsMap[l.LOCATION_ID] = l.NOMBRE;
+        locationsMap[l.LOCATION_ID?.toString()] = l.NOMBRE;
       });
 
-      // Enlazar nombre de rol y nombre de ubicación a cada usuario
-      const usuariosConDatos = usuariosResponse.data.map(usuario => ({
-        ...usuario,
-        rol: rolesMap[usuario.rolID] || "Sin rol",
-        locationNombre: locationsMap[usuario.locationId] || "Sin ubicación"
-      }));
+      const usuariosConDatos = usuariosResponse.data.map(usuario => {
+        const rolId = usuario.rolId;
+        const locationId = usuario.locationId;
+
+        return {
+          ...usuario,
+          rol: rolesMap[rolId?.toString()] || "Sin rol",
+          locationNombre: locationsMap[locationId?.toString()] || "Sin ubicación"
+        };
+      });
 
       setUsuarios(usuariosConDatos);
       setUsuariosFiltrados(usuariosConDatos);
@@ -94,19 +95,18 @@ const UsersListLayer = () => {
     <div className="card h-100 p-0 radius-12">
       <div className="card-header d-flex justify-content-between align-items-center py-16 px-24">
         <div className="d-flex align-items-center gap-3">
-          <span>Usuarios</span>
-          <div className="icon-field">
+          <span className="text-md fw-medium text-secondary-light mb-0">Mostrar</span>
+          <form className="navbar-search">
             <input
               type="text"
-              className="form-control form-control-sm w-auto"
+              id="buscadorUsuarios"
+              className="bg-base h-40-px w-auto"
               placeholder="Buscar usuarios..."
               value={terminoBusqueda}
               onChange={(e) => setTerminoBusqueda(e.target.value)}
             />
-            <span className="icon">
-              <Icon icon="ion:search-outline" />
-            </span>
-          </div>
+            <Icon icon="ion:search-outline" className="icon" />
+          </form>
         </div>
         <Link to="/agregar-usuario" id="agregarUsuarioBtn" className="btn btn-primary btn-sm">
           <Icon icon="ic:baseline-plus" className="icon text-xl" /> Agregar Usuario
@@ -142,22 +142,20 @@ const UsersListLayer = () => {
                         <td className="text-center">
                           <div className="d-flex align-items-center gap-10 justify-content-center">
                             <button
+                              id={`editarUsuario-${index}`} 
                               type="button"
                               onClick={() => navigate(`/editar-usuario/${usuario.correo}`)}
-                              className="w-24-px h-24-px me-4 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                              style={{ border: 'none' }}
-                              title="Editar Usuario"
+                              className="bg-success-focus bg-hover-success-200 text-success-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                             >
-                              <Icon icon="lucide:edit" />
+                              <Icon icon="lucide:edit" className="menu-icon" />
                             </button>
                             <button
+                              id={`eliminarUsuario-${index}`}
                               type="button"
                               onClick={() => eliminarUsuario(usuario.correo)}
-                              className="w-24-px h-24-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                              style={{ border: 'none' }}
-                              title="Eliminar Usuario"
+                              className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                             >
-                              <Icon icon="fluent:delete-24-regular" />
+                              <Icon icon="fluent:delete-24-regular" className="menu-icon" />
                             </button>
                           </div>
                         </td>

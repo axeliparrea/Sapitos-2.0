@@ -67,16 +67,24 @@ class WeeklyStockUpdate:
         
     def connect_to_database(self):
         """Connect to the HANA database"""
-        try:
+        try:            
             logger.info("Loading environment variables")
-            load_dotenv('../.env')
+            load_dotenv('../../backend/.env')
+            
+            # Parse SERVER_NODE to get host and port
+            server_node = os.getenv('SERVER_NODE')
+            if server_node and ':' in server_node:
+                host, port = server_node.split(':')
+            else:
+                host = server_node
+                port = 443
             
             logger.info("Connecting to database")
             self.conn = dataframe.ConnectionContext(
-                address=os.getenv('HANA_HOST'),
-                port=int(os.getenv('HANA_PORT', 443)),
-                user=os.getenv('HANA_USER'),
-                password=os.getenv('HANA_PASSWORD')
+                address=host,
+                port=int(port),
+                user=os.getenv('DB_USERNAME'),
+                password=os.getenv('DB_PASSWORD')
             )
             
             if self.conn.connection.isconnected():
@@ -85,6 +93,7 @@ class WeeklyStockUpdate:
             else:
                 logger.error("Failed to connect to database")
                 return False
+        
         except Exception as e:
             logger.error(f"Error connecting to database: {e}")
             return False

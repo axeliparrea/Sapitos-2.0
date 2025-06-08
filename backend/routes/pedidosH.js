@@ -101,6 +101,8 @@ router.get("/roles", getRoles);
  *                   fechaCreado:
  *                     type: string
  *                     format: date
+ *                   organizacion:
+ *                     type: string
  *                   totalUsuarios:
  *                     type: integer
  *                   totalProductos:
@@ -132,6 +134,9 @@ router.get("/roles", getRoles);
  *                 type: number
  *               posicionY:
  *                 type: number
+ *               organizacion:
+ *                 type: string
+ *                 maxLength: 100
  *     responses:
  *       201:
  *         description: Location creada exitosamente
@@ -181,6 +186,8 @@ router.post("/locations", insertLocation);
  *                   fechaCreado:
  *                     type: string
  *                     format: date
+ *                   organizacion:
+ *                     type: string
  *                   totalUsuarios:
  *                     type: integer
  *                   totalProductos:
@@ -230,6 +237,8 @@ router.get("/locations/tipo/:tipo", getLocationsPorTipo);
  *                 fechaCreado:
  *                   type: string
  *                   format: date
+ *                 organizacion:
+ *                   type: string
  *       400:
  *         description: ID inválido
  *       404:
@@ -265,6 +274,9 @@ router.get("/locations/tipo/:tipo", getLocationsPorTipo);
  *                 type: number
  *               posicionY:
  *                 type: number
+ *               organizacion:
+ *                 type: string
+ *                 maxLength: 100
  *     responses:
  *       200:
  *         description: Location actualizada exitosamente

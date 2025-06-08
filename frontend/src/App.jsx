@@ -29,6 +29,7 @@ import UsuariosShec from "./pages/admin/UsuariosShec";
 import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
+import Articulos from "./pages/admin/Articulos";
 
 const App = () => {
   const [role, setRole] = useState(null); 
@@ -175,6 +176,14 @@ const App = () => {
             <Navigate to="/" />
           } 
         />
+        <Route 
+  path="/articulos" 
+  element={
+    role === "admin" ? <Articulos /> :
+    <Navigate to="/" />
+  }
+/>
+
         <Route 
           path="/agregar-usuario" 
           element={

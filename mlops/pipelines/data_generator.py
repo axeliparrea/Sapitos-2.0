@@ -23,7 +23,7 @@ except ImportError:
     sys.exit(1)
 
 # Load environment and configure logging
-load_dotenv()
+load_dotenv('../../backend/.env')
 # Configure dynamic log file path in mlops/logs with date-based filename
 logs_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
 os.makedirs(logs_dir, exist_ok=True)

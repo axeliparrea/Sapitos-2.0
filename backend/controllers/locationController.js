@@ -8,11 +8,11 @@ const getLocations = (req, res) => {
 };
 
 const createLocation = (req, res) => {
-  const { Nombre, Tipo, PosicionX, PosicionY, FechaCreado } = req.body;
-  const query = `INSERT INTO Location2 (Nombre, Tipo, PosicionX, PosicionY, FechaCreado) VALUES (?, ?, ?, ?, ?)`;
+  const { Nombre, Tipo, PosicionX, PosicionY, FechaCreado, Organizacion } = req.body;
+  const query = `INSERT INTO Location2 (Nombre, Tipo, PosicionX, PosicionY, FechaCreado, Organizacion) VALUES (?, ?, ?, ?, ?, ?)`;
   connection.prepare(query, (err, statement) => {
     if (err) return res.status(500).json({ error: err.message });
-    statement.exec([Nombre, Tipo, PosicionX, PosicionY, FechaCreado], (execErr) => {
+    statement.exec([Nombre, Tipo, PosicionX, PosicionY, FechaCreado, Organizacion], (execErr) => {
       if (execErr) return res.status(500).json({ error: execErr.message });
       res.status(201).json({ message: "Ubicación creada" });
     });

@@ -5,7 +5,9 @@ const {
   aceptarPedido,
   rechazarPedido,
   getDetallePedido,
-  enviarPedido 
+  enviarPedido,
+  getPedidosAceptadosProveedor ,
+  getTodosPedidosProveedor
 } = require('../controllers/pedidosProveedorController');
 const router = express.Router();
 
@@ -275,5 +277,8 @@ router.get("/pedido/:id/detalle", getDetallePedido);
  *         description: Error del servidor
  */
 router.put("/pedido/:id/enviar", enviarPedido);
+
+router.get('/pedidos/:locationId', getTodosPedidosProveedor); 
+router.get('/pedidos-aceptados/:locationId', getPedidosAceptadosProveedor);
 
 module.exports = router;
