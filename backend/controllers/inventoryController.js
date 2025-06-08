@@ -372,64 +372,37 @@ const getLocaciones = async (req, res) => {
 };
 
 const getInventoryByLocation = async (req, res) => {
-  const locationId = req.params.locationId;
-  
+  const { locationId } = req.params;
+
   try {
     const query = `
       SELECT
         i.Inventario_ID,
         i.Articulo_ID,
-        a.Nombre AS ArticuloNombre,
+        a.Nombre,
         a.Categoria,
-        a.PrecioProveedor,
-        a.PrecioVenta,
-        a.Temporada,
         i.StockActual,
         i.StockMinimo,
-        i.StockRecomendado,
-        i.StockSeguridad,
-        i.FechaUltimaImportacion,
-        i.FechaUltimaExportacion,
-        i.MargenGanancia,
-        i.TiempoReposicion,
-        i.DemandaPromedio,
-        l.Nombre AS LocationNombre,
-        l.Tipo AS LocationTipo
+        i.StockRecomendado
       FROM Inventario2 i
-      INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
-      INNER JOIN Location2 l ON i.Location_ID = l.Location_ID
+      JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
       WHERE i.Location_ID = ?
     `;
 
     connection.exec(query, [locationId], (err, result) => {
       if (err) {
-        console.error("Error al obtener inventario por ubicación:", err);
-        return res.status(500).json({ error: "Error al obtener inventario por ubicación" });
-      }
-
-      if (result.length === 0) {
-        return res.status(404).json({ error: "No se encontró inventario para esta ubicación" });
+        console.error("Error al obtener el inventario por ubicación:", err);
+        return res.status(500).json({ error: "Error al obtener el inventario por ubicación" });
       }
 
       const formatted = result.map(item => ({
-        inventarioId: item.INVENTARIO_ID,
-        articuloId: item.ARTICULO_ID,
-        nombre: item.ARTICULONOMBRE,
-        categoria: item.CATEGORIA,
-        precioProveedor: item.PRECIOPROVEEDOR,
-        precioVenta: item.PRECIOVENTA,
-        temporada: item.TEMPORADA,
-        stockActual: item.STOCKACTUAL,
-        stockMinimo: item.STOCKMINIMO,
-        stockRecomendado: item.STOCKRECOMENDADO,
-        stockSeguridad: item.STOCKSEGURIDAD,
-        fechaUltimaImportacion: item.FECHAULTIMAIMPORTACION,
-        fechaUltimaExportacion: item.FECHAULTIMAEXPORTACION,
-        margenGanancia: item.MARGENGANANCIA,
-        tiempoReposicion: item.TIEMPOREPOSICION,
-        demandaPromedio: item.DEMANDAPROMEDIO,
-        locationNombre: item.LOCATIONNOMBRE,
-        locationTipo: item.LOCATIONTIPO
+        INVENTARIO_ID: item.INVENTARIO_ID,
+        ARTICULO_ID: item.ARTICULO_ID,
+        NOMBRE: item.NOMBRE,
+        CATEGORIA: item.CATEGORIA,
+        STOCKACTUAL: item.STOCKACTUAL,
+        STOCKMINIMO: item.STOCKMINIMO,
+        STOCKRECOMENDADO: item.STOCKRECOMENDADO,
       }));
 
       res.status(200).json(formatted);

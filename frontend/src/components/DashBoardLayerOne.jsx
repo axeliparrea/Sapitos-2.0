@@ -77,7 +77,7 @@ const DashBoardLayerOne = () => {
               setUserLocation(locationData);
 
               // Fetch inventory data for the location
-              const inventoryResponse = await fetch(`http://localhost:5000/inventory/location/${parsedData.LOCATION_ID}`, {
+              const inventoryResponse = await fetch(`http://localhost:5000/api/inventory/location/${parsedData.LOCATION_ID}`, {
                 credentials: 'include'
               });
               console.log("Inventory response status:", inventoryResponse.status);
@@ -143,7 +143,7 @@ const DashBoardLayerOne = () => {
 
       <section className='row gy-4 mt-1'>
         {/* SalesStatisticOne */}
-        <SalesStatisticOne ventasKpi={kpiData.ventas} />
+        <SalesStatisticOne />
 
         {/* RiskProductsOne */}
         <RiskProductsOne inventoryData={inventoryData} loading={loading} error={!inventoryData && !loading ? "No se pudo cargar la información de inventario." : null} />

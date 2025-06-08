@@ -7,8 +7,8 @@ const executeKpiQuery = (res, query, kpiName) => {
       return res.status(500).json({ error: `Error al obtener KPI de ${kpiName}` });
     }
 
-    const current = rows[0]?.CURRENT_TOTAL || 0;
-    const previous = rows[0]?.PREVIOUS_TOTAL || 0;
+    const current = parseFloat(rows[0]?.CURRENT_TOTAL || 0);
+    const previous = parseFloat(rows[0]?.PREVIOUS_TOTAL || 0);
 
     const percentageChange = previous > 0
         ? ((current - previous) / previous) * 100
@@ -109,12 +109,12 @@ const getClientesKpi = (req, res) => {
             COUNT(DISTINCT Creado_por_ID) as clientes_activos
         FROM Ordenes2
         WHERE Estado = 'Completado'
-        GROUP BY anio, mes
+        GROUP BY YEAR(FechaCreacion), MONTH(FechaCreacion)
     ),
     RankedData AS (
         SELECT
             clientes_activos,
-            ROW_NUMBER() OVER (ORDER BY Anio DESC, Mes DESC) as rn
+            ROW_NUMBER() OVER (ORDER BY anio DESC, mes DESC) as rn
         FROM MonthlyData
     )
     SELECT
