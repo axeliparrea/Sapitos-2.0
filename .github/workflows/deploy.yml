@@ -79,6 +79,9 @@ jobs:
           rm -rf dist
           npm install 
           npm run build
+          # Ensure the Staticfile is in the dist directory
+          cp Staticfile dist/
+          # Push with updated configuration for client-side routing
           cf push
 
   deploy-backend:
