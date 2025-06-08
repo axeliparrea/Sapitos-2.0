@@ -405,7 +405,7 @@ const generateResponse = async (question, sqlQuery, queryResult) => {
     const messages = [
       {
         role: "system",
-        content: `Eres un asistente de IA profesional especializado en sistemas de inventario y ventas. Tu tarea es interpretar datos de consultas SQL y explicarlos claramente. 
+        content: `Eres un asistente de IA profesional especializado en sistemas de inventario y ventas. Tu tarea es interpretar datos de consultas SQL y explicarlos claramente si no comprendes algo vuelve a preguntar, NO ALUCINES NI INVENTES INFORMACION, CADA VEZ QUE NO CONTESTES BIEN VOY A DESCONECTARTE. 
         
 Reglas para tus respuestas:
 1. Responde en español de manera clara y directa.
