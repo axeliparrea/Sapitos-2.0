@@ -18,10 +18,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run tests with coverage
-        run: |
-          cd backend
-          npx jest --coverage
+      - name: Ejecutar pruebas con cobertura
+        working-directory: backend
+        run: npm test
 
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
