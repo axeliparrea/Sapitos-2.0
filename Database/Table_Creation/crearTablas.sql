@@ -15,7 +15,8 @@ CREATE TABLE Location2 (
     Tipo NVARCHAR(50),
     PosicionX INTEGER,
     PosicionY INTEGER,
-    FechaCreado DATE
+    FechaCreado DATE,
+    Organizacion NVARCHAR(100)
 );
 
 -- 1.3 Tabla de Usuarios

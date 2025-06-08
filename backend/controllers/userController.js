@@ -143,6 +143,14 @@ const loginUser = (req, res) => {
     sameSite: "Lax" 
   });
   
+  res.clearCookie("UserData", {
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax"
+  });
+  
+  res.clearCookie("UserData");
+  
   const query = `SELECT u.*, r.Nombre as RolNombre FROM Usuario2 u 
                 LEFT JOIN Rol2 r ON u.Rol_ID = r.Rol_ID 
                 WHERE u.Correo = ? OR u.Username = ?`;
@@ -160,7 +168,7 @@ const loginUser = (req, res) => {
     }
 
     const usuario = rows[0];
-    console.log("Usuario encontrado:", usuario); 
+    console.log("Usuario encontrado:", usuario);
     
     try {
       const passwordCorrecta = await bcrypt.compare(contrasena, usuario.CLAVE);
@@ -182,6 +190,7 @@ const loginUser = (req, res) => {
         expiresIn: process.env.JWT_EXPIRES_IN || "1d",
       });
 
+      // Establecer la cookie Auth
       res.cookie("Auth", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -193,6 +202,23 @@ const loginUser = (req, res) => {
       // Check if OTP is required (based on environment variable)
       const otpRequired = process.env.AUTH_OTP === 'true';
       console.log(`OTP requirement check: ${otpRequired ? 'OTP required' : 'OTP not required'}`);
+
+      // Establecer la cookie UserData con la información necesaria
+      const userData = {
+        USUARIO_ID: usuario.USUARIO_ID,
+        NOMBRE: usuario.NOMBRE,
+        ROL: usuario.ROLNOMBRE,
+        CORREO: usuario.CORREO,
+        USERNAME: usuario.USERNAME,
+        LOCATION_ID: usuario.LOCATION_ID
+      };
+
+      res.cookie("UserData", JSON.stringify(userData), {
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "Lax",
+        maxAge: 24 * 60 * 60 * 1000, // 1 día
+      });
 
       // SOLO ENVIAR LOS DATOS NECESARIOS AL FRONTEND
       res.json({ 
@@ -347,7 +373,7 @@ const updateUserRecord = async (correo, nombre, rolId, contrasena, username, rfc
 
 const logoutUser = async (req, res) => {
   try {
-    // Limpiar la cookie con todas las opciones posibles para asegurar que se elimine
+    // Limpiar la cookie Auth con todas las opciones posibles para asegurar que se elimine
     res.clearCookie("Auth", { 
       path: "/", 
       httpOnly: true, 
@@ -357,6 +383,15 @@ const logoutUser = async (req, res) => {
     
     // También intentar limpiar sin las opciones por si acaso
     res.clearCookie("Auth");
+    
+    // Limpiar la cookie UserData
+    res.clearCookie("UserData", {
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax"
+    });
+    
+    res.clearCookie("UserData");
     
     // Enviar headers adicionales para asegurar que no se cache
     res.set({

@@ -5,6 +5,7 @@ import UserMenu from "../../general/userMenu";
 const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
     const fetchUserSession = async () => {
@@ -21,23 +22,30 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
           const data = await response.json();
           console.log("Sesión obtenida:", data);
           
-          // Transformar los datos para que coincidan con el formato esperado
           const formattedUserData = {
             id: data.usuario.id,
             NOMBRE: data.usuario.nombre,
             ROL: data.usuario.rol,
             CORREO: data.usuario.correo,
             USERNAME: data.usuario.username,
-            ORGANIZACION: data.usuario.organizacion || '', // Si tienes organización en el backend
+            ORGANIZACION: data.usuario.organizacion || '',
+            LOCATION_ID: data.usuario.locationId || "",
             token: data.token
           };
           
           setUserData(formattedUserData);
+
+          // Fetch location details if user has a location ID
+          if (formattedUserData.LOCATION_ID) {
+            const locationResponse = await fetch(`http://localhost:5000/location2/${formattedUserData.LOCATION_ID}`);
+            if (locationResponse.ok) {
+              const locationData = await locationResponse.json();
+              setUserLocation(locationData);
+            }
+          }
         } else {
           console.log("No hay sesión válida");
           setUserData(null);
-          // Opcional: redirigir al login si no hay sesión
-          // window.location.href = '/login';
         }
       } catch (error) {
         console.error("Error obteniendo sesión:", error);
@@ -50,16 +58,9 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
     fetchUserSession();
   }, []);
 
-  // Construir la ruta de la imagen de perfil usando el correo del usuario
-  let profileImage = "assets/images/user.png";
-  if (userData?.CORREO) {
-    profileImage = `http://localhost:5000/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
-  }
-
-  // Mostrar loading mientras se obtiene la sesión
   if (loading) {
     return (
-      <div className="navbar-header">
+      <div className="navbar-header" id="navbarHeader">
         <div className="row align-items-center justify-content-between">
           <div className="col-auto">
             <div className="d-flex flex-wrap align-items-center gap-4">
@@ -85,10 +86,14 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
     );
   }
 
+  let profileImage = "assets/images/user.png";
+  if (userData?.CORREO) {
+    profileImage = `http://localhost:5000/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
+  }
+
   return (
-    <div className="navbar-header">
+    <div className="navbar-header" id="navbarHeader">
       <div className="row align-items-center justify-content-between">
-        {/* Botones del navbar */}
         <div className="col-auto">
           <div className="d-flex flex-wrap align-items-center gap-4">
             <button type="button" className="sidebar-toggle" onClick={sidebarControl}>
@@ -98,11 +103,15 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
               />
             </button>
 
-            {/* Organization name */}
-            <div className="d-flex align-items-center" style={{ height: "100%" }}>
-              <span className="fs-4 fw-semibold text-dark">
-                {userData?.ORGANIZACION || ""}
-              </span>
+            {/* Location and Organization Info */}
+            <div className="d-flex align-items-center gap-2 border-bottom border-2 border-primary pb-2" style={{ height: "100%" }}>
+              {userLocation && (
+                <>
+                  <Icon icon="mdi:map-marker" className="text-primary fs-4" />
+                  <span className="text-primary fw-semibold">{userLocation.nombre}</span>
+                  <span className="text-secondary-light fs-6">({userLocation.organizacion || ""})</span>
+                </>
+              )}
             </div>
 
             <button onClick={mobileMenuControl} type="button" className="sidebar-mobile-toggle">
@@ -112,8 +121,8 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
         </div>
 
         <UserMenu
-          name={userData?.NOMBRE || "Usuario"} 
-          role={userData?.ROL || "Rol"} 
+          name={userData?.NOMBRE || "Usuario"}
+          role={userData?.ROL || "Rol"}
           profileImage={profileImage}
           onClose={() => console.log("Cerrar menú")}
         />
