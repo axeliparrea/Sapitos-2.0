@@ -5,6 +5,7 @@ import getCookie from "../../../utils/cookies";
 
 const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   const [userData, setUserData] = useState(null);
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     const cookieData = getCookie("UserData");

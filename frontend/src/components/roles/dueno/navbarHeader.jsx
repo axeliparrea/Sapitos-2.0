@@ -5,6 +5,7 @@ import getCookie from "../../../utils/cookies";
 
 const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   const [userData, setUserData] = useState(null);
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     const cookieData = getCookie("UserData");
@@ -23,7 +24,7 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   // Construir la ruta de la imagen de perfil usando el correo del usuario
   let profileImage = "assets/images/user.png";
   if (userData?.CORREO) {
-    profileImage = `http://localhost:5000/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
+    profileImage = `${API_BASE_URL}/users/${encodeURIComponent(userData.CORREO)}/profileImage`;
   }
 
   return (

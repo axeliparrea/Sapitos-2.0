@@ -10,6 +10,11 @@ const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterOptions, setFilterOptions] = useState({
+    categorias: [],
+    locations: [],
+    temporadas: []
+  });
   const itemsPerPage = 15;
   const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   

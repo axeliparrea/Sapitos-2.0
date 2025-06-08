@@ -18,23 +18,23 @@ const UsersListLayer = () => {
   const navigate = useNavigate(); 
 
   useEffect(() => {
-    fetchUsuarios();
+    fetchAllData();
   }, []);
 
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const usuariosResponse = await axios.get('http://localhost:5000/users/getUsers', {
+      const usuariosResponse = await axios.get(`${API_BASE_URL}/users/getUsers`, {
         withCredentials: true
       });
 
-      const rolesResponse = await axios.get('http://localhost:5000/rol/getRoles');
+      const rolesResponse = await axios.get(`${API_BASE_URL}/rol/getRoles`);
       const rolesMap = {};
       rolesResponse.data.forEach((r) => {
         rolesMap[r.ROL_ID?.toString()] = r.NOMBRE;
       });
 
-      const locationsResponse = await axios.get('http://localhost:5000/location2');
+      const locationsResponse = await axios.get(`${API_BASE_URL}/location2`);
       const locationsMap = {};
       locationsResponse.data.forEach((l) => {
         locationsMap[l.LOCATION_ID?.toString()] = l.NOMBRE;
@@ -66,10 +66,6 @@ const UsersListLayer = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
-
   const eliminarUsuario = async (correo) => {
     try {
       const result = await Swal.fire({
@@ -94,7 +90,7 @@ const UsersListLayer = () => {
       });
 
       if (result.isConfirmed) {
-        await axios.delete('http://localhost:5000/users/deleteUser', { data: { correo } });
+        await axios.delete(`${API_BASE_URL}/users/deleteUser`, { data: { correo } });
         notify("Usuario eliminado exitosamente", NotificationType.SUCCESS);
         fetchAllData();
       }

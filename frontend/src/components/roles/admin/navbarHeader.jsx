@@ -5,11 +5,12 @@ import UserMenu from "../../general/userMenu";
 const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     const fetchUserSession = async () => {
       try {
-        const response = await fetch("http://localhost:5000/users/getSession", {
+        const response = await fetch(`${API_BASE_URL}/users/getSession`, {
           method: "GET",
           credentials: "include",
           headers: {
@@ -45,7 +46,7 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
     };
 
     fetchUserSession();
-  }, []);
+  }, [API_BASE_URL]);
 
   if (loading) {
     return (
