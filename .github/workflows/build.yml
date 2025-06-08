@@ -20,7 +20,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          cd frontend
+          cd backend
           npx jest --coverage
 
       - name: Run SonarQube Scan
