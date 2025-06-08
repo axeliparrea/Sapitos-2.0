@@ -18,6 +18,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Instalar dependencias del backend
+        run: |
+          cd backend
+          npm install
+
       - name: Ejecutar pruebas con cobertura
         working-directory: backend
         run: npm test
