@@ -79,10 +79,19 @@ jobs:
           rm -rf dist
           npm install 
           npm run build
-          # Ensure the Staticfile is in the dist directory
+          # Copy Staticfile to dist directory
           cp Staticfile dist/
-          # Try to push as new app first, if it fails try updating
-          cf push || cf push -f manifest.yml
+          # Change to dist directory and create a simple manifest
+          cd dist
+          echo "applications:" > manifest.yml
+          echo "  - name: sapitos-frontend" >> manifest.yml
+          echo "    memory: 64M" >> manifest.yml
+          echo "    buildpacks:" >> manifest.yml
+          echo "      - staticfile_buildpack" >> manifest.yml
+          echo "    routes:" >> manifest.yml
+          echo "      - route: sapitos-frontend.cfapps.us10-001.hana.ondemand.com" >> manifest.yml
+          # Push directly from dist directory
+          cf push -f manifest.yml
 
   deploy-backend:
     name: Deploy Backend
