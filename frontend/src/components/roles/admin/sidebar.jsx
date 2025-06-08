@@ -51,6 +51,7 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
             <SidebarButton to='/pedidos' icon='hugeicons:invoice-03' label='Pedidos' />
             <SidebarButton to='/modelo-prediccion' icon='carbon:machine-learning-model' label='Modelo IA' />
             <SidebarButton to='/notificaciones' icon='mdi:bell-outline' label='Notificaciones' />
+            <SidebarButton to='/asistente-ia' icon='simple-icons:openai' label='Asistente IA' />
         </ul>
       </div>
     </aside>

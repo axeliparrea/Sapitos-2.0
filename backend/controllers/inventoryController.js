@@ -1,5 +1,6 @@
 const { connection } = require("../config/db");
 const jwt = require("jsonwebtoken");
+const { generarNotificacion } = require("./alertaController"); // Importar la función de notificaciones
 
 const getInventory = async (req, res) => {
   try {
@@ -221,80 +222,144 @@ const getInventoryById = async (req, res) => {
 
 const updateInventory = async (req, res) => {
   const id = req.params.id;
-  const { 
-    stockActual, 
-    stockMinimo, 
+  const {
+    stockActual,
+    stockMinimo,
     stockRecomendado,
     stockSeguridad,
-    importacion,
-    exportacion,
     margenGanancia,
     tiempoReposicion,
     demandaPromedio
   } = req.body;
 
   try {
-    // Verificar si el inventario existe
-    const checkQuery = `SELECT Inventario_ID FROM Inventario2 WHERE Inventario_ID = ?`;
+    // Verificar que el inventario exista y obtener datos actuales
+    const getInventoryQuery = `
+      SELECT 
+        i.*, 
+        a.Nombre AS ArticuloNombre, 
+        l.Nombre AS LocationNombre 
+      FROM Inventario2 i
+      INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+      INNER JOIN Location2 l ON i.Location_ID = l.Location_ID
+      WHERE i.Inventario_ID = ?
+    `;
     
-    connection.exec(checkQuery, [id], (err, result) => {
-      if (err) {
-        console.error("Error al verificar el inventario:", err);
-        return res.status(500).json({ error: "Error al verificar el inventario" });
-      }
-
-      if (result.length === 0) {
-        return res.status(404).json({ error: "Inventario no encontrado" });
-      }
-
-      // Construir la consulta de actualización
-      const updateQuery = `
-        UPDATE Inventario2
-        SET 
-          StockActual = ?,
-          StockMinimo = ?,
-          StockRecomendado = ?,
-          StockSeguridad = ?,
-          Importacion = ?,
-          Exportacion = ?,
-          MargenGanancia = ?,
-          TiempoReposicion = ?,
-          DemandaPromedio = ?
-        WHERE Inventario_ID = ?
-      `;
-
-      const params = [
-        stockActual,
-        stockMinimo,
-        stockRecomendado,
-        stockSeguridad,
-        importacion,
-        exportacion,
-        margenGanancia,
-        tiempoReposicion,
-        demandaPromedio,
-        id
-      ];
-
-      connection.prepare(updateQuery, (err, statement) => {
+    const inventoryResult = await new Promise((resolve, reject) => {
+      connection.exec(getInventoryQuery, [id], (err, result) => {
         if (err) {
-          console.error("Error al preparar la consulta de actualización:", err);
-          return res.status(500).json({ error: "Error al preparar la consulta" });
+          console.error("Error al verificar inventario:", err);
+          reject(err);
+          return;
         }
-
-        statement.execute(params, (err, result) => {
-          if (err) {
-            console.error("Error al ejecutar la consulta de actualización:", err);
-            return res.status(500).json({ error: "Error al actualizar inventario" });
-          }
-
-          res.status(200).json({ message: "Inventario actualizado exitosamente" });
-        });
+        resolve(result);
       });
     });
+
+    if (!inventoryResult || inventoryResult.length === 0) {
+      return res.status(404).json({ error: "Inventario no encontrado" });
+    }
+
+    const inventarioActual = inventoryResult[0];
+
+    // Construir la consulta de actualización
+    let updateQuery = "UPDATE Inventario2 SET ";
+    let updateParams = [];
+    let updateFields = [];
+
+    if (stockActual !== undefined) {
+      updateFields.push("StockActual = ?");
+      updateParams.push(stockActual);
+    }
+
+    if (stockMinimo !== undefined) {
+      updateFields.push("StockMinimo = ?");
+      updateParams.push(stockMinimo);
+    }
+
+    if (stockRecomendado !== undefined) {
+      updateFields.push("StockRecomendado = ?");
+      updateParams.push(stockRecomendado);
+    }
+
+    if (stockSeguridad !== undefined) {
+      updateFields.push("StockSeguridad = ?");
+      updateParams.push(stockSeguridad);
+    }
+
+    if (margenGanancia !== undefined) {
+      updateFields.push("MargenGanancia = ?");
+      updateParams.push(margenGanancia);
+    }
+
+    if (tiempoReposicion !== undefined) {
+      updateFields.push("TiempoReposicion = ?");
+      updateParams.push(tiempoReposicion);
+    }
+
+    if (demandaPromedio !== undefined) {
+      updateFields.push("DemandaPromedio = ?");
+      updateParams.push(demandaPromedio);
+    }
+
+    // Si no hay campos para actualizar, retornar error
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: "No se especificaron campos para actualizar" });
+    }
+
+    updateQuery += updateFields.join(", ") + " WHERE Inventario_ID = ?";
+    updateParams.push(id);
+
+    // Ejecutar la actualización
+    await new Promise((resolve, reject) => {
+      connection.exec(updateQuery, updateParams, (err, result) => {
+        if (err) {
+          console.error("Error al actualizar inventario:", err);
+          reject(err);
+          return;
+        }
+        resolve(result);
+      });
+    });
+
+    // Verificar si se actualizó el stock y comprobar si está por debajo del mínimo
+    if (stockActual !== undefined) {
+      const stockMinimoActual = stockMinimo !== undefined ? stockMinimo : inventarioActual.STOCKMINIMO;
+      
+      // Si el stock actual está por debajo del mínimo, generar una notificación
+      if (stockActual < stockMinimoActual) {
+        try {
+          // Calcular cuántos días tardará en agotarse el inventario basado en demanda promedio
+          const demandaActual = demandaPromedio !== undefined ? demandaPromedio : inventarioActual.DEMANDAPROMEDIO;
+          let diasHastaAgotarse = '?';
+          
+          if (demandaActual && demandaActual > 0) {
+            diasHastaAgotarse = (stockActual / demandaActual).toFixed(1);
+          }
+          
+          // Calcular unidades a pedir (normalmente sería hasta llegar al stock recomendado)
+          const stockRecomendadoActual = stockRecomendado !== undefined ? stockRecomendado : inventarioActual.STOCKRECOMENDADO;
+          const unidadesAPedir = Math.max(0, stockRecomendadoActual - stockActual);
+          
+          await generarNotificacion(
+            `Artículo ${inventarioActual.ARTICULONOMBRE} en ${inventarioActual.LOCATIONNOMBRE} tiene stock bajo (${stockActual}/${stockMinimoActual}). Se agotará en ${diasHastaAgotarse} días. Pedir ${unidadesAPedir} unidades.`,
+            `Reabastecimiento necesario`,
+            'danger',
+            inventarioActual.LOCATION_ID
+          );
+          
+          console.log(`Notificación generada para stock bajo del artículo ${inventarioActual.ARTICULONOMBRE}`);
+        } catch (notifError) {
+          // No bloqueamos la actualización del inventario si falla la notificación
+          console.error("Error al generar notificación de stock bajo:", notifError);
+        }
+      }
+    }
+
+    res.json({ message: "Inventario actualizado exitosamente" });
   } catch (error) {
-    console.error("Error general:", error);
-    res.status(500).json({ error: "Error del servidor" });
+    console.error("Error general al actualizar inventario:", error);
+    res.status(500).json({ error: "Error al actualizar el inventario", detalle: error.message });
   }
 };
 

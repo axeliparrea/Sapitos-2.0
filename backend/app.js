@@ -14,6 +14,8 @@ const locationRoutes = require("./routes/location"); // al inicio
 const mlRoutes = require("./routes/ml");
 const articuloRoutes = require("./routes/articulo");
 const otpRoutes = require("./routes/otp"); // Added OTP routes
+const alertasRoutes = require("./routes/alertas"); // Added Alertas routes
+const aiRoutes = require("./Ai_OpenAI/aiRoutes");
 
 const app = express();
 
@@ -30,10 +32,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(cors(corsOptions));
 
-// OTP routes - No auth required
-app.use("/api/otp", otpRoutes); // Using explicit /api/otp prefix for OTP routes
-
-// Settings routes - No auth required
+// OTP routes
+app.use("/api/otp", otpRoutes); 
 const settingsRoutes = require("./routes/settings");
 app.use("/api/settings", settingsRoutes);
 
@@ -53,7 +53,10 @@ app.use("/inventory", inventoryRoutes);
 app.use("/rol", rolRoutes);
 
 // locations routes
-app.use("/location2", locationRoutes); // junto a tus otras rutas
+app.use("/location2", locationRoutes); 
+
+// alertas routes
+app.use("/alertas", alertasRoutes);
 
 // articulo routes
 app.use("/articulo", articuloRoutes);
@@ -66,5 +69,8 @@ app.use("/proveedor", pedidosProveedorRoutes);
 app.use("/proveedores", pedidoRoutes);
 app.use("/pedidosH", pedidosHRoutes);
 app.use("/proveedor", pedidosProveedorRoutes);
+
+// rutas para el asistente de IA (ahora OpenAI)
+app.use("/api/ai", aiRoutes);
 
 module.exports = app;

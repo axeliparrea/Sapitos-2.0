@@ -48,6 +48,7 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
             <SidebarButton to='/ordenes-proveedores' label='Ordenes Proveedores'/>
             <SidebarButton to='/ordenes-clientes' label='Ordenes Clientes' />
             <SidebarButton to='/recomendaciones-IA' label='Recomendaciones IA' />
+            <SidebarButton to='/asistente-ia' icon='simple-icons:openai' label='Asistente IA' />
         </ul>
       </div>
     </aside>
