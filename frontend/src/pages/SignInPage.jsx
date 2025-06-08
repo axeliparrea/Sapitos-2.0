@@ -150,10 +150,15 @@ const SignInPage = () => {
         // Redirect to OTP page instead of showing a modal
         navigate('/otp');
       } else {
-        // Redirect if OTP is not required
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 100);
+        // Redirect immediately without setTimeout to prevent flashing
+        console.log("Login successful, redirecting to dashboard");
+        
+        // Set a flag in sessionStorage to indicate we're completing login
+        // This helps avoid redirect loops
+        sessionStorage.setItem('loginInProgress', 'true');
+        
+        // Navigate immediately
+        navigate('/dashboard', { replace: true });
       }
       
     } catch (error) {

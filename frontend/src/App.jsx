@@ -47,15 +47,29 @@ const App = () => {
   const [role, setRole] = useState(null); // Initially null
   const [loading, setLoading] = useState(true); // Loading state
   const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
 
   useEffect(() => {
     const fetchSession = async () => {
       try {
+        console.log("Fetching session data...");
         const cookieResponse = await fetch(`${API_BASE_URL}/users/getSession`, {
           credentials: "include",
         });
 
         if (!cookieResponse.ok) {
+          console.log(`Session check failed with status: ${cookieResponse.status}`);
+          
+          // If we haven't exceeded the retry limit, try again
+          if (retryCount < maxRetries) {
+            console.log(`Retrying session check (${retryCount + 1}/${maxRetries})...`);
+            setRetryCount(prev => prev + 1);
+            // Wait a bit longer between retries
+            setTimeout(() => setLoading(true), 1000);
+            return;
+          }
+          
           setLoading(false);
           return; // No token found, stop execution
         }
@@ -65,34 +79,56 @@ const App = () => {
 
         // Check if we have user data with role
         if (data.usuario && data.usuario.rol) {
+          console.log(`Setting role from usuario object: ${data.usuario.rol}`);
           setRole(data.usuario.rol);
         } else if (data.token) {
           // Decode token as fallback
-          const decoded = jwtDecode(data.token);
-          console.log("Decoded JWT:", decoded);
-          setRole(decoded.rol || decoded.ROL);
+          try {
+            const decoded = jwtDecode(data.token);
+            console.log("Decoded JWT:", decoded);
+            const userRole = decoded.rol || decoded.ROL;
+            console.log(`Setting role from JWT: ${userRole}`);
+            setRole(userRole);
+          } catch (decodeError) {
+            console.error("Error decoding JWT:", decodeError);
+            setRole(null);
+          }
+        } else {
+          console.log("No role information found in session");
+          setRole(null);
         }
       } catch (error) {
         console.error("Error fetching session:", error);
+        setRole(null);
       }
       setLoading(false);
     };
 
-    fetchSession();
-  }, []);
+    if (loading) {
+      fetchSession();
+    }
+  }, [loading, retryCount]);
 
   // Show a loading indicator while waiting for the role
   if (loading) {
-    console.log("Loading...");
-    return <div>Loading...</div>;
+    console.log("Loading app state...");
+    return (
+      <div className="loading-screen">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+        <p className="mt-3">Iniciando aplicación...</p>
+      </div>
+    );
   }
+
   return (
     <>
       <BrowserRouter>
         <AuthHandler>
           <Routes>
             <Route path="/" element={<SignInPage />} />
-          <Route path="/otp" element={<OtpPage />} />
+            <Route path="/otp" element={<OtpPage />} />
             <Route
               path="/dashboard"
               element={

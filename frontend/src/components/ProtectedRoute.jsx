@@ -42,6 +42,19 @@ const ProtectedRoute = ({ children, allowedRoles = [], requireOtp = true }) => {
     // Wait until OTP settings are loaded
     if (otpSettings === null) return;
     
+    // Check if we're in the middle of a login process
+    const loginInProgress = sessionStorage.getItem('loginInProgress') === 'true';
+    
+    // If login is in progress, we'll consider the user authorized for this transition
+    // This prevents redirects during the login -> dashboard transition
+    if (loginInProgress) {
+      console.log("Login in progress, bypassing auth check for smooth transition");
+      sessionStorage.removeItem('loginInProgress');
+      setIsAuthorized(true);
+      setIsLoading(false);
+      return;
+    }
+    
     const checkAuth = async () => {
       try {
         // Get session from server
@@ -113,7 +126,16 @@ const ProtectedRoute = ({ children, allowedRoles = [], requireOtp = true }) => {
   }, [allowedRoles, requireOtp, location.pathname, otpSettings, API_BASE_URL]);
 
   if (isLoading) {
-    return <div className="loading">Verificando autenticación...</div>;
+    return (
+      <div className="loading-container d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Verificando autenticación...</span>
+          </div>
+          <p className="mt-3">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthorized && redirectTo) {

@@ -21,19 +21,37 @@ const AuthHandler = ({ children }) => {
       return;
     }
 
+    // Also skip if login is in progress (from sessionStorage flag)
+    const loginInProgress = sessionStorage.getItem('loginInProgress') === 'true';
+    if (loginInProgress) {
+      console.log("Login in progress, skipping auth check in AuthHandler");
+      setIsChecking(false);
+      return;
+    }
+
     // Check if user has a valid session
     const checkSession = async () => {
       try {
-        await fetch(`${API_BASE_URL}/users/getSession`, {
+        const response = await fetch(`${API_BASE_URL}/users/getSession`, {
           credentials: "include",
         });
+        
+        if (!response.ok) {
+          throw new Error("Session check failed");
+        }
         
         // Session exists, continue
         setIsChecking(false);
       } catch (error) {
         // No valid session, redirect to login
         console.error("No valid session found:", error);
-        navigate('/');
+        
+        // Don't redirect if already on login page
+        if (location.pathname !== '/') {
+          navigate('/', { replace: true });
+        } else {
+          setIsChecking(false);
+        }
       }
     };
 
@@ -72,12 +90,12 @@ const AuthHandler = ({ children }) => {
                     sessionStorage.setItem('returnUrl', location.pathname);
                   }
                   // Redirect to OTP page
-                  navigate('/otp');
+                  navigate('/otp', { replace: true });
                 })
                 .catch(err => console.error("Error generating OTP:", err));
               } catch (e) {
                 console.error("Failed to generate OTP:", e);
-                navigate('/otp');
+                navigate('/otp', { replace: true });
               }
             }
             
@@ -86,7 +104,7 @@ const AuthHandler = ({ children }) => {
           } else if (message === 'Unauthorized' || message === 'Invalid token') {
             // Handle general authentication issues
             console.log('Authentication required, redirecting to login page');
-            navigate('/');
+            navigate('/', { replace: true });
             return new Promise(() => {});
           }
         }
@@ -102,9 +120,22 @@ const AuthHandler = ({ children }) => {
     return () => {
       axios.interceptors.response.eject(interceptor);
     };
-  }, [navigate]);
+  }, [navigate, location.pathname, API_BASE_URL]);
   
-  return isChecking ? <div>Checking authentication...</div> : children;
+  if (isChecking) {
+    return (
+      <div className="auth-check-loading d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Verificando autenticación...</span>
+          </div>
+          <p className="mt-3">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
 };
 
 export default AuthHandler;
