@@ -9,6 +9,7 @@ import getCookie from "../utils/cookies";
 const DashBoardLayerOne = () => {
   const [userData, setUserData] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [inventoryData, setInventoryData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,6 +36,21 @@ const DashBoardLayerOne = () => {
               const locationData = await locationResponse.json();
               console.log("Location data received:", locationData);
               setUserLocation(locationData);
+
+              // Fetch inventory data for the location
+              const inventoryResponse = await fetch(`http://localhost:5000/api/inventory/location/${parsedData.LOCATION_ID}`, {
+                credentials: 'include'
+              });
+              console.log("Inventory response status:", inventoryResponse.status);
+
+              if (inventoryResponse.ok) {
+                const inventoryData = await inventoryResponse.json();
+                console.log("Inventory data received:", inventoryData);
+                setInventoryData(inventoryData);
+              } else {
+                const errorText = await inventoryResponse.text();
+                console.error("Error fetching inventory:", errorText);
+              }
             } else {
               const errorText = await locationResponse.text();
               console.error("Error fetching location:", errorText);
@@ -84,14 +100,14 @@ const DashBoardLayerOne = () => {
       </div>
 
       {/* UnitCountOne */}
-      <UnitCountOne />
+      <UnitCountOne inventoryData={inventoryData} />
 
       <section className='row gy-4 mt-1'>
         {/* SalesStatisticOne */}
-        <SalesStatisticOne />
+        <SalesStatisticOne inventoryData={inventoryData} />
 
         {/* RiskProductsOne */}
-        <RiskProductsOne />
+        <RiskProductsOne inventoryData={inventoryData} loading={loading} error={!inventoryData && !loading ? "No se pudo cargar la información de inventario." : null} />
 
       </section>
     </>

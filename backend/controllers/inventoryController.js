@@ -25,8 +25,7 @@ const getInventory = async (req, res) => {
         l.Tipo AS LocationTipo
       FROM Inventario2 i
       INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
-      INNER JOIN Location2 l ON i.Location_ID = l.Location_ID
-      WHERE l.Tipo = 'Oficina'  -- si lo ocupamos ponemos la ubicacion que nos interesa
+      INNER JOIN Location2 l ON i.Location_ID = l.Location_ID;
     `;
 
     connection.exec(query, [], async (err, result) => {

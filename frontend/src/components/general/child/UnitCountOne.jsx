@@ -1,6 +1,11 @@
 import { Icon } from "@iconify/react";
+import PropTypes from 'prop-types';
 
-const UnitCountOne = () => {
+const UnitCountOne = ({ inventoryData }) => {
+  const totalVentas = inventoryData ? inventoryData.reduce((acc, item) => acc + (item.PRECIOVENTA * item.EXPORTACION), 0) : 0;
+  const totalOrdenes = inventoryData ? inventoryData.reduce((acc, item) => acc + item.EXPORTACION, 0) : 0;
+  const productosVendidos = inventoryData ? inventoryData.filter(item => item.EXPORTACION > 0).length : 0;
+
   return (
     <div className='row row-cols-xxxl-6 row-cols-xl-5 row-cols-lg-4 row-cols-md-3 row-cols-sm-2 row-cols-1 gy-4'>
       <div className='col' style={{ maxWidth: "260px" }}>
@@ -9,7 +14,7 @@ const UnitCountOne = () => {
             <div className='d-flex flex-wrap align-items-center justify-content-between gap-2'>
               <div>
                 <p className='fw-medium text-primary-light mb-1'>Ventas Totales</p>
-                <h6 className='mb-0'>$1k</h6>
+                <h6 className='mb-0'>${totalVentas.toLocaleString()}</h6>
               </div>
               <div className='w-40-px h-40-px bg-cyan rounded-circle d-flex justify-content-center align-items-center'>
                 <Icon icon='gridicons:multiple-users' className='text-white text-xl mb-0' />
@@ -30,8 +35,8 @@ const UnitCountOne = () => {
           <div className='card-body p-3'>
             <div className='d-flex flex-wrap align-items-center justify-content-between gap-2'>
               <div>
-                <p className='fw-medium text-primary-light mb-1'>Orden Total</p>
-                <h6 className='mb-0'>300</h6>
+                <p className='fw-medium text-primary-light mb-1'>Unidades Totales</p>
+                <h6 className='mb-0'>{totalOrdenes}</h6>
               </div>
               <div className='w-40-px h-40-px bg-purple rounded-circle d-flex justify-content-center align-items-center'>
                 <Icon icon='fa-solid:award' className='text-white text-xl mb-0' />
@@ -52,8 +57,8 @@ const UnitCountOne = () => {
           <div className='card-body p-3'>
             <div className='d-flex flex-wrap align-items-center justify-content-between gap-2'>
               <div>
-                <p className='fw-medium text-primary-light mb-1'>Producto Vendido</p>
-                <h6 className='mb-0'>5</h6>
+                <p className='fw-medium text-primary-light mb-1'>Artículos Vendidos</p>
+                <h6 className='mb-0'>{productosVendidos}</h6>
               </div>
               <div className='w-40-px h-40-px bg-info rounded-circle d-flex justify-content-center align-items-center'>
                 <Icon icon='fluent:people-20-filled' className='text-white text-xl mb-0' />
@@ -92,6 +97,10 @@ const UnitCountOne = () => {
       </div>
     </div>
   );
+};
+
+UnitCountOne.propTypes = {
+  inventoryData: PropTypes.array
 };
 
 export default UnitCountOne;
