@@ -12,7 +12,7 @@ const UsersListLayer = () => {
   const [paginaActual, setPaginaActual] = useState(1);
   const usuariosPorPagina = 10;
   const [loading, setLoading] = useState(false);
-  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
 
   const navigate = useNavigate(); 

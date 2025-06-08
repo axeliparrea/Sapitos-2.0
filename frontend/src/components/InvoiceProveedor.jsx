@@ -10,7 +10,7 @@ const InvoiceProveedor = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPedido, setSelectedPedido] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     fetchPedidos();

@@ -6,7 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 const EditUserLayer = () => {
   const { userId } = useParams();
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
-  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   const [usuario, setUsuario] = useState({
     nombre: "",

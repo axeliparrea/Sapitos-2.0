@@ -10,7 +10,7 @@ const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
   const itemsPerPage = 15;
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   
   // Estados del filtro 
   const [filters, setFilters] = useState({
@@ -262,7 +262,7 @@ const Inventory = () => {
                 >
                   <option value="">Todas</option>
                   {getUniqueValues('temporada').map(temp => (
-                    <option
+                    <option key={temp} value={temp}>{temp}</option>
                   ))}
                 </Form.Select>
               </Form.Group>

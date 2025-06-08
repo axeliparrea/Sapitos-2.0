@@ -7,7 +7,7 @@ import { notify, NotificationType } from "./NotificationService";
 const AddUserLayer = () => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
   const [locations, setLocations] = useState([]);
-  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   const [nuevoUsuario, setNuevoUsuario] = useState({
     nombre: "",
     correo: "",

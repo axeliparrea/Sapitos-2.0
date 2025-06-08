@@ -9,7 +9,7 @@ import { notify, NotificationType } from "./NotificationService";
 const InvoiceListLayer = () => {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   const [searchTerm, setSearchTerm] = useState("");  const [filters, setFilters] = useState({
     proveedor: '',
     estatus: '',

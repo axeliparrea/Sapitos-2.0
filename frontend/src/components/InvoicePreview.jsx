@@ -9,7 +9,7 @@ const InvoicePreview = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState({ nombre: '', rol: '', email: '' });
-  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   
   useEffect(() => {
     const fetchSession = async () => {

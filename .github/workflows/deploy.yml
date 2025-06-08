@@ -178,12 +178,25 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           BACK_PORT: ${{ secrets.BACK_PORT }}
+          AUTH_OTP_SECRET: ${{ secrets.AUTH_OTP_SECRET }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
         run: |
           cf set-env Sapitos-backend SERVER_NODE "$SERVER_NODE"
           cf set-env Sapitos-backend DB_USERNAME "$DB_USERNAME"
           cf set-env Sapitos-backend DB_PASSWORD "$DB_PASSWORD"
           cf set-env Sapitos-backend JWT_SECRET "$JWT_SECRET"
           cf set-env Sapitos-backend BACK_PORT "$BACK_PORT"
+          cf set-env Sapitos-backend AUTH_OTP "true"
+          cf set-env Sapitos-backend AUTH_OTP_SECRET "$AUTH_OTP_SECRET"
+          cf set-env Sapitos-backend EMAIL_USER "$EMAIL_USER"
+          cf set-env Sapitos-backend EMAIL_PASSWORD "$EMAIL_PASSWORD"
+          cf set-env Sapitos-backend EMAIL_HOST "$EMAIL_HOST"
+          cf set-env Sapitos-backend EMAIL_PORT "$EMAIL_PORT"
+          cf set-env Sapitos-backend EMAIL_FROM "$EMAIL_FROM"
           cf restage Sapitos-backend || true # Ensure env changes are applied
 
       - name: Deploy Backend
@@ -206,6 +219,13 @@ jobs:
                 DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
                 JWT_SECRET: ${{ secrets.JWT_SECRET }}
                 BACK_PORT: ${{ secrets.BACK_PORT }}
+                AUTH_OTP: true
+                AUTH_OTP_SECRET: ${{ secrets.AUTH_OTP_SECRET }}
+                EMAIL_USER: ${{ secrets.EMAIL_USER }}
+                EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+                EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+                EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+                EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EOL
           # Push with manifest which includes environment variables
           cf push --no-start

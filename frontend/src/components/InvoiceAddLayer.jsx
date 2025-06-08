@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
 const useUserSession = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
-  const API_BASE_URL = "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -146,25 +146,29 @@ const InvoiceAddLayer = () => {
         setIsSubmitting(true);
         setError(null);
 
-      try {
-        const response = await axios.post(`${API_BASE_URL}/pedido`, pedidoData);
-        
-        if (response.data?.ordenId) {
-          setPedidoID(response.data.ordenId);
-          setPedidoEnviado(true);
-          notify("¡Pedido creado exitosamente!", NotificationType.SUCCESS);
-          setTimeout(() => navigate("/pedidos"), 2500);
-        } else {
-          throw new Error("No se recibió el ID del pedido");
+        try {
+          const response = await axios.post(`${API_BASE_URL}/pedido`, pedidoData);
+          
+          if (response.data?.ordenId) {
+            setPedidoID(response.data.ordenId);
+            setPedidoEnviado(true);
+            notify("¡Pedido creado exitosamente!", NotificationType.SUCCESS);
+            setTimeout(() => navigate("/pedidos"), 2500);
+          } else {
+            throw new Error("No se recibió el ID del pedido");
+          }
+        } catch (err) {
+          console.error("Error al enviar pedido:", err);
+          const errorMsg = err.response?.data?.error || err.message;
+          setError(errorMsg);
+          notify(errorMsg, NotificationType.ERROR);
+        } finally {
+          setIsSubmitting(false);
         }
       }
     } catch (err) {
-      console.error("Error al enviar pedido:", err);
-      const errorMsg = err.response?.data?.error || err.message;
-      setError(errorMsg);
-      notify(errorMsg, NotificationType.ERROR);
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error al mostrar confirmación:", err);
+      setError("Error al procesar la solicitud");
     }
   };
 
