@@ -149,8 +149,12 @@ router.post("/login", loginUser);
  *         description: Error del servidor
  */
 
+<<<<<<< HEAD
 // router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
 router.get('/getUsers', auth(), requireOtpVerification, getUsers); // Apply middleware to enforce OTP verification
+=======
+router.get("/getUsers", getUsers);
+>>>>>>> d328b36b6c65b3c5f1f154263fa00e4142884745
 
 /**
  * @swagger
@@ -206,7 +210,7 @@ router.post("/logoutUser", logoutUser);
  *       500:
  *         description: Server error
  */
-//router.delete("/deleteUser", auth(["admin"]), deleteUser);
+
 router.delete("/deleteUser", deleteUser);
 
 /**
