@@ -70,7 +70,7 @@ const SalesStatisticOne = () => {
   const totalGeneral = totales.reduce((acc, val) => acc + val, 0);
 
   return (
-    <div className='col-xxl-6 col-xl-12'>
+    <div className='col-xxl-6 col-xl-6'>
       <div className='card h-100'>
         <div className='card-body'>
           <div className='d-flex flex-wrap align-items-center justify-content-between'>

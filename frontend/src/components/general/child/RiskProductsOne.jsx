@@ -36,7 +36,7 @@ const RiskProductsOne = () => {
   }, []);
 
   return (
-    <div className="col-xxl-9 col-xl-12">
+    <div className="col-xxl-6 col-xl-6">
       <div className="card h-100 radius-8 border">
         <div className="card-body p-24">
           <div className="d-flex align-items-center justify-content-between mb-12">
