@@ -13,10 +13,12 @@
   "description": "",
   "dependencies": {
     "@sap/hana-client": "^2.23.27",
+    "bcryptjs": "^2.4.3",
     "child_process": "^1.0.2",
     "colors": "^1.4.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
     "express": "^4.21.2",
     "express-fileupload": "^1.5.1",
     "fs": "^0.0.1-security",
@@ -25,9 +27,7 @@
     "node-cron": "^3.0.3",
     "path": "^0.12.7",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "bcryptjs": "^2.4.3",
-    "dotenv": "^16.0.3"
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "bcryptjs": "^3.0.2",
