@@ -10,6 +10,7 @@ const AuthHandler = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   // Check if user needs OTP verification on initial load
   useEffect(() => {
@@ -23,7 +24,7 @@ const AuthHandler = ({ children }) => {
     // Check if user has a valid session
     const checkSession = async () => {
       try {
-        await fetch("http://localhost:5000/users/getSession", {
+        await fetch(`${API_BASE_URL}/users/getSession`, {
           credentials: "include",
         });
         
@@ -37,7 +38,7 @@ const AuthHandler = ({ children }) => {
     };
 
     checkSession();
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, API_BASE_URL]);
 
   useEffect(() => {
     // Set up axios interceptor for API responses
@@ -58,7 +59,7 @@ const AuthHandler = ({ children }) => {
             if (location.pathname !== '/otp') {
               // Generate OTP if possible
               try {
-                fetch("http://localhost:5000/api/otp/generate", {
+                fetch(`${API_BASE_URL}/api/otp/generate`, {
                   method: "GET",
                   credentials: "include",
                 })

@@ -12,12 +12,13 @@ const ProtectedRoute = ({ children, allowedRoles = [], requireOtp = true }) => {
   const [redirectTo, setRedirectTo] = useState(null);
   const [otpSettings, setOtpSettings] = useState(null);
   const location = useLocation();
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     // First, fetch OTP settings from the server
     const fetchOtpSettings = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/settings/otp", {
+        const response = await fetch(`${API_BASE_URL}/api/settings/otp`, {
           credentials: "include",
         });
         
@@ -35,7 +36,7 @@ const ProtectedRoute = ({ children, allowedRoles = [], requireOtp = true }) => {
     };
 
     fetchOtpSettings();
-  }, []);
+  }, [API_BASE_URL]);
 
   useEffect(() => {
     // Wait until OTP settings are loaded
@@ -44,7 +45,7 @@ const ProtectedRoute = ({ children, allowedRoles = [], requireOtp = true }) => {
     const checkAuth = async () => {
       try {
         // Get session from server
-        const cookieResponse = await fetch("http://localhost:5000/users/getSession", {
+        const cookieResponse = await fetch(`${API_BASE_URL}/users/getSession`, {
           credentials: "include",
         });
 
@@ -109,7 +110,7 @@ const ProtectedRoute = ({ children, allowedRoles = [], requireOtp = true }) => {
     };
 
     checkAuth();
-  }, [allowedRoles, requireOtp, location.pathname, otpSettings]);
+  }, [allowedRoles, requireOtp, location.pathname, otpSettings, API_BASE_URL]);
 
   if (isLoading) {
     return <div className="loading">Verificando autenticación...</div>;

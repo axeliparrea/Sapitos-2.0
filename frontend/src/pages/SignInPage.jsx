@@ -16,6 +16,7 @@ const SignInPage = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
   useEffect(() => {
     if (hasCheckedSession.current) return;
@@ -97,7 +98,7 @@ const SignInPage = () => {
     setErrorMessage("");
 
     try {
-      const response = await fetch("http://localhost:5000/users/login", {
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo: email, contrasena: password }),
@@ -165,7 +166,7 @@ const SignInPage = () => {
   const generateOTP = async () => {
     console.log("Iniciando generación de OTP...");
     try {
-      const response = await fetch("http://localhost:5000/api/otp/generate", {
+      const response = await fetch(`${API_BASE_URL}/api/otp/generate`, {
         method: "GET",  
         credentials: "include",
       });

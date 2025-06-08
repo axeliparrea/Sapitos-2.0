@@ -11,6 +11,7 @@ const OtpPage = () => {
   const [otpSecret, setOtpSecret] = useState("");
   const [resendDisabled, setResendDisabled] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
   
   const inputRefs = Array(6).fill(0).map(_ => useState(null)[0]);
 
@@ -81,7 +82,7 @@ const OtpPage = () => {
     setError('');
     
     try {
-      const response = await fetch("http://localhost:5000/api/otp/generate", {
+      const response = await fetch(`${API_BASE_URL}/api/otp/generate`, {
         method: "GET",
         credentials: "include",
       });
@@ -127,7 +128,7 @@ const OtpPage = () => {
     setError('');
 
     try {
-      const response = await fetch("http://localhost:5000/api/otp/verify", {
+      const response = await fetch(`${API_BASE_URL}/api/otp/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
