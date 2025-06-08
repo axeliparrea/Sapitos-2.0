@@ -90,7 +90,9 @@ const UsersListLayer = () => {
       });
 
       if (result.isConfirmed) {
-        await axios.delete(`${API_BASE_URL}/users/deleteUser`, { data: { correo } });
+        await axios.delete(`${API_BASE_URL}/users/deleteUser/${correo}`, {
+          withCredentials: true
+        });
         notify("Usuario eliminado exitosamente", NotificationType.SUCCESS);
         fetchAllData();
       }

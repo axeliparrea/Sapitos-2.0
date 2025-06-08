@@ -32,7 +32,7 @@ const InvoiceListLayer = () => {
     const fetchPedidos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:5000/pedido");
+      const response = await axios.get(`${API_BASE_URL}/pedido`);
       const data = Array.isArray(response.data) ? response.data : (response.data.formatted || response.data.pedidos || []);
       const formattedPedidos = data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),
@@ -168,7 +168,7 @@ const InvoiceListLayer = () => {
       });
   
       if (result.isConfirmed) {
-        await axios.delete(`http://localhost:5000/pedido/${pedidoId}`);
+        await axios.delete(`${API_BASE_URL}/pedido/${pedidoId}`);
         notify("Pedido eliminado exitosamente", NotificationType.SUCCESS);
         fetchPedidos();
       }

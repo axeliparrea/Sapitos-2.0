@@ -260,7 +260,7 @@ const getUsers = async (req, res) => {
 };
 
 const deleteUser = async (req, res) => {
-  const { correo } = req.body;
+  const { correo } = req.params;
   
   if (!correo) {
     return res.status(400).json({ error: "Necesitas un email" });
