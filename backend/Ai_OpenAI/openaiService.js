@@ -7,7 +7,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Información de esquema de la base de datos para proporcionar contexto al modelo (Schema completo)
+// Es para que haga respuestas mas precisas del DB NO LO BORREN NI EDITEN
 const DB_SCHEMA = `
 -- 1.1 Tabla de Roles
 Rol2 (
@@ -177,7 +177,6 @@ Alertas2 (
 -- 4. Para inventario por ubicación, relacionar Inventario2 con Location2
 `;
 
-// Ejemplos de preguntas y sus consultas SQL correspondientes
 const EXAMPLE_QUERIES = `
 Ejemplos de preguntas que puedes responder:
 
@@ -206,7 +205,6 @@ Ejemplos de preguntas que puedes responder:
    - "¿En qué ubicaciones tenemos el producto X?"
 `;
 
-// Recompensa para ejemplos exitosos para ayudar a aprender al modelo
 const EXAMPLE_REWARD_QUERIES = `
 Ejemplos de SQL exitosos para diferentes tipos de preguntas:
 
