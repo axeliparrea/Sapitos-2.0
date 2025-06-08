@@ -4,7 +4,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
 const EditUserLayer = () => {
-  // Obtendremos el ID del usuario desde los parámetros de la URL
   const { userId } = useParams();
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
   const [usuario, setUsuario] = useState({
@@ -15,53 +14,69 @@ const EditUserLayer = () => {
     rol: "",
     diasordenprom: 0,
     valorordenprom: 0,
+    locationId: null,
   });
+  const [locations, setLocations] = useState([]);
+  const [tipoSeleccionado, setTipoSeleccionado] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
-  // Efecto para cargar los datos del usuario cuando el componente se monta
+  const tipoMap = {
+    proveedor: "Proveedor",
+    oficina: "Oficina",
+    almacen: "Almacén",
+    sucursal: "Sucursal",
+  };
+
   useEffect(() => {
     const fetchUsuario = async () => {
       if (!userId) return;
-      
       try {
         setLoadingData(true);
-        // Obtener todos los usuarios y filtrar por el correo/userId
-        const response = await axios.get(`http://localhost:5000/users/getUsers`);
-        
-        // Buscar el usuario específico en la lista
-        const usuarioEncontrado = response.data.find(user => user.correo === userId);
-        
-        if (!usuarioEncontrado) {
-          throw new Error("Usuario no encontrado");
-        }
-        
-        setUsuario({
-            nombre: usuarioEncontrado.nombre || "",
-            correo: usuarioEncontrado.correo || "",
-            organizacion: usuarioEncontrado.organizacion || "",
-            contrasena: "",
-            rol: usuarioEncontrado.rol || "",
-            diasordenprom: usuarioEncontrado.diasOrdenProm || 0,
-            valorordenprom: usuarioEncontrado.valorOrdenProm || 0,
+        const response = await axios.get(`http://localhost:5000/users/getUsers`, {
+          withCredentials: true,
         });
-        
-        // Si el usuario tiene una imagen de perfil, la cargamos
+        const usuarioEncontrado = response.data.find(user => user.correo === userId);
+        if (!usuarioEncontrado) throw new Error("Usuario no encontrado");
+
+        setUsuario({
+          nombre: usuarioEncontrado.nombre || "",
+          correo: usuarioEncontrado.correo || "",
+          organizacion: usuarioEncontrado.organizacion || "",
+          contrasena: "",
+          rol: usuarioEncontrado.rol || "",
+          diasordenprom: usuarioEncontrado.diasOrdenProm || 0,
+          valorordenprom: usuarioEncontrado.valorOrdenProm || 0,
+          locationId: usuarioEncontrado.locationId || null,
+        });
+
         if (usuarioEncontrado.imagen) {
           setImagePreviewUrl(usuarioEncontrado.imagen);
         }
       } catch (error) {
         console.error("Error al cargar datos del usuario:", error);
-        setError('Error al cargar los datos del usuario: ' + (error.response?.data?.error || error.message));
+        setError("Error al cargar los datos del usuario: " + (error.response?.data?.error || error.message));
       } finally {
         setLoadingData(false);
       }
     };
 
+    const fetchLocations = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/location2", {
+          withCredentials: true,
+        });
+        setLocations(res.data);
+      } catch (err) {
+        console.error("Error al obtener locations:", err);
+      }
+    };
+
     fetchUsuario();
+    fetchLocations();
   }, [userId]);
 
   const handleImageChange = (e) => {
@@ -83,31 +98,30 @@ const EditUserLayer = () => {
     setLoading(true);
     setError(null);
     try {
-      // Preparamos los datos para la actualización
       const datosActualizacion = {
         correo: usuario.correo,
         nombre: usuario.nombre,
         organizacion: usuario.organizacion,
-        rol: usuario.rol
+        rol: usuario.rol,
+        location_id: usuario.locationId, // clave esperada por el backend
       };
 
-      // Si se proporciona una nueva contraseña, la incluimos
       if (usuario.contrasena) {
         datosActualizacion.contrasena = usuario.contrasena;
       }
 
-      // Incluimos la imagen si se actualizó
       if (imagePreviewUrl && imagePreviewUrl !== usuario.imagen) {
         datosActualizacion.imagen = imagePreviewUrl;
       }
 
-      // Usar el endpoint updateUser que ya existe
-      await axios.put(`http://localhost:5000/users/updateUser`, datosActualizacion);
-      
-      navigate("/usuarios"); // Redirige automáticamente al guardar
+      await axios.put(`http://localhost:5000/users/updateUser`, datosActualizacion, {
+        withCredentials: true,
+      });
+
+      navigate("/usuarios");
     } catch (error) {
       console.error("Error al actualizar usuario:", error);
-      setError('Error al actualizar usuario: ' + (error.response?.data?.error || error.message));
+      setError("Error al actualizar usuario: " + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -120,9 +134,7 @@ const EditUserLayer = () => {
           <div className="col-xxl-6 col-xl-8 col-lg-10">
             <div className="card border">
               <div className="card-body">
-                <h6 className="text-md text-primary-light mb-16">
-                  Imagen de perfil
-                </h6>
+                <h6 className="text-md text-primary-light mb-16">Imagen de perfil</h6>
 
                 {loadingData ? (
                   <div className="text-center py-4">
@@ -133,7 +145,6 @@ const EditUserLayer = () => {
                   </div>
                 ) : (
                   <>
-                    {/* Cargar Imagen */}
                     <div className="mb-24 mt-16">
                       <div className="avatar-upload">
                         <div className="avatar-edit position-absolute bottom-0 end-0 me-24 mt-16 z-1 cursor-pointer">
@@ -162,18 +173,13 @@ const EditUserLayer = () => {
                       </div>
                     </div>
 
-                    {/* Formulario */}
                     <form onSubmit={(e) => { e.preventDefault(); actualizarUsuario(); }}>
                       <div className="mb-20">
-                        <label htmlFor="name" className="form-label fw-semibold text-primary-light text-sm mb-8">
-                          Nombre completo <span className="text-danger-600">*</span>
-                        </label>
+                        <label className="form-label">Nombre completo</label>
                         <input
                           type="text"
                           className="form-control radius-8"
-                          id="nombreInput"
                           name="nombre"
-                          placeholder="Ingrese el nombre completo"
                           value={usuario.nombre}
                           onChange={handleInputChange}
                           required
@@ -181,15 +187,11 @@ const EditUserLayer = () => {
                       </div>
 
                       <div className="mb-20">
-                        <label htmlFor="email" className="form-label fw-semibold text-primary-light text-sm mb-8">
-                          Correo electrónico <span className="text-danger-600">*</span>
-                        </label>
+                        <label className="form-label">Correo electrónico</label>
                         <input
                           type="email"
-                          id="emailInput"
                           className="form-control radius-8"
                           name="correo"
-                          placeholder="Ingrese el correo electrónico"
                           value={usuario.correo}
                           onChange={handleInputChange}
                           required
@@ -197,43 +199,21 @@ const EditUserLayer = () => {
                       </div>
 
                       <div className="mb-20">
-                        <label htmlFor="contrasena" className="form-label fw-semibold text-primary-light text-sm mb-8">
-                          Contraseña {!userId && <span className="text-danger-600">*</span>}
-                        </label>
+                        <label className="form-label">Contraseña</label>
                         <input
                           type="password"
                           className="form-control radius-8"
-                          id="contrasenaInput"
                           name="contrasena"
-                          placeholder={userId ? "Dejar en blanco para mantener la actual" : "Ingrese la contraseña"}
                           value={usuario.contrasena}
                           onChange={handleInputChange}
-                          required={!userId} // Solo es requerido para nuevos usuarios
+                          placeholder="Dejar en blanco para no cambiar"
                         />
                       </div>
 
                       <div className="mb-20">
-                        <label htmlFor="organizacion" className="form-label fw-semibold text-primary-light text-sm mb-8">
-                          Organización
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control radius-8"
-                          id="organizacionInput"
-                          name="organizacion"
-                          placeholder="Nombre de la organización"
-                          value={usuario.organizacion}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-
-                      <div className="mb-20">
-                        <label htmlFor="rol" className="form-label fw-semibold text-primary-light text-sm mb-8">
-                          Rol
-                        </label>
+                        <label className="form-label">Rol</label>
                         <select
-                          className="form-control radius-8 form-select"
-                          id="rolSelect"
+                          className="form-control radius-8"
                           name="rol"
                           value={usuario.rol}
                           onChange={handleInputChange}
@@ -241,42 +221,79 @@ const EditUserLayer = () => {
                           <option value="">Seleccionar rol</option>
                           <option value="admin">Admin</option>
                           <option value="proveedor">Proveedor</option>
-                          <option value="cliente">Cliente</option>
                           <option value="dueno">Dueño</option>
+                          <option value="empleado">Empleado</option>
                         </select>
                       </div>
 
-                      <div className="d-flex align-items-center justify-content-center gap-3">
+                      <div className="mb-20">
+                        <label className="form-label">Tipo de ubicación</label>
+                        <select
+                          className="form-control radius-8"
+                          value={tipoSeleccionado}
+                          onChange={(e) => {
+                            setTipoSeleccionado(e.target.value);
+                            setUsuario({ ...usuario, organizacion: "", locationId: null });
+                          }}
+                        >
+                          <option value="">Seleccionar tipo</option>
+                          <option value="oficina">Oficina</option>
+                          <option value="proveedor">Proveedor</option>
+                          <option value="almacen">Almacén</option>
+                          <option value="sucursal">Sucursal</option>
+                        </select>
+                      </div>
+
+                      {tipoSeleccionado && (
+                        <div className="mb-20">
+                          <label className="form-label">Organización ({tipoSeleccionado})</label>
+                          <select
+                            className="form-control radius-8"
+                            name="locationId"
+                            value={usuario.locationId || ""}
+                            onChange={(e) =>
+                              setUsuario({
+                                ...usuario,
+                                locationId: parseInt(e.target.value),
+                                organizacion: e.target.options[e.target.selectedIndex].text,
+                              })
+                            }
+                          >
+                            <option value="">Seleccionar organización</option>
+                            {locations
+                              .filter((loc) => {
+                                const tipoDB = (loc.TIPO || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                                const tipoSel = (tipoMap[tipoSeleccionado] || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                                return tipoDB === tipoSel;
+                              })
+                              .map((loc) => (
+                                <option key={loc.LOCATION_ID} value={loc.LOCATION_ID}>
+                                  {loc.NOMBRE}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="d-flex justify-content-between mt-4">
                         <button
-                          id="cancelarBtn"
                           type="button"
-                          className="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-56 py-11 radius-8"
+                          className="btn btn-outline-danger"
                           onClick={() => navigate("/usuarios")}
                         >
                           Cancelar
                         </button>
-
                         <button
-                          id="actualizarBtn"
                           type="submit"
-                          className="btn btn-primary border border-primary-600 text-md px-56 py-12 radius-8 d-flex align-items-center justify-content-center gap-2"
+                          className="btn btn-primary"
                           disabled={loading}
                         >
-                          {loading ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                              Guardando...
-                            </>
-                          ) : (
-                            "Actualizar"
-                          )}
+                          {loading ? "Guardando..." : "Actualizar"}
                         </button>
                       </div>
 
                       {error && (
-                        <div className="mt-3 text-danger text-center">
-                          {error}
-                        </div>
+                        <div className="mt-3 text-danger text-center">{error}</div>
                       )}
                     </form>
                   </>
