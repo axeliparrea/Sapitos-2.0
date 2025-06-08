@@ -203,7 +203,7 @@ router.get("/articles/all", getArticulos);
  */
 router.get("/category/:categoria", getInventoryByCategory);
 
-// Rutas de proveedores (manteniendo el prefijo /inventory)
+
 /**
  * @swagger
  * /inventory/proveedores:
@@ -216,7 +216,7 @@ router.get("/category/:categoria", getInventoryByCategory);
  *       500:
  *         description: Error del servidor
  */
-// router.get("/proveedores/all", getProveedores);
+
 
 /**
  * @swagger
@@ -237,6 +237,6 @@ router.get("/category/:categoria", getInventoryByCategory);
  *       500:
  *         description: Error del servidor
  */
-// router.get("/proveedores/:proveedor", getProductosPorProveedor);
+
 
 module.exports = router;

@@ -147,7 +147,6 @@ router.post("/login", loginUser);
  *         description: Error del servidor
  */
 
-// router.get("/getUsers", auth(["admin", "dueno"]), getUsers);
 router.get("/getUsers", getUsers);
 
 /**
@@ -204,7 +203,7 @@ router.post("/logoutUser", logoutUser);
  *       500:
  *         description: Server error
  */
-//router.delete("/deleteUser", auth(["admin"]), deleteUser);
+
 router.delete("/deleteUser", deleteUser);
 
 /**
