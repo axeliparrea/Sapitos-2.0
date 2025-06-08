@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">42.75% </span>
+                <span class="strong">51.03% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>62/145</span>
+                <span class='fraction'>74/145</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">47.56% </span>
+                <span class="strong">58.53% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>39/82</span>
+                <span class='fraction'>48/82</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">44.82% </span>
+                <span class="strong">51.72% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>13/29</span>
+                <span class='fraction'>15/29</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">45.25% </span>
+                <span class="strong">53.28% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>62/137</span>
+                <span class='fraction'>73/137</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -443,16 +443,14 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -472,22 +470,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -495,7 +489,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -817,14 +817,14 @@ const getPedidosPendientesProveedor = async (req, res) =&gt; {
   const { locationId } = req.params;
   
   // Debug logging to verify parameter is received
-<span class="cstat-no" title="statement not covered" >  console.log("LocationID recibido:", locationId);</span>
+  console.log("LocationID recibido:", locationId);
   
-<span class="cstat-no" title="statement not covered" >  if (!locationId) {</span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!locationId) {
 <span class="cstat-no" title="statement not covered" >    return res.status(400).json({ error: "ID de ubicación requerido" });</span>
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  try {</span>
-    const query = <span class="cstat-no" title="statement not covered" >`</span>
+  try {
+    const query = `
       SELECT DISTINCT
         o.ORDEN_ID as id,
         o.FECHACREACION as fecha,
@@ -846,16 +846,16 @@ const getPedidosPendientesProveedor = async (req, res) =&gt; {
     `;
 &nbsp;
     // Passing locationId to the query
-<span class="cstat-no" title="statement not covered" >    connection.exec(query, [locationId], <span class="fstat-no" title="function not covered" >(e</span>rr, result) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      if (err) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error("Error al obtener pedidos pendientes:", err);</span>
-<span class="cstat-no" title="statement not covered" >        return res.status(500).json({ error: "Error al obtener pedidos" });</span>
+    connection.exec(query, [locationId], (err, result) =&gt; {
+      if (err) {
+        console.error("Error al obtener pedidos pendientes:", err);
+        return res.status(500).json({ error: "Error al obtener pedidos" });
       }
 &nbsp;
       // Debug logging for results
-<span class="cstat-no" title="statement not covered" >      console.log(`Encontrados ${result?.length || 0} pedidos para location ${locationId}`);</span>
+      console.log(`Encontrados ${result?.length || <span class="branch-1 cbranch-no" title="branch not covered" >0}</span> pedidos para location ${locationId}`);
 &nbsp;
-      const pedidosFormateados = <span class="cstat-no" title="statement not covered" >(result || []).map(<span class="fstat-no" title="function not covered" >pe</span>dido =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+      const pedidosFormateados = (result || <span class="branch-1 cbranch-no" title="branch not covered" >[])</span>.map(pedido =&gt; ({
         id: pedido.ID,
         numero: pedido.ID,
         fecha: pedido.FECHA,
@@ -869,7 +869,7 @@ const getPedidosPendientesProveedor = async (req, res) =&gt; {
         organizacion: pedido.ORGANIZACION || "N/A"
       }));
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      res.status(200).json(pedidosFormateados);</span>
+      res.status(200).json(pedidosFormateados);
     });
   } catch (error) {
 <span class="cstat-no" title="statement not covered" >    console.error("Error general:", error);</span>
@@ -1192,7 +1192,7 @@ module.exports = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-07T02:31:04.644Z
+                at 2025-06-08T02:06:55.008Z
             </div>
         <script src="../prettify.js"></script>
         <script>
