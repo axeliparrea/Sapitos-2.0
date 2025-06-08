@@ -47,13 +47,13 @@ const RiskProductsOne = ({ inventoryData, loading, error }) => {
       <div className="card h-100 radius-8 border">
         <div className="card-body p-24">
           <div className="d-flex align-items-center justify-content-between mb-12">
-            <h6 className="fw-semibold text-lg mb-0">Productos en Riesgo</h6>
+            <h6 className="fw-semibold text-lg mb-0">Riesgo</h6>
             <span className="fs-3 fw-bold text-danger d-flex align-items-center gap-1">
               <Icon icon="mdi:alert" className="me-1" />
               {productosEnRiesgo.length}
             </span>
           </div>
-          <p className="text-muted mb-16">Monitoreo de stock crítico</p>
+          <p className="text-muted mb-16">Stock crítico</p>
           {loading ? (
             <div className="text-center py-4">
               <Icon icon="mdi:loading" className="text-lg animate-spin me-2" />

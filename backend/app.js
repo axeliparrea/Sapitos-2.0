@@ -15,6 +15,7 @@ const locationRoutes = require("./routes/location");
 const mlRoutes = require("./routes/ml");
 const articuloRoutes = require("./routes/articulo");
 const pedidosHelperRoutes = require("./routes/pedidosH");
+const kpiRoutes = require("./routes/kpi.js");
 
 const app = express();
 
@@ -42,7 +43,7 @@ app.use("/users/logoutUser", userRoutes);
 app.use("/ml", mlRoutes);
 
 // inventory routes
-app.use("/inventory", inventoryRoutes);
+app.use("/api/inventory", inventoryRoutes);
 
 // roles routes
 app.use("/rol", rolRoutes);
@@ -62,6 +63,7 @@ app.use("/proveedores", pedidoRoutes);
 app.use("/pedidosH", pedidosHRoutes);
 app.use("/proveedor", pedidosProveedorRoutes);
 app.use("/helpers", pedidosHelperRoutes);
+app.use("/kpi", kpiRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
