@@ -13,18 +13,52 @@ const getSession = async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id || decoded.USUARIO_ID;
     
-    res.json({
-      token: token,
-      usuario: {
-        id: decoded.id || decoded.USUARIO_ID,
-        nombre: decoded.nombre || decoded.NOMBRE,
-        rol: decoded.rol || decoded.ROL,
-        correo: decoded.correo || decoded.CORREO,
-        username: decoded.username || decoded.USERNAME,
-        locationId: decoded.locationId || decoded.LOCATION_ID
+    // Verificar el estado de OTP en la base de datos
+    connection.exec(
+      `SELECT OTP_VERIFIED, OTP_VERIFIED_AT FROM "DBADMIN"."USUARIO2" WHERE USUARIO_ID = ?`,
+      [userId],
+      (err, results) => {
+        if (err) {
+          console.error('Error checking OTP verification status:', err);
+          return res.status(500).json({ error: "Server error" });
+        }
+        
+        let otpVerified = false;
+        let otpVerifiedAt = null;
+        let otpExpired = true;
+        
+        // Si hay resultados, verificar estado de OTP
+        if (results && results.length > 0) {
+          const user = results[0];
+          otpVerified = !!user.OTP_VERIFIED;
+          otpVerifiedAt = user.OTP_VERIFIED_AT;
+          
+          // Verificar si la verificación OTP tiene menos de 24 horas
+          if (otpVerified && otpVerifiedAt) {
+            const now = new Date();
+            const verifiedAt = new Date(otpVerifiedAt);
+            const hoursDiff = (now - verifiedAt) / (1000 * 60 * 60);
+            otpExpired = hoursDiff > 24;
+          }
+        }
+        
+        res.json({
+          token: token,
+          otpVerified: otpVerified,
+          otpExpired: otpExpired,
+          usuario: {
+            id: decoded.id || decoded.USUARIO_ID,
+            nombre: decoded.nombre || decoded.NOMBRE,
+            rol: decoded.rol || decoded.ROL,
+            correo: decoded.correo || decoded.CORREO,
+            username: decoded.username || decoded.USERNAME,
+            locationId: decoded.locationId || decoded.LOCATION_ID
+          }
+        });
       }
-    });
+    );
   } catch (err) {
     // Si el token es inválido, limpiar la cookie
     res.clearCookie("Auth", { 

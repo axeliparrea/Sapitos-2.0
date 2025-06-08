@@ -30,17 +30,17 @@ const {
  *               items:
  *                 type: object
  *                 properties:
- *                   ARTICULO_ID:
+ *                   Articulo_ID:
  *                     type: integer
- *                   NOMBRE:
+ *                   Nombre:
  *                     type: string
- *                   CATEGORIA:
+ *                   Categoria:
  *                     type: string
- *                   PRECIOPROVEEDOR:
+ *                   PrecioProveedor:
  *                     type: number
- *                   PRECIOVENTA:
+ *                   PrecioVenta:
  *                     type: number
- *                   TEMPORADA:
+ *                   Temporada:
  *                     type: string
  */
 router.get("/", getArticulos);
@@ -58,21 +58,21 @@ router.get("/", getArticulos);
  *           schema:
  *             type: object
  *             required:
- *               - NOMBRE
- *               - CATEGORIA
- *               - PRECIOPROVEEDOR
- *               - PRECIOVENTA
- *               - TEMPORADA
+ *               - Nombre
+ *               - Categoria
+ *               - PrecioProveedor
+ *               - PrecioVenta
+ *               - Temporada
  *             properties:
- *               NOMBRE:
+ *               Nombre:
  *                 type: string
- *               CATEGORIA:
+ *               Categoria:
  *                 type: string
- *               PRECIOPROVEEDOR:
+ *               PrecioProveedor:
  *                 type: number
- *               PRECIOVENTA:
+ *               PrecioVenta:
  *                 type: number
- *               TEMPORADA:
+ *               Temporada:
  *                 type: string
  *     responses:
  *       201:
@@ -100,21 +100,21 @@ router.post("/", createArticulo);
  *           schema:
  *             type: object
  *             required:
- *               - NOMBRE
- *               - CATEGORIA
- *               - PRECIOPROVEEDOR
- *               - PRECIOVENTA
- *               - TEMPORADA
+ *               - Nombre
+ *               - Categoria
+ *               - PrecioProveedor
+ *               - PrecioVenta
+ *               - Temporada
  *             properties:
- *               NOMBRE:
+ *               Nombre:
  *                 type: string
- *               CATEGORIA:
+ *               Categoria:
  *                 type: string
- *               PRECIOPROVEEDOR:
+ *               PrecioProveedor:
  *                 type: number
- *               PRECIOVENTA:
+ *               PrecioVenta:
  *                 type: number
- *               TEMPORADA:
+ *               Temporada:
  *                 type: string
  *     responses:
  *       200:

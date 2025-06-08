@@ -2,6 +2,7 @@ const { generateOTP, verifyOTP } = require('../utils/otp');
 const jwt = require('jsonwebtoken');
 const { sendOTPEmail } = require('../utils/emailService');
 const { getUserById } = require('../controllers/userController');
+const { connection } = require('../config/db');
 
 /**
  * Middleware to check if auth timestamp is older than 24 hours
@@ -29,44 +30,62 @@ const checkAuthTimestamp = (req, res, next) => {
             });
         }
         
-        // Check for OTP verification status
-        const otpVerified = req.user.otpVerified;
-        if (!otpVerified) {
-            console.log('User has not completed OTP verification');
-            return res.status(401).json({ 
-                requiresOtp: true,
-                message: 'OTP verification required'
+        // Get user ID for database check
+        const userId = req.user.id || req.user.USUARIO_ID;
+        
+        // Check for OTP verification in database
+        const query = `
+            SELECT OTP_VERIFIED, OTP_VERIFIED_AT 
+            FROM "DBADMIN"."USUARIO2" 
+            WHERE USUARIO_ID = ?
+        `;
+        
+        connection.exec(query, [userId], (err, results) => {
+            if (err) {
+                console.error('Error checking OTP verification status:', err);
+                return res.status(500).json({ message: 'Server error during OTP check' });
+            }
+            
+            if (!results || results.length === 0) {
+                console.log('User not found in database');
+                return res.status(401).json({ 
+                    requiresAuth: true,
+                    message: 'Authentication required' 
+                });
+            }
+            
+            const user = results[0];
+            console.log('OTP verification status from DB:', {
+                otpVerified: user.OTP_VERIFIED, 
+                otpVerifiedAt: user.OTP_VERIFIED_AT
             });
-        }
-        
-        // Check if authTimestamp exists in JWT payload
-        const authTimestamp = req.user.authTimestamp;
-        console.log(`Auth timestamp from JWT: ${authTimestamp}`);
-        
-        if (!authTimestamp) {
-            console.log('No authTimestamp in token, token might be old or malformed');
-            return res.status(401).json({ 
-                requiresOtp: true,
-                message: 'Session requires OTP verification (no timestamp)'
-            });
-        }
-        
-        // Check if timestamp is older than 24 hours
-        const now = Date.now();
-        const timeDiff = now - authTimestamp;
-        const hoursDiff = timeDiff / (1000 * 60 * 60);
-        console.log(`Token age: ${hoursDiff.toFixed(2)} hours`);
-        
-        if (hoursDiff > 24) {
-            console.log('Auth timestamp is older than 24 hours, requiring OTP verification');
-            return res.status(401).json({ 
-                requiresOtp: true,
-                message: 'Session requires OTP verification'
-            });
-        }
-        
-        console.log('Auth timestamp is recent, proceeding without OTP');
-        next();
+            
+            // If user has not verified OTP yet
+            if (!user.OTP_VERIFIED) {
+                console.log('User has not completed OTP verification');
+                return res.status(401).json({ 
+                    requiresOtp: true,
+                    message: 'OTP verification required'
+                });
+            }
+            
+            // Check if OTP_VERIFIED_AT is older than 24 hours
+            const now = new Date();
+            const verifiedAt = new Date(user.OTP_VERIFIED_AT);
+            const hoursDiff = (now - verifiedAt) / (1000 * 60 * 60);
+            console.log(`OTP verified ${hoursDiff.toFixed(2)} hours ago`);
+            
+            if (hoursDiff > 24) {
+                console.log('OTP verification is older than 24 hours, requiring new verification');
+                return res.status(401).json({ 
+                    requiresOtp: true,
+                    message: 'OTP verification required (expired)'
+                });
+            }
+            
+            console.log('OTP verification is recent, proceeding without OTP');
+            next();
+        });
     } catch (error) {
         console.error('Error in checkAuthTimestamp middleware:', error);
         res.status(500).json({ message: 'Server error during OTP check' });
@@ -159,7 +178,8 @@ const generateOTPHandler = async (req, res) => {
 /**
  * Verify OTP provided by user
  */
-const verifyOTPHandler = async (req, res) => {    try {
+const verifyOTPHandler = async (req, res) => {    
+    try {
         console.log("Verifying OTP...");
         const { otp, secret } = req.body;
         
@@ -173,7 +193,8 @@ const verifyOTPHandler = async (req, res) => {    try {
         const isValid = verifyOTP(otp, secret);
         console.log("OTP verification result:", isValid);
         
-        if (isValid) {            // Get user info from token
+        if (isValid) {
+            // Get user info from token
             const token = req.cookies.Auth;
             
             try {
@@ -184,32 +205,52 @@ const verifyOTPHandler = async (req, res) => {    try {
                     return res.status(401).json({ message: 'Invalid token' });
                 }
                 
-                const { exp, ...decodedWithoutExp } = decoded;
+                const userId = decoded.id || decoded.USUARIO_ID;
                 
-                const payload = {
-                    ...decodedWithoutExp,
-                    otpVerified: true, // Add OTP verification flag
-                    authTimestamp: Date.now() // Update timestamp
-                };
-            
-                const newToken = jwt.sign(payload, process.env.JWT_SECRET, {
-                    expiresIn: process.env.JWT_EXPIRES_IN || "1d",
-                });
+                // Update the user's OTP verification status in the database
+                const updateQuery = `
+                    UPDATE "DBADMIN"."USUARIO2" 
+                    SET OTP_VERIFIED = TRUE, 
+                        OTP_VERIFIED_AT = CURRENT_TIMESTAMP 
+                    WHERE USUARIO_ID = ?
+                `;
                 
-                res.cookie("Auth", newToken, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === "production",
-                    sameSite: "Lax",
-                    maxAge: 24 * 60 * 60 * 1000, // 1 day
-                    path: "/",
-                });
+                connection.exec(updateQuery, [userId], (err, updateResult) => {
+                    if (err) {
+                        console.error("Error updating OTP verification status:", err);
+                        // Continue with token update even if DB update fails
+                    } else {
+                        console.log("Database updated with OTP verification status");
+                    }
+                    
+                    // Update token regardless of DB update success
+                    const { exp, ...decodedWithoutExp } = decoded;
+                    
+                    const payload = {
+                        ...decodedWithoutExp,
+                        otpVerified: true, // Add OTP verification flag
+                        authTimestamp: Date.now() // Update timestamp
+                    };
                 
-                console.log("OTP verification successful, token updated with otpVerified=true");
-                
-                res.json({ 
-                    verified: true, 
-                    message: 'OTP verified successfully',
-                    token: newToken 
+                    const newToken = jwt.sign(payload, process.env.JWT_SECRET, {
+                        expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+                    });
+                    
+                    res.cookie("Auth", newToken, {
+                        httpOnly: true,
+                        secure: process.env.NODE_ENV === "production",
+                        sameSite: "Lax",
+                        maxAge: 24 * 60 * 60 * 1000, // 1 day
+                        path: "/",
+                    });
+                    
+                    console.log("OTP verification successful, token updated with otpVerified=true");
+                    
+                    res.json({ 
+                        verified: true, 
+                        message: 'OTP verified successfully',
+                        token: newToken 
+                    });
                 });
             } catch (tokenError) {
                 console.error("Token verification failed:", tokenError);

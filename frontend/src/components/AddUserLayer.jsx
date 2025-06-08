@@ -2,6 +2,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { notify, NotificationType } from "./NotificationService";
 
 const AddUserLayer = () => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
@@ -56,13 +57,13 @@ const AddUserLayer = () => {
     setError(null);
     try {
       await axios.post("http://localhost:5000/users/register", nuevoUsuario);
+      notify("¡Usuario creado exitosamente!", NotificationType.SUCCESS);
       navigate("/usuarios"); // Redirect after successful registration
     } catch (error) {
       console.error("Error al agregar usuario:", error);
-      setError(
-        "Error al agregar usuario: " +
-          (error.response?.data?.error || error.message)
-      );
+      const errorMsg = "Error al agregar usuario: " + (error.response?.data?.error || error.message);
+      setError(errorMsg);
+      notify(errorMsg, NotificationType.ERROR);
     } finally {
       setLoading(false);
     }

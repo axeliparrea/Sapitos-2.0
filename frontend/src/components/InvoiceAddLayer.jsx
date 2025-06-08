@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { notify, NotificationType } from "./NotificationService";
+import Swal from "sweetalert2";
 
 const useUserSession = () => {
   const [session, setSession] = useState(null);
@@ -93,48 +95,75 @@ const InvoiceAddLayer = () => {
   };
 
   const handleEnviarPedido = async (productos, proveedorSeleccionado, total) => {
-      const productosFormateados = productos
-        .filter(p => p.cantidad > 0)
-        .map(p => ({
-          articuloId: p.articuloId || p.id,
-          cantidad: parseInt(p.cantidad),
-          precio: parseFloat(p.precioCompra || p.precio || 0)
-        }));
+    try {
+      const result = await Swal.fire({
+        title: "¿Realizar pedido?",
+        text: "Se enviará el pedido al proveedor seleccionado",
+        icon: "info",
+        iconColor: '#28a745',
+        showCancelButton: true,
+        confirmButtonText: "Realizar pedido",
+        cancelButtonText: "Cancelar",
+        customClass: {
+          popup: 'swal-compact',
+          title: 'text-lg mb-2',
+          htmlContainer: 'text-sm mb-3',
+          actions: 'd-flex gap-3 justify-content-center mt-3',
+          confirmButton: 'px-4 py-2 border border-2 border-success-600 bg-success-600 text-white text-sm fw-semibold rounded',
+          cancelButton: 'px-4 py-2 border border-2 border-secondary-600 bg-white text-secondary-600 text-sm fw-semibold rounded'
+        },
+        buttonsStyling: false,
+        width: '330px',
+        padding: '1rem'
+      });
 
-      const pedidoData = {
-        creadoPorId: parseInt(session.userId),
-        tipoOrden: 'Compra',
-        organizacion: proveedorSeleccionado,
-        total: parseFloat(total),
-        metodoPagoId: 1,
-        descuentoAplicado: 0,
-        productos: productosFormateados
-      };
-      const validationErrors = validatePedidoData(pedidoData);
-      if (validationErrors.length > 0) {
-        setError(validationErrors.join(". "));
-        return;
-      }
+      if (result.isConfirmed) {
+        const productosFormateados = productos
+          .filter(p => p.cantidad > 0)
+          .map(p => ({
+            articuloId: p.articuloId || p.id,
+            cantidad: parseInt(p.cantidad),
+            precio: parseFloat(p.precioCompra || p.precio || 0)
+          }));
 
-      setIsSubmitting(true);
-      setError(null);
+        const pedidoData = {
+          creadoPorId: parseInt(session.userId),
+          tipoOrden: 'Compra',
+          organizacion: proveedorSeleccionado,
+          total: parseFloat(total),
+          metodoPagoId: 1,
+          descuentoAplicado: 0,
+          productos: productosFormateados
+        };
 
-      try {
+        const validationErrors = validatePedidoData(pedidoData);
+        if (validationErrors.length > 0) {
+          setError(validationErrors.join(". "));
+          return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+
         const response = await axios.post("http://localhost:5000/pedido", pedidoData);
         
         if (response.data?.ordenId) {
           setPedidoID(response.data.ordenId);
           setPedidoEnviado(true);
+          notify("¡Pedido creado exitosamente!", NotificationType.SUCCESS);
           setTimeout(() => navigate("/pedidos"), 2500);
         } else {
           throw new Error("No se recibió el ID del pedido");
         }
-      } catch (err) {
-        console.error("Error al enviar pedido:", err);
-        setError(err.response?.data?.error || err.message);
-      } finally {
-        setIsSubmitting(false);
       }
+    } catch (err) {
+      console.error("Error al enviar pedido:", err);
+      const errorMsg = err.response?.data?.error || err.message;
+      setError(errorMsg);
+      notify(errorMsg, NotificationType.ERROR);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleNuevoPedido = () => {

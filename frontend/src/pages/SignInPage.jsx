@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import ErrorDialog from "../components/ErrorDialog";
 
 const SignInPage = () => {
   const [email, setEmail] = useState("");
@@ -12,7 +13,8 @@ const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingSession, setCheckingSession] = useState(true);
-  // No longer need OTP states as they are handled in OtpPage.jsx
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (hasCheckedSession.current) return;
@@ -87,9 +89,9 @@ const SignInPage = () => {
     event.preventDefault();
     setIsLoading(true);
     setError('');
+    setErrorMessage("");
 
     try {
-      console.log("Iniciando login...");
       const response = await fetch("http://localhost:5000/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -111,10 +113,20 @@ const SignInPage = () => {
       });
       
       if (!response.ok) {
-        throw new Error(data.error || "Error en el inicio de sesión");
+        let message = "Error en el inicio de sesión";
+        if (data.error === "Usuario no encontrado") {
+          message = "El usuario no existe en el sistema";
+        } else if (data.error === "Contraseña incorrecta") {
+          message = "La contraseña ingresada es incorrecta";
+        }
+        setErrorMessage(message);
+        setDialogOpen(true);
+        throw new Error(data.error || message);
       }
 
       if (!data.usuario) {
+        setErrorMessage("Datos de sesión incompletos");
+        setDialogOpen(true);
         throw new Error("Datos de sesión incompletos");
       }
 
@@ -184,6 +196,10 @@ const SignInPage = () => {
   };
   // OTP verification now handled in OtpPage.jsx
 
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
+
   if (checkingSession) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
@@ -193,92 +209,88 @@ const SignInPage = () => {
   }
 
   return (
-    <>
-      <section className='auth bg-base d-flex flex-wrap'>
-        <div className='auth-left d-lg-block d-none'>
-          <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
-            <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
+    <section className='auth bg-base d-flex flex-wrap'>
+      <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center'>
+        <div className='max-w-464-px mx-auto w-100'>
+          <div>
+            <Link to='/' className='mb-40 max-w-290-px d-block'>
+              <img src='assets/images/logo.png' alt='Logo' className='img-fluid' />
+            </Link>
+            <h4 className='mb-12'>Iniciar sesión</h4>
+            <p className='mb-32 text-secondary-light text-lg'>
+              Por favor ingrese sus datos
+            </p>
           </div>
-        </div>
-        <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center'>
-          <div className='max-w-464-px mx-auto w-100'>
-            <div>
-              <Link to='/' className='mb-40 max-w-290-px d-block'>
-                <img src='assets/images/logo.png' alt='Logo' className='img-fluid' />
-              </Link>
-              <h4 className='mb-12'>Iniciar sesión</h4>
-              <p className='mb-32 text-secondary-light text-lg'>
-                Por favor ingrese sus datos
-              </p>
+           
+          <form onSubmit={handleLogin} className='needs-validation' noValidate>
+            <div className='icon-field mb-16'>
+              <span className='icon top-50 translate-middle-y'>
+                <Icon icon='mdi:email-outline' className='text-muted' />
+              </span>
+              <input
+                type='email'
+                id='username'
+                className='form-control h-56-px bg-neutral-50 radius-12'
+                placeholder='Correo electrónico'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete='email'
+              />
             </div>
-            
-            <form onSubmit={handleLogin} className='needs-validation' noValidate>
-              <div className='icon-field mb-16'>
+
+            <div className='position-relative mb-20'>
+              <div className='icon-field'>
                 <span className='icon top-50 translate-middle-y'>
-                  <Icon icon='mdi:email-outline' className='text-muted' />
+                  <Icon icon='solar:lock-password-outline' className='text-muted' />
                 </span>
                 <input
-                  type='email'
-                  id='username'
+                  type='password'
+                  id='password'
                   className='form-control h-56-px bg-neutral-50 radius-12'
-                  placeholder='Correo electrónico'
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder='Contraseña'
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
-                  autoComplete='email'
+                  autoComplete='current-password'
                 />
               </div>
-
-              <div className='position-relative mb-20'>
-                <div className='icon-field'>
-                  <span className='icon top-50 translate-middle-y'>
-                    <Icon icon='solar:lock-password-outline' className='text-muted' />
-                  </span>
-                  <input
-                    type='password'
-                    id='password'
-                    className='form-control h-56-px bg-neutral-50 radius-12'
-                    placeholder='Contraseña'
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete='current-password'
-                  />
-                </div>
-              </div>
-              
-              <div className='d-grid gap-3'>
-                <button 
-                  id='loginButton' 
-                  type='submit'
-                  className='btn btn-primary h-48-px d-flex align-items-center justify-content-center radius-12'
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      <span>Procesando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon="solar:login-2-outline" className="me-2" />
-                      <span>Iniciar sesión</span>
-                    </>
-                  )}
-                </button>
-
-                {error && (
-                  <div className="alert alert-danger d-flex align-items-center p-3 mb-0">
-                    <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
-                    <div className="text-sm">{error}</div>
-                  </div>
+            </div>
+             
+            <div className='d-grid gap-3'>
+              <button 
+                id='loginButton' 
+                type='submit'
+                className='btn btn-primary h-48-px d-flex align-items-center justify-content-center radius-12'
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>Procesando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Iniciar sesión</span>
+                  </>
                 )}
-              </div>
-            </form>
-          </div>
+              </button>
+            </div>
+          </form>
         </div>
-      </section>      {/* OTP verification moved to OtpPage.jsx */}
-    </>
+      </div>
+      <div className='auth-left d-lg-block d-none'>
+        <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
+          <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
+        </div>
+      </div>
+
+      <ErrorDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        errorMessage={errorMessage}
+      />
+    </section>
   );
 };
 

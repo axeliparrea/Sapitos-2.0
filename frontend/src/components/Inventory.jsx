@@ -376,85 +376,68 @@ const Inventory = () => {
           </div>
 
           {/* Estadísticas de resultados filtrados y paginación */}
-          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
-            <span>
-              Mostrando {idxFirst + 1} a {Math.min(idxLast, filteredItems.length)} de {filteredItems.length} productos
-            </span>
-            
-            {/* Paginación */}
+          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24 p-24">
+            <div>
+              <small className="text-muted">
+                Mostrando {idxFirst + 1} a {Math.min(idxLast, filteredItems.length)} de {filteredItems.length} productos
+              </small>
+            </div>
             {totalPages > 1 && (
-              <ul className="pagination d-flex flex-wrap align-items-center gap-2 justify-content-center">
-                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                  <button 
-                    className="page-link"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                  >
-                    <Icon icon="lucide:chevron-first" />
-                  </button>
-                </li>
-                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                  <button 
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <Icon icon="lucide:chevron-left" />
-                  </button>
-                </li>
-                
+              <nav className="d-flex align-items-center gap-2">
+                <button
+                  className="btn btn-outline-primary btn-sm px-2.5 py-1"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <Icon icon="mdi:chevron-double-left" width="16" />
+                </button>
+                <button
+                  className="btn btn-outline-primary btn-sm px-2.5 py-1"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <Icon icon="mdi:chevron-left" width="16" />
+                </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => {
-                    const delta = 2;
-                    return (
-                      page === 1 ||
-                      page === totalPages ||
-                      (page >= currentPage - delta && page <= currentPage + delta)
-                    );
-                  })
-                  .reduce((acc, page) => {
-                    const last = acc[acc.length - 1];
-                    if (last && page - last > 1) {
-                      acc.push('...');
-                    }
-                    acc.push(page);
-                    return acc;
-                  }, [])
-                  .map((page, index) => (
-                    page === '...' ? (
-                      <li key={`ellipsis-${index}`} className="page-item disabled">
-                        <span className="page-link">...</span>
-                      </li>
-                    ) : (
-                      <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
-                        <button 
-                          className="page-link"
+                  .filter(page => Math.abs(page - currentPage) <= 2 || page === 1 || page === totalPages)
+                  .map((page, index, array) => {
+                    if (index > 0 && array[index - 1] !== page - 1) {
+                      return [
+                        <span key={`ellipsis-${page}`} className="px-1">...</span>,
+                        <button
+                          key={page}
+                          className={`btn ${currentPage === page ? 'btn-primary' : 'btn-outline-primary'} btn-sm px-2.5 py-1`}
                           onClick={() => setCurrentPage(page)}
                         >
                           {page}
                         </button>
-                      </li>
-                    )
-                  ))}
-                
-                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                  <button 
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    <Icon icon="lucide:chevron-right" />
-                  </button>
-                </li>
-                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                  <button 
-                    className="page-link"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                  >
-                    <Icon icon="lucide:chevron-last" />
-                  </button>
-                </li>              </ul>
+                      ];
+                    }
+                    return (
+                      <button
+                        key={page}
+                        className={`btn ${currentPage === page ? 'btn-primary' : 'btn-outline-primary'} btn-sm px-2.5 py-1`}
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                <button
+                  className="btn btn-outline-primary btn-sm px-2.5 py-1"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <Icon icon="mdi:chevron-right" width="16" />
+                </button>
+                <button
+                  className="btn btn-outline-primary btn-sm px-2.5 py-1"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  <Icon icon="mdi:chevron-double-right" width="16" />
+                </button>
+              </nav>
             )}
           </div>          {selectedItems.length > 0 && (
             <div className="mt-3">
