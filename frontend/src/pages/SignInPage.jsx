@@ -31,10 +31,8 @@ const SignInPage = () => {
         if (!response.ok) {
           await clearInvalidSession();
           setCheckingSession(false);
-          {
           setLoading(false);
           return;
-        }
         }
 
         const data = await response.json();
@@ -70,10 +68,12 @@ const SignInPage = () => {
         ) {
           navigate("/dashboard");
         }
-      } catch {
+      } catch (error) {
+        console.error("Error checking session:", error);
         await clearInvalidSession();
       } finally {
         setCheckingSession(false);
+        setLoading(false);
       }
     };
 
@@ -90,7 +90,7 @@ const SignInPage = () => {
     };
 
     checkSession();
-  }, [navigate]);
+  }, [navigate, API_BASE_URL]);
   const handleLogin = async (event) => {
     event.preventDefault();
     setIsLoading(true);
@@ -152,7 +152,7 @@ const SignInPage = () => {
       } else {
         // Redirect if OTP is not required
         setTimeout(() => {
-          window.location.href = "/dashboard";
+          navigate('/dashboard');
         }, 100);
       }
       

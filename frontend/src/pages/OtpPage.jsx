@@ -151,7 +151,7 @@ const OtpPage = () => {
         
         setTimeout(() => {
           // Redirect to saved URL or dashboard as fallback
-          window.location.href = returnUrl || "/dashboard";
+          navigate(returnUrl || "/dashboard");
         }, 500);
       } else {
         throw new Error("Código de verificación inválido");
