@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 import './RiskProductsOne.css';
 
 const riesgoConfig = {
-  CRITICO: { label: "CRÍTICO", icon: "mdi:alert-circle", colorClass: "risk-critical" },
-  ALTO: { label: "ALTO", icon: "mdi:alert", colorClass: "risk-high" },
-  MEDIO: { label: "MEDIO", icon: "mdi:information", colorClass: "risk-medium" },
+  PELIGRO: { label: "Peligro", icon: "mdi:alert-circle", colorClass: "risk-danger" },
+  RIESGO: { label: "Riesgo", icon: "mdi:alert", colorClass: "risk-warning" },
+  CUMPLIRA: { label: "Cumplirá", icon: "mdi:check-circle", colorClass: "risk-success" },
 };
 
 const RiskProductCard = ({ product }) => {
@@ -15,7 +15,7 @@ const RiskProductCard = ({ product }) => {
   return (
     <div className={`risk-card ${config.colorClass}`}>
       <div className="risk-card-header">
-        <span className="risk-label">{config.label}</span>
+        <span className="risk-status-label">{config.label}</span>
         <Icon icon={config.icon} className="risk-icon" />
       </div>
       <div className="risk-card-body">
@@ -40,9 +40,7 @@ RiskProductCard.propTypes = {
   product: PropTypes.object.isRequired,
 };
 
-const RiskProductsOne = ({ inventoryData, loading, error }) => {
-
-  const getRiskProducts = () => {
+const RiskProductsOne = ({ inventoryData, loading, error }) => {  const getRiskProducts = () => {
     if (!inventoryData) return [];
     
     return inventoryData
@@ -50,20 +48,22 @@ const RiskProductsOne = ({ inventoryData, loading, error }) => {
         const stockPercentage = p.STOCKRECOMENDADO > 0 ? (p.STOCKACTUAL / p.STOCKRECOMENDADO) * 100 : 0;
         let riesgo = null;
 
-        if (p.STOCKACTUAL <= p.STOCKMINIMO) {
-          riesgo = "CRITICO";
-        } else if (stockPercentage <= 75) {
-          riesgo = "ALTO";
-        } else if (stockPercentage <= 100) {
-          riesgo = "MEDIO";
+        // Nueva clasificación basada en porcentaje - solo productos que necesitan atención
+        if (stockPercentage < 50) {
+          riesgo = "PELIGRO";
+        } else if (stockPercentage >= 50 && stockPercentage < 75) {
+          riesgo = "RIESGO";
+        } else if (stockPercentage >= 75 && stockPercentage < 100) {
+          riesgo = "CUMPLIRA";
         }
+        // No incluir productos con 100% o más (ya están bien abastecidos)
 
         return { ...p, riesgo, stockPercentage };
       })
-      .filter(p => p.riesgo)
+      .filter(p => p.riesgo) // Solo productos con algún nivel de riesgo o cerca de cumplir
       .sort((a, b) => {
-        const order = { CRITICO: 1, ALTO: 2, MEDIO: 3 };
-        return order[a.riesgo] - order[b.riesgo];
+        // Ordenar del menos posible a cumplir (menor porcentaje) al más posible (mayor porcentaje)
+        return a.stockPercentage - b.stockPercentage;
       })
       .slice(0, 3);
   };

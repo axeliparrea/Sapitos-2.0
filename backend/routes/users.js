@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser, getUserByEmail, getProfileImage, updateProfileImage, getLocations} = require("../controllers/userController");
+const { registerUser, loginUser, getUsers, getSession, logoutUser, deleteUser, updateUser, getUserByEmail, getProfileImage, updateProfileImage, getLocations, getOrganizationUsers} = require("../controllers/userController");
 const router = express.Router();
 
 const { auth } = require('../middleware/auth');
@@ -165,6 +165,65 @@ router.get('/getUsers', auth(), requireOtpVerification, getUsers); // Apply midd
  *         description: Not authenticated
  */
 router.get("/getSession", getSession);
+
+/**
+ * @swagger
+ * /users/getOrganizationUsers:
+ *   get:
+ *     summary: Get users from the same organization as the authenticated user
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios de la misma organización
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     description: ID único del usuario
+ *                   correo:
+ *                     type: string
+ *                     description: Correo electrónico del usuario
+ *                   nombre:
+ *                     type: string
+ *                     description: Nombre completo del usuario
+ *                   username:
+ *                     type: string
+ *                     description: Nombre de usuario
+ *                   rolId:
+ *                     type: integer
+ *                     description: ID del rol
+ *                   rol:
+ *                     type: string
+ *                     description: Nombre del rol del usuario
+ *                   rfc:
+ *                     type: string
+ *                     description: RFC del usuario
+ *                   fechaEmpiezo:
+ *                     type: string
+ *                     format: date
+ *                     description: Fecha de inicio del usuario
+ *                   locationId:
+ *                     type: integer
+ *                     description: ID de la ubicación del usuario
+ *                   locationNombre:
+ *                     type: string
+ *                     description: Nombre de la ubicación
+ *                   organizacion:
+ *                     type: string
+ *                     description: Organización de la ubicación
+ *       401:
+ *         description: No autorizado
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/getOrganizationUsers", auth(), getOrganizationUsers);
 
 /**
  * @swagger

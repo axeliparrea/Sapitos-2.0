@@ -42,7 +42,7 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
         </Link>
       </div>      <div className='sidebar-menu-area'>
         <ul className='sidebar-menu' id='sidebar-menu'>
-            <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Dashboard' />
+            <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Estadisticas' />
             <SidebarButton to='/inventario' icon='fluent:box-20-filled' label='Inventario' />
             <SidebarButton to='/usuarios' icon='solar:user-linear' label='Usuarios' />
             <SidebarButton to="/articulos" icon="mdi:package-variant-closed" label="Artículos" />

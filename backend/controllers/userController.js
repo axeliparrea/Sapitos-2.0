@@ -43,8 +43,7 @@ const getSession = async (req, res) => {
             otpExpired = hoursDiff > 24;
           }
         }
-        
-        res.json({
+          res.json({
           token: token,
           otpVerified: otpVerified,
           otpExpired: otpExpired,
@@ -54,7 +53,8 @@ const getSession = async (req, res) => {
             rol: decoded.rol || decoded.ROL,
             correo: decoded.correo || decoded.CORREO,
             username: decoded.username || decoded.USERNAME,
-            locationId: decoded.locationId || decoded.LOCATION_ID
+            locationId: decoded.locationId || decoded.LOCATION_ID,
+            LOCATION_ID: decoded.locationId || decoded.LOCATION_ID // Agregar también en formato mayúsculas
           }
         });
       }
@@ -201,16 +201,15 @@ const loginUser = (req, res) => {
 
       // Check if OTP is required (based on environment variable)
       const otpRequired = process.env.AUTH_OTP === 'true';
-      console.log(`OTP requirement check: ${otpRequired ? 'OTP required' : 'OTP not required'}`);
-
-      // Establecer la cookie UserData con la información necesaria
+      console.log(`OTP requirement check: ${otpRequired ? 'OTP required' : 'OTP not required'}`);      // Establecer la cookie UserData con la información necesaria
       const userData = {
         USUARIO_ID: usuario.USUARIO_ID,
         NOMBRE: usuario.NOMBRE,
         ROL: usuario.ROLNOMBRE,
         CORREO: usuario.CORREO,
         USERNAME: usuario.USERNAME,
-        LOCATION_ID: usuario.LOCATION_ID
+        LOCATION_ID: usuario.LOCATION_ID || null,
+        locationId: usuario.LOCATION_ID || null // Agregar también en formato camelCase para compatibilidad
       };
 
       res.cookie("UserData", JSON.stringify(userData), {
@@ -218,21 +217,113 @@ const loginUser = (req, res) => {
         secure: process.env.NODE_ENV === "production",
         sameSite: "Lax",
         maxAge: 24 * 60 * 60 * 1000, // 1 día
-      });
-
-      // SOLO ENVIAR LOS DATOS NECESARIOS AL FRONTEND
-      res.json({ 
-        mensaje: "Login exitoso", 
-        token, 
-        requiresOtp: otpRequired,  // Add this flag
-        usuario: {
-          id: usuario.USUARIO_ID,
-          nombre: usuario.NOMBRE,
-          rol: usuario.ROLNOMBRE,
-          correo: usuario.CORREO,
-          username: usuario.USERNAME
-        }
-      });
+      });      // Fetch users from the same organization if user has a location
+      if (usuario.LOCATION_ID) {
+        // First get the organization of the user's location
+        const locationQuery = `SELECT Organizacion FROM Location2 WHERE Location_ID = ?`;
+        
+        connection.exec(locationQuery, [usuario.LOCATION_ID], (locationErr, locationResult) => {
+          if (locationErr) {
+            console.error("Error getting location:", locationErr);
+            return res.status(500).json({ error: "Error del servidor" });
+          }
+          
+          if (locationResult && locationResult.length > 0) {
+            const userOrganization = locationResult[0].ORGANIZACION;
+            
+            // Now fetch all users from locations with the same organization
+            const sameOrgUsersQuery = `
+              SELECT DISTINCT 
+                u.Usuario_ID,
+                u.Nombre,
+                u.Correo,
+                u.Username,
+                u.Rol_ID,
+                u.RFC,
+                u.FechaEmpiezo,
+                u.Location_ID,
+                r.Nombre as RolNombre,
+                l.Nombre as LocationNombre,
+                l.Organizacion
+              FROM Usuario2 u
+              LEFT JOIN Rol2 r ON u.Rol_ID = r.Rol_ID
+              LEFT JOIN Location2 l ON u.Location_ID = l.Location_ID
+              WHERE l.Organizacion = ? AND u.Usuario_ID != ?
+            `;
+            
+            connection.exec(sameOrgUsersQuery, [userOrganization, usuario.USUARIO_ID], (orgErr, orgUsers) => {
+              if (orgErr) {
+                console.error("Error getting organization users:", orgErr);
+                // Continue with login even if this fails
+                orgUsers = [];
+              }
+              
+              const formattedOrgUsers = orgUsers ? orgUsers.map(user => ({
+                id: user.USUARIO_ID,
+                correo: user.CORREO,
+                nombre: user.NOMBRE,
+                username: user.USERNAME,
+                rolId: user.ROL_ID,
+                rol: user.ROLNOMBRE,
+                rfc: user.RFC,
+                fechaEmpiezo: user.FECHAEMPIEZO,
+                locationId: user.LOCATION_ID,
+                locationNombre: user.LOCATIONNOMBRE,
+                organizacion: user.ORGANIZACION
+              })) : [];
+              
+              // SOLO ENVIAR LOS DATOS NECESARIOS AL FRONTEND
+              res.json({ 
+                mensaje: "Login exitoso", 
+                token, 
+                requiresOtp: otpRequired,  // Add this flag
+                usuario: {
+                  id: usuario.USUARIO_ID,
+                  nombre: usuario.NOMBRE,
+                  rol: usuario.ROLNOMBRE,
+                  correo: usuario.CORREO,
+                  username: usuario.USERNAME,
+                  locationId: usuario.LOCATION_ID,
+                  organizacion: userOrganization
+                },
+                organizationUsers: formattedOrgUsers
+              });
+            });
+          } else {
+            // No location found, proceed without organization users
+            res.json({ 
+              mensaje: "Login exitoso", 
+              token, 
+              requiresOtp: otpRequired,
+              usuario: {
+                id: usuario.USUARIO_ID,
+                nombre: usuario.NOMBRE,
+                rol: usuario.ROLNOMBRE,
+                correo: usuario.CORREO,
+                username: usuario.USERNAME,
+                locationId: usuario.LOCATION_ID
+              },
+              organizationUsers: []
+            });
+          }
+        });
+      } else {
+        // User has no location, proceed without organization users
+        res.json({ 
+          mensaje: "Login exitoso", 
+          token, 
+          requiresOtp: otpRequired,
+          usuario: {
+            id: usuario.USUARIO_ID,
+            nombre: usuario.NOMBRE,
+            rol: usuario.ROLNOMBRE,
+            correo: usuario.CORREO,
+            username: usuario.USERNAME,
+            locationId: usuario.LOCATION_ID
+          },
+          organizationUsers: []
+        });
+      }
     } catch (error) {
       console.error("Error comparing password:", error);
       return res.status(500).json({ error: "Error del servidor" });
@@ -604,6 +695,87 @@ const getUserById = async (id) => {
   });
 };
 
+const getOrganizationUsers = async (req, res) => {
+  try {
+    const token = req.cookies.Auth;
+    if (!token) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id || decoded.USUARIO_ID;
+    const userLocationId = decoded.locationId || decoded.LOCATION_ID;
+
+    if (!userLocationId) {
+      return res.status(200).json([]); // Return empty array if user has no location
+    }
+
+    // First get the organization of the user's location
+    const locationQuery = `SELECT Organizacion FROM Location2 WHERE Location_ID = ?`;
+    
+    connection.exec(locationQuery, [userLocationId], (locationErr, locationResult) => {
+      if (locationErr) {
+        console.error("Error getting location:", locationErr);
+        return res.status(500).json({ error: "Error del servidor" });
+      }
+      
+      if (!locationResult || locationResult.length === 0) {
+        return res.status(200).json([]); // Return empty array if location not found
+      }
+
+      const userOrganization = locationResult[0].ORGANIZACION;
+      
+      // Now fetch all users from locations with the same organization
+      const sameOrgUsersQuery = `
+        SELECT DISTINCT 
+          u.Usuario_ID,
+          u.Nombre,
+          u.Correo,
+          u.Username,
+          u.Rol_ID,
+          u.RFC,
+          u.FechaEmpiezo,
+          u.Location_ID,
+          r.Nombre as RolNombre,
+          l.Nombre as LocationNombre,
+          l.Organizacion
+        FROM Usuario2 u
+        LEFT JOIN Rol2 r ON u.Rol_ID = r.Rol_ID
+        LEFT JOIN Location2 l ON u.Location_ID = l.Location_ID
+        WHERE l.Organizacion = ? AND u.Usuario_ID != ?
+      `;
+      
+      connection.exec(sameOrgUsersQuery, [userOrganization, userId], (orgErr, orgUsers) => {
+        if (orgErr) {
+          console.error("Error getting organization users:", orgErr);
+          return res.status(500).json({ error: "Error del servidor" });
+        }
+        
+        const formattedOrgUsers = orgUsers ? orgUsers.map(user => ({
+          id: user.USUARIO_ID,
+          correo: user.CORREO,
+          nombre: user.NOMBRE,
+          username: user.USERNAME,
+          rolId: user.ROL_ID,
+          rol: user.ROLNOMBRE,
+          rfc: user.RFC,
+          fechaEmpiezo: user.FECHAEMPIEZO,
+          locationId: user.LOCATION_ID,
+          locationNombre: user.LOCATIONNOMBRE,
+          organizacion: user.ORGANIZACION,
+          diasOrdenProm: null,
+          valorOrdenProm: null
+        })) : [];
+        
+        res.status(200).json(formattedOrgUsers);
+      });
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
 module.exports = { 
   registerUser, 
   loginUser, 
@@ -616,5 +788,6 @@ module.exports = {
   getProfileImage,
   updateProfileImage,
   getLocations,
-  getUserById
+  getUserById,
+  getOrganizationUsers
 };

@@ -5,12 +5,14 @@ import RiskProductsOne from "./general/child/RiskProductsOne";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import getCookie from "../utils/cookies";
+import LocationNotAssigned from "./LocationNotAssigned";
 
 const DashBoardLayerOne = () => {
   const [userData, setUserData] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [inventoryData, setInventoryData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [locationError, setLocationError] = useState(null);
   const [kpiData, setKpiData] = useState({
     ventas: { total: 0, percentage_change: 0 },
     unidades: { total: 0, percentage_change: 0 },
@@ -21,16 +23,28 @@ const DashBoardLayerOne = () => {
   useEffect(() => {
     const fetchKpiData = async () => {
       try {
+        // Get user data to extract location ID
+        const cookieData = getCookie("UserData");
+        let locationId = null;
+        
+        if (cookieData) {
+          const parsedData = typeof cookieData === 'string' ? JSON.parse(cookieData) : cookieData;
+          locationId = parsedData?.LOCATION_ID || parsedData?.locationId;
+        }
+
+        // Build query parameters for location filtering
+        const locationParam = locationId ? `?locationId=${locationId}` : '';
+
         const [
           ventasRes,
           unidadesRes,
           articulosRes,
           clientesRes,
         ] = await Promise.all([
-          fetch("http://localhost:5000/kpi/ventas"),
-          fetch("http://localhost:5000/kpi/unidades"),
-          fetch("http://localhost:5000/kpi/articulos"),
-          fetch("http://localhost:5000/kpi/clientes"),
+          fetch(`http://localhost:5000/kpi/ventas${locationParam}`),
+          fetch(`http://localhost:5000/kpi/unidades${locationParam}`),
+          fetch(`http://localhost:5000/kpi/articulos${locationParam}`),
+          fetch(`http://localhost:5000/kpi/clientes${locationParam}`),
         ]);
 
         const ventas = await ventasRes.json();
@@ -63,10 +77,14 @@ const DashBoardLayerOne = () => {
           console.log("Parsed user data:", parsedData);
           setUserData(parsedData);
 
+          // Verificar que el usuario tenga un LOCATION_ID válido
+          const locationId = parsedData.LOCATION_ID || parsedData.locationId;
+          console.log("Location ID encontrado:", locationId);
+
           // Fetch location details if user has a location ID
-          if (parsedData.LOCATION_ID) {
-            console.log("Fetching location for ID:", parsedData.LOCATION_ID);
-            const locationResponse = await fetch(`http://localhost:5000/helpers/locations/${parsedData.LOCATION_ID}`, {
+          if (locationId) {
+            console.log("Fetching location for ID:", locationId);
+            const locationResponse = await fetch(`http://localhost:5000/helpers/locations/${locationId}`, {
               credentials: 'include'
             });
             console.log("Location response status:", locationResponse.status);
@@ -77,7 +95,7 @@ const DashBoardLayerOne = () => {
               setUserLocation(locationData);
 
               // Fetch inventory data for the location
-              const inventoryResponse = await fetch(`http://localhost:5000/api/inventory/location/${parsedData.LOCATION_ID}`, {
+              const inventoryResponse = await fetch(`http://localhost:5000/api/inventory/location/${locationId}`, {
                 credentials: 'include'
               });
               console.log("Inventory response status:", inventoryResponse.status);
@@ -89,20 +107,25 @@ const DashBoardLayerOne = () => {
               } else {
                 const errorText = await inventoryResponse.text();
                 console.error("Error fetching inventory:", errorText);
+                setLocationError("No se pudo cargar la información de inventario");
               }
             } else {
               const errorText = await locationResponse.text();
               console.error("Error fetching location:", errorText);
+              setLocationError("No se encontró información de ubicación");
             }
           } else {
             console.log("No LOCATION_ID found in user data");
+            setLocationError("Usuario sin ubicación asignada");
           }
         } else {
           console.log("No UserData cookie found");
+          setLocationError("No se encontraron datos de usuario");
         }
       } catch (error) {
         console.error("Error obteniendo datos del usuario:", error);
         setUserData(null);
+        setLocationError("Error al cargar información de usuario");
       } finally {
         setLoading(false);
       }
@@ -110,6 +133,11 @@ const DashBoardLayerOne = () => {
 
     fetchUserData();
   }, []);
+
+  // Si el usuario no tiene ubicación asignada, mostrar el componente especial
+  if (!loading && locationError === "Usuario sin ubicación asignada") {
+    return <LocationNotAssigned userRole={userData?.ROL} />;
+  }
 
   return (
     <>
@@ -129,6 +157,11 @@ const DashBoardLayerOne = () => {
                 <span className="text-primary fw-semibold fs-5">{userLocation.nombre}</span>
                 <span className="text-secondary-light fs-6">({userLocation.organizacion || ""})</span>
               </>
+            ) : locationError ? (
+              <div className="d-flex align-items-center gap-2 text-warning">
+                <Icon icon="mdi:alert-circle" />
+                <span>{locationError}</span>
+              </div>
             ) : (
               <div className="text-muted">
                 No se encontró información de ubicación
@@ -149,6 +182,9 @@ const DashBoardLayerOne = () => {
         <RiskProductsOne inventoryData={inventoryData} loading={loading} error={!inventoryData && !loading ? "No se pudo cargar la información de inventario." : null} />
 
       </section>
+
+      {/* Location Not Assigned Component */}
+      {!loading && !userLocation && <LocationNotAssigned />}
     </>
   );
 };
