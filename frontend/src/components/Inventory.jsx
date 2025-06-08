@@ -29,25 +29,37 @@ const Inventory = () => {
         const response = await fetch(`${API_BASE_URL}/inventory`, {
           credentials: "include",
         });
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText || 'Error al cargar el inventario'}`);
+        }
+        
         const data = await response.json();
         console.log('Datos del inventario:', data);
-        setInventory(data);
         
-        // Extraer opciones de filtro únicas
-        if (Array.isArray(response.data)) {
-          const categorias = [...new Set(response.data.map(item => item.categoria).filter(Boolean))];
-          const locations = [...new Set(response.data.map(item => item.locationNombre).filter(Boolean))];
-          const temporadas = [...new Set(response.data.map(item => item.temporada).filter(Boolean))];
+        // Ensure data is an array before setting it
+        if (Array.isArray(data)) {
+          setInventory(data);
+          
+          // Extract filter options
+          const categorias = [...new Set(data.map(item => item.categoria).filter(Boolean))];
+          const locations = [...new Set(data.map(item => item.locationNombre).filter(Boolean))];
+          const temporadas = [...new Set(data.map(item => item.temporada).filter(Boolean))];
           
           setFilterOptions({
             categorias,
             locations,
             temporadas
           });
+        } else {
+          console.error('La respuesta no es un array:', data);
+          setInventory([]);
+          setError('Formato de datos inesperado del servidor');
         }
         
         setError(null);
       } catch (err) {
+        console.error('Error al cargar el inventario:', err);
         setError('Error al cargar el inventario: ' + err.message);
         setInventory([]);
       } finally {
@@ -56,7 +68,8 @@ const Inventory = () => {
     };
 
     fetchInventory();
-  }, []);
+  }, [API_BASE_URL]);
+
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       const allIds = currentItems.map(item => item.inventarioId);
@@ -64,7 +77,8 @@ const Inventory = () => {
     } else {
       setSelectedItems([]);
     }
-  };  const handleSelectItem = (id) => {
+  }; 
+  const handleSelectItem = (id) => {
     if (selectedItems.includes(id)) {
       setSelectedItems(selectedItems.filter(itemId => itemId !== id));
     } else {
@@ -99,7 +113,8 @@ const Inventory = () => {
   const getUniqueValues = (field) => {
     const values = inventory.map(item => item[field]).filter(Boolean);
     return [...new Set(values)].sort();
-  };  const filteredItems = Array.isArray(inventory) 
+  }; 
+  const filteredItems = Array.isArray(inventory) 
     ? inventory.filter(item => {
         // Filtro de búsqueda general
         const matchesSearch = 
