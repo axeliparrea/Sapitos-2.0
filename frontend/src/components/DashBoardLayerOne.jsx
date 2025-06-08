@@ -12,11 +12,10 @@ const DashBoardLayerOne = () => {
   const [inventoryData, setInventoryData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [kpiData, setKpiData] = useState({
-    ventas: null,
-    unidades: null,
-    articulos: null,
-    clientes: null,
-    unidadesVendidasGraph: null,
+    ventas: { total: 0, percentage_change: 0 },
+    unidades: { total: 0, percentage_change: 0 },
+    articulos: { total: 0, percentage_change: 0 },
+    clientes: { total: 0, percentage_change: 0 },
   });
 
   useEffect(() => {
@@ -27,27 +26,23 @@ const DashBoardLayerOne = () => {
           unidadesRes,
           articulosRes,
           clientesRes,
-          unidadesGraphRes,
         ] = await Promise.all([
           fetch("http://localhost:5000/kpi/ventas"),
           fetch("http://localhost:5000/kpi/unidades"),
           fetch("http://localhost:5000/kpi/articulos"),
           fetch("http://localhost:5000/kpi/clientes"),
-          fetch("http://localhost:5000/kpi/unidades-vendidas-graph"),
         ]);
 
         const ventas = await ventasRes.json();
         const unidades = await unidadesRes.json();
         const articulos = await articulosRes.json();
         const clientes = await clientesRes.json();
-        const unidadesVendidasGraph = await unidadesGraphRes.json();
 
         setKpiData({
           ventas,
           unidades,
           articulos,
           clientes,
-          unidadesVendidasGraph,
         });
       } catch (error) {
         console.error("Error fetching KPI data:", error);
@@ -144,11 +139,11 @@ const DashBoardLayerOne = () => {
       </div>
 
       {/* UnitCountOne */}
-      <UnitCountOne inventoryData={inventoryData} kpiData={kpiData.unidades} />
+      <UnitCountOne kpiData={kpiData} />
 
       <section className='row gy-4 mt-1'>
         {/* SalesStatisticOne */}
-        <SalesStatisticOne inventoryData={inventoryData} kpiData={kpiData.ventas} graphData={kpiData.unidadesVendidasGraph} />
+        <SalesStatisticOne ventasKpi={kpiData.ventas} />
 
         {/* RiskProductsOne */}
         <RiskProductsOne inventoryData={inventoryData} loading={loading} error={!inventoryData && !loading ? "No se pudo cargar la información de inventario." : null} />
