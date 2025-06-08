@@ -1,4 +1,4 @@
-name: SonnarQB_Backend
+name: SonnarQB_Frontend
 
 on:
   push:
@@ -26,9 +26,9 @@ jobs:
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         with:
-          projectBaseDir: backend  # Carpeta donde está sonar-project.properties
+          projectBaseDir: frontend  # Carpeta donde está sonar-project.properties
           args: >
-            -Dsonar.projectKey=SAPitos_back
+            -Dsonar.projectKey=SAPitos_front
             -Dsonar.sources=.
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
