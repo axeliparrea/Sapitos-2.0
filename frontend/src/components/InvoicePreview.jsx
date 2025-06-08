@@ -129,15 +129,6 @@ const InvoicePreview = () => {
   if (!pedido || !productos || productos.length === 0) {
     return (
       <div className='card-body text-center py-5'>
-        <div className="d-flex align-items-center mb-3">
-          <button
-            onClick={() => navigate(-1)} 
-            className='btn btn-light d-flex align-items-center'
-          >
-            <Icon icon='mdi:arrow-left' className='me-2' />
-            Regresar
-          </button>
-        </div>
         <p>No se encontraron datos del pedido.</p>
       </div>
     );
@@ -148,13 +139,6 @@ const InvoicePreview = () => {
   return (
     <>
       <div className="d-flex align-items-center justify-content-between mb-3">
-        <button
-          onClick={() => navigate(-1)} 
-          className='btn btn-light d-flex align-items-center'
-        >
-          <Icon icon='mdi:arrow-left' className='me-2' />
-          Regresar
-        </button>
         <div className="d-flex align-items-center gap-3">
           <div className="text-end">
             <p className="mb-0 small">Visualizado por: {session.nombre}</p>

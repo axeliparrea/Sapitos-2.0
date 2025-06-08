@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import ErrorDialog from "../components/ErrorDialog";
 
 const SignInPage = () => {
   const [email, setEmail] = useState("");
@@ -13,7 +14,8 @@ const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingSession, setCheckingSession] = useState(true);
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (hasCheckedSession.current) return;
@@ -35,6 +37,14 @@ const SignInPage = () => {
         }
 
         const data = await response.json();
+        
+        // Verificar si requiere OTP
+        if (data.requiresOtp) {
+          await generateOTP();
+          setCheckingSession(false);
+          return;
+        }
+
         let userRole;
         
         if (data.usuario && data.usuario.rol) {
@@ -79,42 +89,71 @@ const SignInPage = () => {
     };
 
     checkSession();
-  }, [navigate, API_BASE_URL]); 
-
+  }, [navigate]);
   const handleLogin = async (event) => {
     event.preventDefault();
     setIsLoading(true);
     setError('');
+    setErrorMessage("");
 
     try {
-      // Primero limpiar cualquier sesión previa
-      await fetch(`${API_BASE_URL}/users/logoutUser`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      const response = await fetch(`${API_BASE_URL}/users/login`, {
+      const response = await fetch("http://localhost:5000/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
       });
       
+      console.log("Respuesta de login recibida:", {
+        status: response.status,
+        ok: response.ok
+      });
+      
       const data = await response.json();
+      console.log("Datos de login:", {
+        requiresOtp: !!data.requiresOtp,
+        hasUser: !!data.usuario,
+        hasToken: !!data.token,
+        mensaje: data.message || data.mensaje
+      });
       
       if (!response.ok) {
-        throw new Error(data.error || "Error en el inicio de sesión");
+        let message = "Error en el inicio de sesión";
+        if (data.error === "Usuario no encontrado") {
+          message = "El usuario no existe en el sistema";
+        } else if (data.error === "Contraseña incorrecta") {
+          message = "La contraseña ingresada es incorrecta";
+        }
+        setErrorMessage(message);
+        setDialogOpen(true);
+        throw new Error(data.error || message);
       }
 
-      if (!data.token || !data.usuario) {
+      if (!data.usuario) {
+        setErrorMessage("Datos de sesión incompletos");
+        setDialogOpen(true);
         throw new Error("Datos de sesión incompletos");
       }
 
       console.log("Login exitoso:", data.usuario);
-      
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 100);
+        // OTP
+      if (data.requiresOtp) {
+        console.log("OTP verification required");
+        
+        // Generate OTP and store secret in session storage instead of state
+        const otpData = await generateOTP();
+        if (otpData && otpData.secret) {
+          sessionStorage.setItem('otpSecret', otpData.secret);
+        }
+        
+        // Redirect to OTP page instead of showing a modal
+        navigate('/otp');
+      } else {
+        // Redirect if OTP is not required
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 100);
+      }
       
     } catch (error) {
       console.error("Error:", error);
@@ -123,8 +162,50 @@ const SignInPage = () => {
       setIsLoading(false);
     }
   };
+  const generateOTP = async () => {
+    console.log("Iniciando generación de OTP...");
+    try {
+      const response = await fetch("http://localhost:5000/api/otp/generate", {
+        method: "GET",  
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        console.error(`Error HTTP: ${response.status} - ${response.statusText}`);
+        const errorData = await response.json().catch(() => null);
+        console.error("Detalles del error:", errorData);
+        throw new Error(errorData?.message || "Error al generar OTP");
+      }
+      
+      const data = await response.json();
+      console.log("Respuesta de generación OTP:", { 
+        success: data.success,
+        message: data.message,
+        hasSecret: !!data.secret,
+        devMode: process.env.NODE_ENV === 'development',
+        authOtp: data.authOtpEnabled // El backend debe enviar este valor
+      });
+        // We'll store the secret in sessionStorage in the login function instead
+      
+      // En desarrollo, podemos mostrar el OTP en consola
+      if (process.env.NODE_ENV === 'development' && data.otp) {
+        console.log("Código OTP (solo desarrollo):", data.otp);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error("Error generando OTP:", error);
+      setError(error.message || "Error generando OTP");
+      return null;
+    }
+  };
+  // OTP verification now handled in OtpPage.jsx
 
-  if (loading) {
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
+
+  if (checkingSession) {
     return (
       <section className='auth bg-base d-flex flex-wrap'>
         <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center w-100'>
@@ -141,11 +222,6 @@ const SignInPage = () => {
 
   return (
     <section className='auth bg-base d-flex flex-wrap'>
-      <div className='auth-left d-lg-block d-none'>
-        <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
-          <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
-        </div>
-      </div>
       <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center'>
         <div className='max-w-464-px mx-auto w-100'>
           <div>
@@ -157,7 +233,7 @@ const SignInPage = () => {
               Por favor ingrese sus datos
             </p>
           </div>
-          
+           
           <form onSubmit={handleLogin} className='needs-validation' noValidate>
             <div className='icon-field mb-16'>
               <span className='icon top-50 translate-middle-y'>
@@ -192,7 +268,7 @@ const SignInPage = () => {
                 />
               </div>
             </div>
-            
+             
             <div className='d-grid gap-3'>
               <button 
                 id='loginButton' 
@@ -207,22 +283,25 @@ const SignInPage = () => {
                   </>
                 ) : (
                   <>
-                    <Icon icon="solar:login-2-outline" className="me-2" />
                     <span>Iniciar sesión</span>
                   </>
                 )}
               </button>
-
-              {error && (
-                <div className="alert alert-danger d-flex align-items-center p-3 mb-0">
-                  <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
-                  <div className="text-sm">{error}</div>
-                </div>
-              )}
             </div>
           </form>
         </div>
       </div>
+      <div className='auth-left d-lg-block d-none'>
+        <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
+          <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
+        </div>
+      </div>
+
+      <ErrorDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        errorMessage={errorMessage}
+      />
     </section>
   );
 };

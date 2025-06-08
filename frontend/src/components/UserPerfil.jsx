@@ -319,25 +319,37 @@ const UserPerfil = () => {
         
         <div className="card-footer">
           {!isEditing ? (
-            <button 
-              className="btn btn-primary" 
-              onClick={() => setIsEditing(true)}
-            >
-              Editar Perfil
-            </button>
-          ) : (
-            <div>
+            <div className="d-flex align-items-center justify-content-center gap-3">
               <button 
-                className="btn btn-success me-2" 
-                onClick={handleSave}
+                type="button"
+                className="border border-primary-600 bg-hover-primary-200 text-primary-600 text-md px-56 py-11 radius-8"
+                onClick={() => window.history.back()}
               >
-                Guardar
+                Regresar
               </button>
+                              <button 
+                type="button"
+                className="btn btn-primary border border-primary-600 text-md px-56 py-12 radius-8 d-flex align-items-center justify-content-center gap-2"
+                onClick={() => setIsEditing(true)}
+              >
+                Editar Perfil
+              </button>
+            </div>
+          ) : (
+            <div className="d-flex align-items-center justify-content-center gap-3">
               <button 
-                className="btn btn-secondary" 
+                type="button"
+                className="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-56 py-11 radius-8"
                 onClick={handleCancel}
               >
                 Cancelar
+              </button>
+              <button 
+                type="button"
+                className="btn btn-primary border border-primary-600 text-md px-56 py-12 radius-8 d-flex align-items-center justify-content-center gap-2"
+                onClick={handleSave}
+              >
+                Guardar
               </button>
             </div>
           )}

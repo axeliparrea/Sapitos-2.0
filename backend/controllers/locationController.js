@@ -19,4 +19,34 @@ const createLocation = (req, res) => {
   });
 };
 
-module.exports = { getLocations, createLocation };
+const updateLocation = (req, res) => {
+  const { id } = req.params;
+  const { Nombre, Tipo, PosicionX, PosicionY } = req.body;
+  const query = `UPDATE Location2 SET Nombre = ?, Tipo = ?, PosicionX = ?, PosicionY = ? WHERE Location_ID = ?`;
+  connection.prepare(query, (err, statement) => {
+    if (err) return res.status(500).json({ error: err.message });
+    statement.exec([Nombre, Tipo, PosicionX, PosicionY, id], (execErr) => {
+      if (execErr) return res.status(500).json({ error: execErr.message });
+      res.json({ message: "Ubicación actualizada" });
+    });
+  });
+};
+
+const deleteLocation = (req, res) => {
+  const { id } = req.params;
+  const query = `DELETE FROM Location2 WHERE Location_ID = ?`;
+  connection.prepare(query, (err, statement) => {
+    if (err) return res.status(500).json({ error: err.message });
+    statement.exec([id], (execErr) => {
+      if (execErr) return res.status(500).json({ error: execErr.message });
+      res.json({ message: "Ubicación eliminada" });
+    });
+  });
+};
+
+module.exports = {
+  getLocations,
+  createLocation,
+  updateLocation,
+  deleteLocation
+};

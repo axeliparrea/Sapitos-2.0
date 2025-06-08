@@ -13,18 +13,52 @@ const getSession = async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id || decoded.USUARIO_ID;
     
-    res.json({
-      token: token,
-      usuario: {
-        id: decoded.id || decoded.USUARIO_ID,
-        nombre: decoded.nombre || decoded.NOMBRE,
-        rol: decoded.rol || decoded.ROL,
-        correo: decoded.correo || decoded.CORREO,
-        username: decoded.username || decoded.USERNAME,
-        locationId: decoded.locationId || decoded.LOCATION_ID
+    // Verificar el estado de OTP en la base de datos
+    connection.exec(
+      `SELECT OTP_VERIFIED, OTP_VERIFIED_AT FROM "DBADMIN"."USUARIO2" WHERE USUARIO_ID = ?`,
+      [userId],
+      (err, results) => {
+        if (err) {
+          console.error('Error checking OTP verification status:', err);
+          return res.status(500).json({ error: "Server error" });
+        }
+        
+        let otpVerified = false;
+        let otpVerifiedAt = null;
+        let otpExpired = true;
+        
+        // Si hay resultados, verificar estado de OTP
+        if (results && results.length > 0) {
+          const user = results[0];
+          otpVerified = !!user.OTP_VERIFIED;
+          otpVerifiedAt = user.OTP_VERIFIED_AT;
+          
+          // Verificar si la verificación OTP tiene menos de 24 horas
+          if (otpVerified && otpVerifiedAt) {
+            const now = new Date();
+            const verifiedAt = new Date(otpVerifiedAt);
+            const hoursDiff = (now - verifiedAt) / (1000 * 60 * 60);
+            otpExpired = hoursDiff > 24;
+          }
+        }
+        
+        res.json({
+          token: token,
+          otpVerified: otpVerified,
+          otpExpired: otpExpired,
+          usuario: {
+            id: decoded.id || decoded.USUARIO_ID,
+            nombre: decoded.nombre || decoded.NOMBRE,
+            rol: decoded.rol || decoded.ROL,
+            correo: decoded.correo || decoded.CORREO,
+            username: decoded.username || decoded.USERNAME,
+            locationId: decoded.locationId || decoded.LOCATION_ID
+          }
+        });
       }
-    });
+    );
   } catch (err) {
     // Si el token es inválido, limpiar la cookie
     res.clearCookie("Auth", { 
@@ -132,16 +166,16 @@ const loginUser = (req, res) => {
       const passwordCorrecta = await bcrypt.compare(contrasena, usuario.CLAVE);
       if (!passwordCorrecta) {
         return res.status(401).json({ error: "Contraseña incorrecta" });
-      }
-
-      // SOLO USAR 'rol' en minúsculas en el payload
+      }      // SOLO USAR 'rol' en minúsculas en el payload
       const payload = {
         id: usuario.USUARIO_ID,
         nombre: usuario.NOMBRE,
         rol: usuario.ROLNOMBRE, // solo esta propiedad para rol
         correo: usuario.CORREO,
         username: usuario.USERNAME,
-        locationId: usuario.LOCATION_ID
+        locationId: usuario.LOCATION_ID,
+        otpVerified: !(process.env.AUTH_OTP === 'true'), // Only set to true if OTP is not required
+        authTimestamp: Date.now() // Add authTimestamp to track login time
       };
 
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -156,10 +190,15 @@ const loginUser = (req, res) => {
         path: "/",
       });
 
+      // Check if OTP is required (based on environment variable)
+      const otpRequired = process.env.AUTH_OTP === 'true';
+      console.log(`OTP requirement check: ${otpRequired ? 'OTP required' : 'OTP not required'}`);
+
       // SOLO ENVIAR LOS DATOS NECESARIOS AL FRONTEND
       res.json({ 
-        message: "Login exitoso", 
+        mensaje: "Login exitoso", 
         token, 
+        requiresOtp: otpRequired,  // Add this flag
         usuario: {
           id: usuario.USUARIO_ID,
           nombre: usuario.NOMBRE,
@@ -501,6 +540,35 @@ const getLocations = async (req, res) => {
   }
 };
 
+/**
+ * Get user by ID
+ * @param {number} id - User ID
+ * @returns {Promise<Object|null>} - User data or null if not found
+ */
+const getUserById = async (id) => {
+  return new Promise((resolve, reject) => {
+    const query = `
+      SELECT u.*, r.NOMBRE as ROLNOMBRE
+      FROM USUARIO u
+      LEFT JOIN ROL r ON u.ROL_ID = r.ROL_ID
+      WHERE u.USUARIO_ID = ?
+    `;
+    
+    connection.execute(query, [id], (err, results) => {
+      if (err) {
+        console.error("Error fetching user by ID:", err);
+        return reject(err);
+      }
+      
+      if (results.length === 0) {
+        return resolve(null);
+      }
+      
+      console.log("Usuario encontrado:", results[0]);
+      resolve(results[0]);
+    });
+  });
+};
 
 module.exports = { 
   registerUser, 
@@ -513,5 +581,6 @@ module.exports = {
   getUserByEmail,
   getProfileImage,
   updateProfileImage,
-  getLocations
+  getLocations,
+  getUserById
 };

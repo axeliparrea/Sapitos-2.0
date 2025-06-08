@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Button, Form, Badge } from 'react-bootstrap';
+import { notify, NotificationType } from "./NotificationService";
 
 const InvoiceListLayer = () => {
   const [pedidos, setPedidos] = useState([]);
@@ -43,6 +44,11 @@ const InvoiceListLayer = () => {
         cantidad: pedido.total,
         estatus: pedido.estatus
       }));
+      formattedPedidos.sort((a, b) => {
+        const idA = parseInt(a.id.replace('#', ''));
+        const idB = parseInt(b.id.replace('#', ''));
+        return idB - idA; 
+      });
       setPedidos(formattedPedidos);
       // Extraer opciones únicas para filtros
       setFilterOptions(prev => ({
@@ -138,36 +144,42 @@ const InvoiceListLayer = () => {
   const handleDelete = async (id) => {
     const pedidoId = id.replace("#", "");
   
+  
     try {
-      const result = await showConfirmation(
-        "¿Estás seguro?",
-        "No podrás revertir esta acción",
-        "warning"
-      );
-      
-      if (result) {
-        const response = await fetch(`${API_BASE_URL}/pedido/${pedidoId}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Error HTTP: ${response.status}`);
-        }
-
-        showAlert(
-          "Eliminado",
-          "El pedido ha sido eliminado correctamente",
-          "success"
-        );
-        
+      const result = await Swal.fire({
+        title: "¿Eliminar pedido?",
+        text: "Esta acción no se puede deshacer",
+        icon: "warning",
+        iconColor: '#dc3545',
+        showCancelButton: true,
+        confirmButtonText: "Sí, borrar",
+        cancelButtonText: "Cancelar",
+        customClass: {
+          popup: 'swal-compact',
+          title: 'text-lg mb-2',
+          htmlContainer: 'text-sm mb-3',
+          actions: 'd-flex gap-3 justify-content-center mt-3', // separación entre botones
+          confirmButton: 'px-4 py-2 border border-2 border-danger-600 bg-danger-600 text-white text-sm fw-semibold rounded', // más espacio y borde
+          cancelButton: 'px-4 py-2 border border-2 border-secondary-600 bg-white text-secondary-600 text-sm fw-semibold rounded'
+        },
+        buttonsStyling: false,
+        width: '330px',
+        padding: '1rem'
+      });
+  
+      if (result.isConfirmed) {
+        await axios.delete(`http://localhost:5000/pedido/${pedidoId}`);
+        notify("Pedido eliminado exitosamente", NotificationType.SUCCESS);
         fetchPedidos();
       }
     } catch (error) {
       console.error("Error al eliminar el pedido:", error);
-      showAlert("Error", "No se pudo eliminar el pedido", "error");
+      notify("No se pudo eliminar el pedido", NotificationType.ERROR);
     }
   };
+  
+  
+  
   const enviarAInventario = async (pedido) => {
     if (pedido.estatus === "Completado") {
       try {
@@ -309,8 +321,10 @@ const InvoiceListLayer = () => {
                 >
                   <option value="">Todos los estatus</option>
                   <option value="Pendiente">Pendiente</option>
+                  <option value="Aprobado">Aprobado</option>
                   <option value="En Reparto">En Reparto</option>
                   <option value="Completado">Completado</option>
+                  <option value="Rechazado">Rechazado</option>
                 </Form.Select>
               </Form.Group>
             </div>
@@ -411,7 +425,9 @@ const InvoiceListLayer = () => {
                       <td>
                         <span className={`px-12 py-1 rounded-pill fw-medium text-xs ${
                           pedido.estatus === 'Completado' ? 'bg-success-focus text-success-main' : 
-                          pedido.estatus === 'En Reparto' ? 'bg-success-focus text-success-main' : 
+                          pedido.estatus === 'En Reparto' ? 'bg-primary-focus text-primary-main' :
+                          pedido.estatus === 'Aprobado' ? 'bg-info-focus text-info-main' :
+                          pedido.estatus === 'Rechazado' ? 'bg-danger-focus text-danger-main' :
                           'bg-warning-focus text-warning-main'
                         }`}>
                           {pedido.estatus}
@@ -463,85 +479,67 @@ const InvoiceListLayer = () => {
         )}
       </div>
       {/* Estadísticas de resultados filtrados y paginación */}
-      <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24 p-24">        <div>
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24 p-24">
+        <div>
           <small className="text-muted">
             Mostrando {idxFirst + 1} a {Math.min(idxLast, pedidosFiltrados.length)} de {pedidosFiltrados.length} pedidos
           </small>
         </div>
-        {/* Paginación */}
         {totalPages > 1 && (
-          <nav>
-            <ul className="pagination pagination-sm mb-0">
-              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                >
-                  <Icon icon="lucide:chevron-first" />
-                </button>
-              </li>
-              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <Icon icon="lucide:chevron-left" />
-                </button>
-              </li>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page => {
-                  const delta = 2;
-                  return (
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - delta && page <= currentPage + delta)
-                  );
-                })
-                .reduce((acc, page) => {
-                  const last = acc[acc.length - 1];
-                  if (last && page - last > 1) {
-                    acc.push('...');
-                  }
-                  acc.push(page);
-                  return acc;
-                }, [])
-                .map((page, index) => (
-                  page === '...' ? (
-                    <li key={`ellipsis-${index}`} className="page-item disabled">
-                      <span className="page-link">...</span>
-                    </li>
-                  ) : (
-                    <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
-                      <button 
-                        className="page-link"
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </button>
-                    </li>
-                  )
-                ))}
-              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  <Icon icon="lucide:chevron-right" />
-                </button>
-              </li>
-              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  <Icon icon="lucide:chevron-last" />
-                </button>
-              </li>
-            </ul>
+          <nav className="d-flex align-items-center gap-2">
+            <button
+              className="btn btn-outline-primary btn-sm px-3"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <Icon icon="mdi:chevron-double-left" />
+            </button>
+            <button
+              className="btn btn-outline-primary btn-sm px-3"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <Icon icon="mdi:chevron-left" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(page => Math.abs(page - currentPage) <= 2 || page === 1 || page === totalPages)
+              .map((page, index, array) => {
+                if (index > 0 && array[index - 1] !== page - 1) {
+                  return [
+                    <span key={`ellipsis-${page}`} className="px-2">...</span>,
+                    <button
+                      key={page}
+                      className={`btn ${currentPage === page ? 'btn-primary' : 'btn-outline-primary'} btn-sm px-3`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ];
+                }
+                return (
+                  <button
+                    key={page}
+                    className={`btn ${currentPage === page ? 'btn-primary' : 'btn-outline-primary'} btn-sm px-3`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            <button
+              className="btn btn-outline-primary btn-sm px-3"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <Icon icon="mdi:chevron-right" />
+            </button>
+            <button
+              className="btn btn-outline-primary btn-sm px-3"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <Icon icon="mdi:chevron-double-right" />
+            </button>
           </nav>
         )}
       </div>

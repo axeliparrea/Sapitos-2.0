@@ -16,7 +16,7 @@ const {
 
 /**
  * @swagger
- * /articulo/GetArticulos:
+ * /articulo:
  *   get:
  *     summary: Obtener todos los artículos
  *     tags: [Articulo]
@@ -47,7 +47,7 @@ router.get("/", getArticulos);
 
 /**
  * @swagger
- * /articulo/postArticulo:
+ * /articulo:
  *   post:
  *     summary: Crear un nuevo artículo
  *     tags: [Articulo]
@@ -124,8 +124,25 @@ router.post("/", createArticulo);
  */
 router.put("/:id", updateArticulo);
 
-// ejemplo en backend/rutas/articulo2.js
+/**
+ * @swagger
+ * /articulo/{id}:
+ *   delete:
+ *     summary: Eliminar un artículo por ID
+ *     tags: [Articulo]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID del artículo a eliminar
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Artículo eliminado correctamente
+ *       500:
+ *         description: Error del servidor
+ */
 router.delete("/:id", deleteArticulo);
-
 
 module.exports = router;
