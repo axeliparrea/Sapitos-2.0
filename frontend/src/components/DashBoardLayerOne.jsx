@@ -52,10 +52,10 @@ const DashBoardLayerOne = () => {
           fetch(`http://localhost:5000/kpi/clientes${locationParam}`),
         ]);
 
-        const ventas = await ventasRes.json();
-        const unidades = await unidadesRes.json();
-        const articulos = await articulosRes.json();
-        const clientes = await clientesRes.json();
+      const ventas = await ventasRes.json();
+      const unidades = await unidadesRes.json();
+      const articulos = await articulosRes.json();
+      const clientes = await clientesRes.json();
 
         setKpiData({
           ventas,
@@ -145,6 +145,9 @@ const DashBoardLayerOne = () => {
                 console.error("Error fetching inventory:", errorText);
                 setLocationError("No se pudo cargar la información de inventario");
               }
+
+              // Fetch KPI data for the user's location
+              fetchKpiData(userLocationId);
             } else {
               const errorText = await locationResponse.text();
               console.error("Error fetching location:", errorText);
