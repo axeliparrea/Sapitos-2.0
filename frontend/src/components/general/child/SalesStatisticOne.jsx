@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactApexChart from 'react-apexcharts';
 import { Icon } from '@iconify/react';
 import PropTypes from 'prop-types';
+import getCookie from '../../../utils/cookies';
 
 const SalesStatisticOne = () => {
   const chartContainerRef = useRef(null);
@@ -21,7 +22,22 @@ const SalesStatisticOne = () => {
         chartContainerRef.current.scrollLeft = 0;
       }
       try {
-        const res = await fetch(`http://localhost:5000/kpi/unidades-vendidas-graph?filter=${filter}`);
+        // Get user data to extract location ID
+        const cookieData = getCookie("UserData");
+        let locationId = null;
+        
+        if (cookieData) {
+          const parsedData = typeof cookieData === 'string' ? JSON.parse(cookieData) : cookieData;
+          locationId = parsedData?.LOCATION_ID || parsedData?.locationId;
+        }
+
+        // Build query parameters
+        let queryParams = `filter=${filter}`;
+        if (locationId) {
+          queryParams += `&locationId=${locationId}`;
+        }
+
+        const res = await fetch(`http://localhost:5000/kpi/unidades-vendidas-graph?${queryParams}`);
         const data = await res.json();
         setGraphData(data);
         setSelectedPoint(null); // Reset selection on filter change

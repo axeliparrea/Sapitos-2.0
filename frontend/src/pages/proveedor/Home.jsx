@@ -1,14 +1,13 @@
 import MasterLayout from "../../components/masterLayout";
-import Ordenes from "../../components/OrdenesProveedor";
+import DashBoardLayerOne from "../../components/DashBoardLayerOne";
 
 const HomeProveedor = () => {
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout role="proveedor">
-        
-        <Ordenes/>
-
+        {/* DashBoardLayerOne */}
+        <DashBoardLayerOne />
       </MasterLayout>
     </>
   );

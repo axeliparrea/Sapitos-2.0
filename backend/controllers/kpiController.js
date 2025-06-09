@@ -23,7 +23,9 @@ const executeKpiQuery = (res, query, kpiName) => {
 
 // KPI ventas: usa la tabla historialproductos2 promediada por mes las ventas totales
 const getVentasKpi = (req, res) => {
-  const query = `
+  const { locationId } = req.query;
+  
+  let query = `
     WITH MonthlyData AS (
         SELECT
             hp.Anio,
@@ -31,7 +33,14 @@ const getVentasKpi = (req, res) => {
             SUM(hp.Exportacion * a.PrecioVenta) AS ventas_totales
         FROM HistorialProductos2 hp
         JOIN Inventario2 i ON hp.Inventario_ID = i.Inventario_ID
-        JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+        JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID`;
+  
+  // Add location filter if provided
+  if (locationId && locationId !== 'undefined' && locationId !== 'null') {
+    query += ` WHERE i.Location_ID = ${parseInt(locationId)}`;
+  }
+  
+  query += `
         GROUP BY hp.Anio, hp.Mes
     ),
     RankedData AS (
@@ -50,14 +59,25 @@ const getVentasKpi = (req, res) => {
 
 // KPI unidades:usa la tabla historialproductos2 promediada por mes el stock total
 const getUnidadesKpi = (req, res) => {
-  const query = `
+  const { locationId } = req.query;
+  
+  let query = `
     WITH MonthlyData AS (
         SELECT
-            Anio,
-            Mes,
-            SUM(StockEnd) as stock_total
-        FROM HistorialProductos2
-        GROUP BY Anio, Mes
+            hp.Anio,
+            hp.Mes,
+            SUM(hp.StockEnd) as stock_total
+        FROM HistorialProductos2 hp`;
+  
+  // Add location filter if provided
+  if (locationId && locationId !== 'undefined' && locationId !== 'null') {
+    query += `
+        JOIN Inventario2 i ON hp.Inventario_ID = i.Inventario_ID
+        WHERE i.Location_ID = ${parseInt(locationId)}`;
+  }
+  
+  query += `
+        GROUP BY hp.Anio, hp.Mes
     ),
     RankedData AS (
         SELECT
@@ -75,14 +95,23 @@ const getUnidadesKpi = (req, res) => {
 
 // KPI articulos: usa el inventario en distinct de articulo id
 const getArticulosKpi = (req, res) => {
-    const query = `
+    const { locationId } = req.query;
+    
+    let query = `
     WITH MonthlyData AS (
         SELECT
             hp.Anio,
             hp.Mes,
             COUNT(DISTINCT i.Articulo_ID) as total_articulos
         FROM HistorialProductos2 hp
-        JOIN Inventario2 i ON hp.Inventario_ID = i.Inventario_ID
+        JOIN Inventario2 i ON hp.Inventario_ID = i.Inventario_ID`;
+    
+    // Add location filter if provided
+    if (locationId && locationId !== 'undefined' && locationId !== 'null') {
+        query += ` WHERE i.Location_ID = ${parseInt(locationId)}`;
+    }
+    
+    query += `
         GROUP BY hp.Anio, hp.Mes
     ),
     RankedData AS (
@@ -101,15 +130,27 @@ const getArticulosKpi = (req, res) => {
 
 // KPI clientes: usa el total de ordenes y metodos de pago cpromediados completados cada mes
 const getClientesKpi = (req, res) => {
-  const query = `
+  const { locationId } = req.query;
+  
+  let query = `
     WITH MonthlyData AS (
         SELECT
-            YEAR(FechaCreacion) as anio,
-            MONTH(FechaCreacion) as mes,
-            COUNT(DISTINCT Creado_por_ID) as clientes_activos
-        FROM Ordenes2
-        WHERE Estado = 'Completado'
-        GROUP BY YEAR(FechaCreacion), MONTH(FechaCreacion)
+            YEAR(o.FechaCreacion) as anio,
+            MONTH(o.FechaCreacion) as mes,
+            COUNT(DISTINCT o.Creado_por_ID) as clientes_activos
+        FROM Ordenes2 o`;
+  
+  // Add location filter if provided
+  if (locationId && locationId !== 'undefined' && locationId !== 'null') {
+    query += `
+        JOIN Usuario2 u ON o.Creado_por_ID = u.Usuario_ID
+        WHERE o.Estado = 'Completado' AND u.Location_ID = ${parseInt(locationId)}`;
+  } else {
+    query += ` WHERE o.Estado = 'Completado'`;
+  }
+  
+  query += `
+        GROUP BY YEAR(o.FechaCreacion), MONTH(o.FechaCreacion)
     ),
     RankedData AS (
         SELECT
@@ -127,27 +168,45 @@ const getClientesKpi = (req, res) => {
 
 // Grafica unidades vendidas: usa la tabla historialproductos2
 const getUnidadesVendidasGraph = (req, res) => {
-  const { filter } = req.query; // 'yearly' or 'monthly'
+  const { filter, locationId } = req.query; // 'yearly' or 'monthly'
 
   let query;
   if (filter === 'yearly') {
     query = `
       SELECT
-          Anio,
-          SUM(Exportacion) as unidades_vendidas
-      FROM HistorialProductos2
-      GROUP BY Anio
-      ORDER BY Anio;
+          hp.Anio,
+          SUM(hp.Exportacion) as unidades_vendidas
+      FROM HistorialProductos2 hp`;
+    
+    // Add location filter if provided
+    if (locationId && locationId !== 'undefined' && locationId !== 'null') {
+      query += `
+      JOIN Inventario2 i ON hp.Inventario_ID = i.Inventario_ID
+      WHERE i.Location_ID = ${parseInt(locationId)}`;
+    }
+    
+    query += `
+      GROUP BY hp.Anio
+      ORDER BY hp.Anio;
     `;
   } else { // default to monthly
     query = `
       SELECT
-          Anio,
-          Mes,
-          SUM(Exportacion) as unidades_vendidas
-      FROM HistorialProductos2
-      GROUP BY Anio, Mes
-      ORDER BY Anio, Mes;
+          hp.Anio,
+          hp.Mes,
+          SUM(hp.Exportacion) as unidades_vendidas
+      FROM HistorialProductos2 hp`;
+    
+    // Add location filter if provided
+    if (locationId && locationId !== 'undefined' && locationId !== 'null') {
+      query += `
+      JOIN Inventario2 i ON hp.Inventario_ID = i.Inventario_ID
+      WHERE i.Location_ID = ${parseInt(locationId)}`;
+    }
+    
+    query += `
+      GROUP BY hp.Anio, hp.Mes
+      ORDER BY hp.Anio, hp.Mes;
     `;
   }
 
