@@ -26,7 +26,8 @@ const getInventory = async (req, res) => {
         l.Tipo AS LocationTipo
       FROM Inventario2 i
       INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
-      INNER JOIN Location2 l ON i.Location_ID = l.Location_ID;
+      INNER JOIN Location2 l ON i.Location_ID = l.Location_ID
+      WHERE l.Tipo = 'Oficina'  -- si lo ocupamos ponemos la ubicacion que nos interesa
     `;
 
     connection.exec(query, [], async (err, result) => {
@@ -406,8 +407,7 @@ const getLocaciones = async (req, res) => {
         Tipo,
         PosicionX,
         PosicionY,
-        FechaCreado,
-        Organizacion
+        FechaCreado
       FROM Location2
       ORDER BY Nombre
     `;
@@ -424,8 +424,7 @@ const getLocaciones = async (req, res) => {
         tipo: item.TIPO,
         posicionX: item.POSICIONX,
         posicionY: item.POSICIONY,
-        fechaCreado: item.FECHACREADO,
-        organizacion: item.ORGANIZACION
+        fechaCreado: item.FECHACREADO
       }));
       
       res.status(200).json(locaciones);
@@ -437,37 +436,64 @@ const getLocaciones = async (req, res) => {
 };
 
 const getInventoryByLocation = async (req, res) => {
-  const { locationId } = req.params;
-
+  const locationId = req.params.locationId;
+  
   try {
     const query = `
       SELECT
         i.Inventario_ID,
         i.Articulo_ID,
-        a.Nombre,
+        a.Nombre AS ArticuloNombre,
         a.Categoria,
+        a.PrecioProveedor,
+        a.PrecioVenta,
+        a.Temporada,
         i.StockActual,
         i.StockMinimo,
-        i.StockRecomendado
+        i.StockRecomendado,
+        i.StockSeguridad,
+        i.FechaUltimaImportacion,
+        i.FechaUltimaExportacion,
+        i.MargenGanancia,
+        i.TiempoReposicion,
+        i.DemandaPromedio,
+        l.Nombre AS LocationNombre,
+        l.Tipo AS LocationTipo
       FROM Inventario2 i
-      JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+      INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+      INNER JOIN Location2 l ON i.Location_ID = l.Location_ID
       WHERE i.Location_ID = ?
     `;
 
     connection.exec(query, [locationId], (err, result) => {
       if (err) {
-        console.error("Error al obtener el inventario por ubicación:", err);
-        return res.status(500).json({ error: "Error al obtener el inventario por ubicación" });
+        console.error("Error al obtener inventario por ubicación:", err);
+        return res.status(500).json({ error: "Error al obtener inventario por ubicación" });
+      }
+
+      if (result.length === 0) {
+        return res.status(404).json({ error: "No se encontró inventario para esta ubicación" });
       }
 
       const formatted = result.map(item => ({
-        INVENTARIO_ID: item.INVENTARIO_ID,
-        ARTICULO_ID: item.ARTICULO_ID,
-        NOMBRE: item.NOMBRE,
-        CATEGORIA: item.CATEGORIA,
-        STOCKACTUAL: item.STOCKACTUAL,
-        STOCKMINIMO: item.STOCKMINIMO,
-        STOCKRECOMENDADO: item.STOCKRECOMENDADO,
+        inventarioId: item.INVENTARIO_ID,
+        articuloId: item.ARTICULO_ID,
+        nombre: item.ARTICULONOMBRE,
+        categoria: item.CATEGORIA,
+        precioProveedor: item.PRECIOPROVEEDOR,
+        precioVenta: item.PRECIOVENTA,
+        temporada: item.TEMPORADA,
+        stockActual: item.STOCKACTUAL,
+        stockMinimo: item.STOCKMINIMO,
+        stockRecomendado: item.STOCKRECOMENDADO,
+        stockSeguridad: item.STOCKSEGURIDAD,
+        fechaUltimaImportacion: item.FECHAULTIMAIMPORTACION,
+        fechaUltimaExportacion: item.FECHAULTIMAEXPORTACION,
+        margenGanancia: item.MARGENGANANCIA,
+        tiempoReposicion: item.TIEMPOREPOSICION,
+        demandaPromedio: item.DEMANDAPROMEDIO,
+        locationNombre: item.LOCATIONNOMBRE,
+        locationTipo: item.LOCATIONTIPO
       }));
 
       res.status(200).json(formatted);
@@ -584,57 +610,6 @@ const getInventoryByCategory = async (req, res) => {
   }
 };
 
-// Obtener productos en riesgo (stock actual <= stock mínimo)
-const getProductosEnRiesgo = async (req, res) => {
-  try {
-    const query = `
-      SELECT
-        i.Inventario_ID,
-        a.Articulo_ID,
-        a.Nombre AS ArticuloNombre,
-        a.Categoria,
-        i.StockActual,
-        i.StockMinimo
-      FROM Inventario2 i
-      INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
-      WHERE i.StockActual <= i.StockMinimo
-      ORDER BY a.Nombre
-    `;
-
-    connection.exec(query, [], (err, result) => {
-      if (err) {
-        console.error("Error al obtener productos en riesgo", err);
-        return res.status(500).json({ error: "Error al obtener productos en riesgo" });
-      }
-
-      // Clasificación de riesgo y porcentaje
-      const productos = (result || []).map(item => {
-        const porcentaje = item.StockMinimo > 0 ? Math.round((item.StockActual / item.StockMinimo) * 100) : 0;
-        let riesgo = "MEDIO";
-        if (porcentaje < 50) {
-          riesgo = "CRITICO";
-        } else if (porcentaje < 80) {
-          riesgo = "ALTO";
-        }
-        return {
-          inventarioId: item.INVENTARIO_ID,
-          articuloId: item.ARTICULO_ID,
-          nombre: item.ARTICULONOMBRE,
-          categoria: item.CATEGORIA,
-          stockActual: item.STOCKACTUAL,
-          stockMinimo: item.STOCKMINIMO,
-          porcentaje,
-          riesgo
-        };
-      });
-      res.status(200).json(productos);
-    });
-  } catch (error) {
-    console.error("Error general:", error);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-};
-
 module.exports = {
   getInventory,
   insertInventory,
@@ -644,6 +619,5 @@ module.exports = {
   getLocaciones,
   getInventoryByLocation,
   getArticulos,
-  getInventoryByCategory,
-  getProductosEnRiesgo
+  getInventoryByCategory
 };

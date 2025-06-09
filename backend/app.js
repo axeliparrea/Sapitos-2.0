@@ -51,7 +51,7 @@ app.use("/users/logoutUser", userRoutes);
 app.use("/ml", mlRoutes);
 
 // inventory routes
-app.use("/api/inventory", inventoryRoutes);
+app.use("/inventory", inventoryRoutes);
 
 // roles routes
 app.use("/rol", rolRoutes);

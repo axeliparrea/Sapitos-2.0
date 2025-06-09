@@ -19,11 +19,11 @@ const RiskProductCard = ({ product }) => {
         <Icon icon={config.icon} className="risk-icon" />
       </div>
       <div className="risk-card-body">
-        <h6 className="product-name" title={product.NOMBRE}>{product.NOMBRE}</h6>
-        <p className="product-category">{product.CATEGORIA}</p>
+        <h6 className="product-name" title={product.nombre}>{product.nombre}</h6>
+        <p className="product-category">{product.categoria}</p>
         <div className="stock-info">
           <span>Stock:</span>
-          <span className="stock-values">{product.STOCKACTUAL}/{product.STOCKRECOMENDADO}</span>
+          <span className="stock-values">{product.stockActual}/{product.stockRecomendado}</span>
         </div>
         <div className="progress-bar-container">
           <div className="progress-bar-fill" style={{ width: `${stockPercentage}%` }}></div>
@@ -45,7 +45,7 @@ const RiskProductsOne = ({ inventoryData, loading, error }) => {  const getRiskP
     
     return inventoryData
       .map(p => {
-        const stockPercentage = p.STOCKRECOMENDADO > 0 ? (p.STOCKACTUAL / p.STOCKRECOMENDADO) * 100 : 0;
+        const stockPercentage = p.stockRecomendado > 0 ? (p.stockActual / p.stockRecomendado) * 100 : 0;
         let riesgo = null;
 
         // Nueva clasificación basada en porcentaje - solo productos que necesitan atención
@@ -97,8 +97,11 @@ const RiskProductsOne = ({ inventoryData, loading, error }) => {  const getRiskP
             <div className="text-center text-muted py-4">No hay productos en riesgo</div>
           ) : (
             <div className="d-flex justify-content-center gap-3 flex-grow-1">
-              {productosEnRiesgo.map((prod) => (
-                <RiskProductCard key={prod.INVENTARIO_ID} product={prod} />
+              {productosEnRiesgo.map((prod, index) => (
+                <RiskProductCard 
+                  key={prod.inventarioId ? `inventory-${prod.inventarioId}` : `risk-product-${index}`} 
+                  product={prod} 
+                />
               ))}
             </div>
           )}
