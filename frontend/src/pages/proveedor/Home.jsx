@@ -6,11 +6,8 @@ const HomeProveedor = () => {
     <>
       {/* MasterLayout */}
       <MasterLayout role="proveedor">
+        {/* DashBoardLayerOne */}
         <DashBoardLayerOne />
-        
-        
-        
-
       </MasterLayout>
     </>
   );

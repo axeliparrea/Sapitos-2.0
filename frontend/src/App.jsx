@@ -23,9 +23,8 @@ import InvoiceListProveedorPage from "./pages/proveedor/InvoiceListProveedorPage
 import InvoiceProveedorPage from "./pages/proveedor/InvoiceProveedorPage";
 import InvoicePreviewPage from "./pages/InvoicePreviewPage";
 import Notificaciones from "./pages/admin/Notificaciones";
-import NotFoundPage from "./pages/NotFoundPage";
-
 import Pedidos from "./pages/admin/Pedidos"
+import AiAssistantPage from "./pages/AiAssistantPage";
 
 // Para usuarios admin 
 import UsuariosShec from "./pages/admin/UsuariosShec";
@@ -303,6 +302,15 @@ const App = () => {
               element={
                 role === "admin" ? <ModelManagement /> :
                 <Navigate to="/" />
+              }
+            />
+
+            <Route 
+              path="/asistente-ia" 
+              element={
+                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "dueno", "cliente"]}>
+                  <AiAssistantPage />
+                </ProtectedRoute>
               }
             />
 
