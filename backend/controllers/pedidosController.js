@@ -64,6 +64,7 @@ const getPedido = async (req, res) => {
 };
 
 const insertPedido = async (req, res) => {
+  let conn;
   try {
     const { 
       creadoPorId,
@@ -97,6 +98,22 @@ const insertPedido = async (req, res) => {
       descuentoAplicado,
       tipoOrden
     });
+
+    // Usamos la conexión de pool existente
+    conn = connection;
+
+    // Iniciar transacción con autocommit en false
+    await new Promise((resolve, reject) => {
+      conn.exec('SET TRANSACTION AUTOCOMMIT OFF', [], (err) => {
+        if (err) {
+          console.error("Error al configurar transacción:", err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+
     const insertOrdenQuery = `
       INSERT INTO Ordenes2 (
         Creado_por_ID, 
@@ -110,15 +127,15 @@ const insertPedido = async (req, res) => {
       ) VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'Pendiente', ?, ?, ?)
     `;
 
-    const insertOrdenPromise = new Promise((resolve, reject) => {
-      connection.exec(insertOrdenQuery, 
+    const ordenId = await new Promise((resolve, reject) => {
+      conn.exec(insertOrdenQuery, 
         [creadoPorId, tipoOrden, organizacion, total, metodoPagoId, descuentoAplicado], 
         (err, result) => {
           if (err) {
             console.error("Error al insertar orden:", err);
             reject(err);
           } else {
-            connection.exec("SELECT CURRENT_IDENTITY_VALUE() AS ordenId FROM DUMMY", [], (err2, result2) => {
+            conn.exec("SELECT CURRENT_IDENTITY_VALUE() AS ordenId FROM DUMMY", [], (err2, result2) => {
               if (err2) {
                 console.error("Error al obtener ID de orden:", err2);
                 reject(err2);
@@ -133,31 +150,94 @@ const insertPedido = async (req, res) => {
       );
     });
 
-    const ordenId = await insertOrdenPromise;
-
     if (!ordenId) {
+      // Hacer rollback si no se pudo obtener el ID
+      await new Promise((resolve) => {
+        conn.exec('ROLLBACK', [], () => resolve());
+      });
       throw new Error("No se pudo obtener el ID de la orden creada");
+    }
+
+    // Verificar que la orden existe en la base de datos
+    const verificarOrdenQuery = "SELECT 1 FROM Ordenes2 WHERE Orden_ID = ?";
+    const ordenResult = await new Promise((resolve, reject) => {
+      conn.exec(verificarOrdenQuery, [ordenId], (err, result) => {
+        if (err) {
+          console.error("Error al verificar la existencia de la orden:", err);
+          reject(err);
+        } else {
+          console.log("Resultado de verificación de orden:", result);
+          resolve(result);
+        }
+      });
+    });
+
+    const ordenExiste = ordenResult && ordenResult.length > 0;
+    if (!ordenExiste) {
+      await new Promise((resolve) => {
+        conn.exec('ROLLBACK', [], () => resolve());
+      });
+      throw new Error("La orden fue creada pero no se encontró en la base de datos");
     }
 
     let productosInsertados = 0;
     const erroresProductos = [];
 
+    // Procesar productos secuencialmente para mejor control de errores
     for (let i = 0; i < productos.length; i++) {
       const producto = productos[i];
       
       try {
-        console.log(`Procesando producto ${i + 1}:`, producto);        // Buscar el inventario para el artículo en la ubicación del proveedor
+        console.log(`Procesando producto ${i + 1}:`, producto);
+        
+        // Validar que el artículo existe
+        const checkArticuloQuery = `SELECT 1 FROM Articulo2 WHERE Articulo_ID = ?`;
+        const articuloResult = await new Promise((resolve, reject) => {
+          conn.exec(checkArticuloQuery, [producto.articuloId], (err, result) => {
+            if (err) {
+              console.error(`Error al verificar artículo ${producto.articuloId}:`, err);
+              reject(err);
+            } else {
+              resolve(result);
+            }
+          });
+        });
+        
+        if (!articuloResult || articuloResult.length === 0) {
+          erroresProductos.push(`El artículo ${producto.articuloId} no existe en la base de datos`);
+          continue;
+        }
+        
+        // Buscar el Location_ID
+        const getLocationIdQuery = `SELECT Location_ID FROM Location2 WHERE Nombre = ?`;
+        const locationResult = await new Promise((resolve, reject) => {
+          conn.exec(getLocationIdQuery, [organizacion], (err, result) => {
+            if (err) {
+              console.error(`Error al buscar Location_ID para ${organizacion}:`, err);
+              reject(err);
+            } else {
+              resolve(result);
+            }
+          });
+        });
+        
+        if (!locationResult || locationResult.length === 0) {
+          erroresProductos.push(`La ubicación ${organizacion} no existe en la base de datos`);
+          continue;
+        }
+        
+        const locationId = locationResult[0].LOCATION_ID;
+        
+        // Buscar inventario existente
         const buscarInventarioQuery = `
-          SELECT i.Inventario_ID 
-          FROM Inventario2 i
-          INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
-          INNER JOIN Location2 l ON i.Location_ID = l.Location_ID
-          WHERE a.Articulo_ID = ? AND l.Nombre = ?
+          SELECT Inventario_ID 
+          FROM Inventario2
+          WHERE Articulo_ID = ? AND Location_ID = ?
           LIMIT 1
         `;
 
         const inventarioResult = await new Promise((resolve, reject) => {
-          connection.exec(buscarInventarioQuery, [producto.articuloId, organizacion], (err, result) => {
+          conn.exec(buscarInventarioQuery, [producto.articuloId, locationId], (err, result) => {
             if (err) {
               console.error(`Error al buscar inventario para producto ${producto.articuloId}:`, err);
               reject(err);
@@ -171,48 +251,7 @@ const insertPedido = async (req, res) => {
         let inventarioId;
         
         if (!inventarioResult || inventarioResult.length === 0) {
-          // Si no existe un inventario para este artículo en esta ubicación, lo creamos
-          console.log(`No se encontró inventario para el artículo ${producto.articuloId} en ${organizacion}, creando uno nuevo...`);
-          
-          // Primero verificamos si el artículo existe
-          const checkArticuloQuery = `SELECT Articulo_ID FROM Articulo2 WHERE Articulo_ID = ?`;
-          const articuloExists = await new Promise((resolve, reject) => {
-            connection.exec(checkArticuloQuery, [producto.articuloId], (err, result) => {
-              if (err) {
-                console.error(`Error al verificar artículo ${producto.articuloId}:`, err);
-                reject(err);
-              } else {
-                resolve(result && result.length > 0);
-              }
-            });
-          });
-          
-          if (!articuloExists) {
-            erroresProductos.push(`El artículo ${producto.articuloId} no existe en la base de datos`);
-            continue;
-          }
-          
-          // Luego buscamos el ID de la ubicación
-          const getLocationIdQuery = `SELECT Location_ID FROM Location2 WHERE Nombre = ?`;
-          const locationResult = await new Promise((resolve, reject) => {
-            connection.exec(getLocationIdQuery, [organizacion], (err, result) => {
-              if (err) {
-                console.error(`Error al buscar Location_ID para ${organizacion}:`, err);
-                reject(err);
-              } else {
-                resolve(result);
-              }
-            });
-          });
-          
-          if (!locationResult || locationResult.length === 0) {
-            erroresProductos.push(`La ubicación ${organizacion} no existe en la base de datos`);
-            continue;
-          }
-          
-          const locationId = locationResult[0].LOCATION_ID;
-          
-          // Crear registro en Inventario2
+          // Crear nuevo inventario
           const createInventarioQuery = `
             INSERT INTO Inventario2 (
               Articulo_ID, 
@@ -224,34 +263,38 @@ const insertPedido = async (req, res) => {
             ) VALUES (?, ?, 1000, 10, 50, CURRENT_DATE)
           `;
           
-          const newInventarioId = await new Promise((resolve, reject) => {
-            connection.exec(createInventarioQuery, [producto.articuloId, locationId], (err, result) => {
+          await new Promise((resolve, reject) => {
+            conn.exec(createInventarioQuery, [producto.articuloId, locationId], (err, result) => {
               if (err) {
                 console.error(`Error al crear inventario para artículo ${producto.articuloId}:`, err);
                 reject(err);
               } else {
-                // Obtener el ID del inventario recién creado
-                connection.exec("SELECT CURRENT_IDENTITY_VALUE() AS invId FROM DUMMY", [], (err2, result2) => {
-                  if (err2) {
-                    console.error("Error al obtener ID del nuevo inventario:", err2);
-                    reject(err2);
-                  } else {
-                    const newId = result2[0]?.INVID || result2[0]?.invId;
-                    console.log(`Nuevo inventario creado con ID: ${newId}`);
-                    resolve(newId);
-                  }
-                });
+                resolve(result);
               }
             });
           });
           
-          inventarioId = newInventarioId;
+          // Obtener el ID generado
+          const newInventarioResult = await new Promise((resolve, reject) => {
+            conn.exec("SELECT CURRENT_IDENTITY_VALUE() AS invId FROM DUMMY", [], (err, result) => {
+              if (err) {
+                console.error("Error al obtener ID del nuevo inventario:", err);
+                reject(err);
+              } else {
+                resolve(result);
+              }
+            });
+          });
+          
+          inventarioId = newInventarioResult[0]?.INVID || newInventarioResult[0]?.invId;
+          console.log(`Nuevo inventario creado con ID: ${inventarioId}`);
         } else {
           inventarioId = inventarioResult[0].INVENTARIO_ID;
         }
         
         console.log(`Inventario encontrado/creado para producto ${producto.articuloId}: ${inventarioId}`);
 
+        // Insertar producto en orden
         const insertProductoQuery = `
           INSERT INTO OrdenesProductos2 (
             Orden_ID, 
@@ -262,7 +305,7 @@ const insertPedido = async (req, res) => {
         `;
 
         await new Promise((resolve, reject) => {
-          connection.exec(insertProductoQuery, 
+          conn.exec(insertProductoQuery, 
             [ordenId, inventarioId, producto.cantidad, producto.precio], 
             (err, result) => {
               if (err) {
@@ -282,9 +325,10 @@ const insertPedido = async (req, res) => {
         erroresProductos.push(`Error en producto ${producto.articuloId}: ${error.message}`);
       }
     }
+    
     if (productosInsertados === 0) {
       await new Promise((resolve) => {
-        connection.exec("DELETE FROM Ordenes2 WHERE Orden_ID = ?", [ordenId], () => {
+        conn.exec('ROLLBACK', [], () => {
           resolve();
         });
       });
@@ -294,6 +338,25 @@ const insertPedido = async (req, res) => {
         detalles: erroresProductos
       });
     }
+
+    // Confirmar la transacción
+    await new Promise((resolve, reject) => {
+      conn.exec('COMMIT', [], (err) => {
+        if (err) {
+          console.error("Error al confirmar transacción:", err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    // Restaurar autocommit
+    await new Promise((resolve) => {
+      conn.exec('SET TRANSACTION AUTOCOMMIT ON', [], () => {
+        resolve();
+      });
+    });
 
     const response = {
       message: "Pedido creado exitosamente",
@@ -314,7 +377,7 @@ const insertPedido = async (req, res) => {
       // Obtener el nombre del usuario que creó el pedido para la notificación
       const getUserQuery = `SELECT Nombre FROM Usuario2 WHERE Usuario_ID = ?`;
       const userResult = await new Promise((resolve, reject) => {
-        connection.exec(getUserQuery, [creadoPorId], (err, result) => {
+        conn.exec(getUserQuery, [creadoPorId], (err, result) => {
           if (err) {
             console.error("Error al obtener usuario:", err);
             reject(err);
@@ -346,6 +409,21 @@ const insertPedido = async (req, res) => {
     res.status(201).json(response);
 
   } catch (error) {
+    // Asegurar que se hace rollback en caso de error general
+    if (conn) {
+      try {
+        await new Promise((resolve) => {
+          conn.exec('ROLLBACK', [], () => {
+            conn.exec('SET TRANSACTION AUTOCOMMIT ON', [], () => {
+              resolve();
+            });
+          });
+        });
+      } catch (rollbackError) {
+        console.error("Error adicional durante rollback:", rollbackError);
+      }
+    }
+    
     console.error("Error general al crear pedido:", error);
     res.status(500).json({ error: "Error al crear el pedido", detalle: error.message });
   }
