@@ -5,7 +5,6 @@ import PropTypes from 'prop-types';
 import getCookie from '../../../utils/cookies';
 
 const SalesStatisticOne = ({ locationId = "all" }) => {
-const SalesStatisticOne = ({ locationId = "all" }) => {
   const chartContainerRef = useRef(null);
   const [filter, setFilter] = useState(() => localStorage.getItem('graphFilter') || 'yearly');
   const [graphData, setGraphData] = useState([]);
@@ -47,7 +46,6 @@ const SalesStatisticOne = ({ locationId = "all" }) => {
       }
     };
     fetchGraphData();
-  }, [filter, locationId]);
   }, [filter, locationId]);
 
   useEffect(() => {
@@ -300,7 +298,6 @@ const SalesStatisticOne = ({ locationId = "all" }) => {
 };
 
 SalesStatisticOne.propTypes = {
-  locationId: PropTypes.string
   locationId: PropTypes.string
 };
 
