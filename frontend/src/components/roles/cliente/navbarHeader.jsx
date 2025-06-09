@@ -82,7 +82,7 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
             </button>
 
             {/* Location and Organization Info */}
-            <div className="d-flex align-items-center gap-2 border-bottom border-2 border-primary pb-2" style={{ height: "100%" }}>
+            <div className="d-flex align-items-center gap-2" style={{ height: "100%" }}>
               {userLocation && (
                 <>
                   <Icon icon="mdi:map-marker" className="text-primary fs-4" />
