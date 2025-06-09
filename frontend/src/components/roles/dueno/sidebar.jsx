@@ -82,13 +82,6 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
 
       <div className='sidebar-menu-area'>
         <ul className='sidebar-menu' id='sidebar-menu'>
-<<<<<<< Updated upstream
-            <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Estadisticas' />
-            <SidebarButton to='/inventario' icon='hugeicons:invoice-03' label='Inventario' />
-            <SidebarButton to='/ordenes-proveedores' label='Ordenes Proveedores'/>
-            <SidebarButton to='/ordenes-clientes' label='Ordenes Clientes' />
-            <SidebarButton to='/recomendaciones-IA' label='Recomendaciones IA' />
-=======
           <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Estadísticas' />
           <SidebarButton to='/inventario' icon='hugeicons:invoice-03' label='Inventario' />
 
@@ -114,7 +107,6 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
 
           <SidebarButton to='/recomendaciones-IA' label='Recomendaciones IA' />
           <SidebarButton to='/asistente-ia' icon='simple-icons:openai' label='Asistente IA' />
->>>>>>> Stashed changes
         </ul>
       </div>
     </aside>

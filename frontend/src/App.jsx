@@ -27,12 +27,6 @@ import OrdenesProveedoresDueno from "./pages/dueno/OrdenesProveedores";
 import OrdenesClientesDueno from "./pages/dueno/OrdenesClientes";
 import RecomendacionesIADueno from "./pages/dueno/RecomendacionesIA";
 
-<<<<<<< Updated upstream
-// Empleado (por ahora genérico)
-import HomeEmpleado from "./pages/empleado/Home";
-import InventarioEmpleado from "./pages/empleado/Inventario";
-import OrdenesEmpleado from "./pages/empleado/Ordenes";
-=======
 import CrearProducto from "./components/crearProducto";
 
 import OrdenesRecibidas from "./pages/dueno/OrdenesRecibidas";
@@ -67,7 +61,6 @@ import Location from "./pages/admin/Location";
 import AddLocationLayer from "./components/AddLocationLayer";
 import EditArticuloLayer from "./components/EditArticuloLayer";
 import EditLocationLayer from "./components/EditarLocation";
->>>>>>> Stashed changes
 
 const ROLE_ID_MAP = {
   1: "admin",
@@ -136,18 +129,6 @@ const App = () => {
           </>
         )}
 
-<<<<<<< Updated upstream
-        {/* Rutas de DUEÑO */}
-        {role === "dueno" && (
-          <>
-            <Route path="/dashboard" element={<HomeDueno />} />
-            <Route path="/inventario" element={<InventarioDueno />} />
-            <Route path="/ordenes-proveedores" element={<OrdenesProveedoresDueno />} />
-            <Route path="/ordenes-clientes" element={<OrdenesClientesDueno />} />
-            <Route path="/recomendaciones-IA" element={<RecomendacionesIADueno />} />
-          </>
-        )}
-=======
           <Route 
             path="/agregar-usuario" 
             element={
@@ -213,7 +194,6 @@ const App = () => {
 />
 
 
->>>>>>> Stashed changes
 
         {/* Rutas de EMPLEADO genérico */}
         {role === "empleado" && (

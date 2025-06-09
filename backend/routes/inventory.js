@@ -5,27 +5,24 @@ const {
   getInventoryById,
   updateInventory,
   deleteInventory,
-<<<<<<< Updated upstream
-  getProveedores,
-  getProductosPorProveedor
-=======
   getLocaciones,
   getInventoryByLocation,
   getArticulos,
   getInventoryByCategory,
   getProductosEnRiesgo
->>>>>>> Stashed changes
 } = require("../controllers/inventoryController");
 
 const router = express.Router();
 const { auth } = require("../middleware/auth");
-const { requireOtpVerification } = require("../middleware/requireOtp");
 
-<<<<<<< Updated upstream
-const { auth } = require('../middleware/auth');
+// Previene error si no existe el archivo requireOtp.js
+let requireOtpVerification = (req, res, next) => next();
+try {
+  requireOtpVerification = require("../middleware/requireOtp").requireOtpVerification;
+} catch (error) {
+  console.warn("⚠️ No se encontró requireOtp.js. Se usa función vacía.");
+}
 
-=======
->>>>>>> Stashed changes
 /**
  * @swagger
  * tags:
@@ -86,12 +83,8 @@ const { auth } = require('../middleware/auth');
  *       500:
  *         description: Server error
  */
-
-// router.get("/", auth(["admin", "dueno", "empleado"]), getInventory);
 router.get("/", getInventory);
 
-<<<<<<< Updated upstream
-=======
 /**
  * @swagger
  * /api/inventory/risk-products:
@@ -105,7 +98,6 @@ router.get("/", getInventory);
  *         description: Error del servidor
  */
 router.get("/risk-products", auth(["admin", "dueno", "empleado"]), getProductosEnRiesgo);
->>>>>>> Stashed changes
 
 /**
  * @swagger
@@ -116,18 +108,10 @@ router.get("/risk-products", auth(["admin", "dueno", "empleado"]), getProductosE
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: integer
  *         required: true
-<<<<<<< Updated upstream
- *         description: ID of the inventory item
- *     security:
- *       - bearerAuth: []
-=======
  *         description: ID del item de inventario
  *         schema:
  *           type: integer
->>>>>>> Stashed changes
  *     responses:
  *       200:
  *         description: Inventory item details
@@ -151,14 +135,9 @@ router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
  *           schema:
  *             type: object
  *             required:
-<<<<<<< Updated upstream
- *               - nombre
- *               - stock
-=======
  *               - articuloId
  *               - locationId
  *               - stockActual
->>>>>>> Stashed changes
  *             properties:
  *               id:
  *                 type: integer
@@ -194,25 +173,15 @@ router.post("/", auth(["admin", "dueno"]), insertInventory);
  * @swagger
  * /api/inventory/{id}:
  *   put:
-<<<<<<< Updated upstream
- *     summary: Update an inventory item
-=======
  *     summary: Actualizar stock actual, importación o exportación de un item de inventario
->>>>>>> Stashed changes
  *     tags: [Inventory]
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: integer
  *         required: true
-<<<<<<< Updated upstream
- *         description: ID of the inventory item
-=======
  *         description: ID del item de inventario
  *         schema:
  *           type: integer
->>>>>>> Stashed changes
  *     requestBody:
  *       required: true
  *       content:
@@ -226,21 +195,6 @@ router.post("/", auth(["admin", "dueno"]), insertInventory);
  *                 type: string
  *               stockActual:
  *                 type: integer
-<<<<<<< Updated upstream
- *               stockMinimo:
- *                 type: integer
- *               precioCompra:
- *                 type: number
- *               precioVenta:
- *                 type: number
- *               temporada:
- *                 type: string
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Inventory item updated successfully
-=======
  *                 description: Nuevo valor del stock actual
  *               importacion:
  *                 type: integer
@@ -257,18 +211,12 @@ router.post("/", auth(["admin", "dueno"]), insertInventory);
  *         description: Item actualizado exitosamente
  *       400:
  *         description: No se proporcionaron campos válidos para actualizar
->>>>>>> Stashed changes
  *       404:
  *         description: Inventory item not found
  *       500:
  *         description: Server error
  */
-<<<<<<< Updated upstream
-router.put("/:id", auth(["admin", "dueno"]), updateInventory);
-=======
-
 router.put("/:id", auth(["admin", "dueno"], true), requireOtpVerification, updateInventory);
->>>>>>> Stashed changes
 
 /**
  * @swagger
@@ -279,18 +227,10 @@ router.put("/:id", auth(["admin", "dueno"], true), requireOtpVerification, updat
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: integer
  *         required: true
-<<<<<<< Updated upstream
- *         description: ID of the inventory item
- *     security:
- *       - bearerAuth: []
-=======
  *         description: ID del item de inventario
  *         schema:
  *           type: integer
->>>>>>> Stashed changes
  *     responses:
  *       200:
  *         description: Inventory item deleted successfully
@@ -299,104 +239,6 @@ router.put("/:id", auth(["admin", "dueno"], true), requireOtpVerification, updat
  *       500:
  *         description: Server error
  */
-<<<<<<< Updated upstream
-router.delete("/:id", auth(["admin", "dueno"]), deleteInventory);
-
-/**
- * @swagger
- * /proveedores:
- *   get:
- *     summary: Obtener todos los proveedores
- *     tags: [Proveedores]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de proveedores
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   proveedor:
- *                     type: string
- *       500:
- *         description: Error del servidor
- */
-// router.get("/", auth(["admin", "dueno", "empleado"]), getProveedores);
-router.get("/", getProveedores);
-
-
-/**
- * @swagger
- * /proveedores/{proveedor}:
- *   get:
- *     summary: Obtener todos los productos por proveedor
- *     tags: [Proveedores]
- *     parameters:
- *       - in: path
- *         name: proveedor
- *         schema:
- *           type: string
- *         required: true
- *         description: Nombre del proveedor
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de productos del proveedor
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   proveedor:
- *                     type: string
- *                   nombre:
- *                     type: string
- *                   categoria:
- *                     type: string
- *                   stockActual:
- *                     type: integer
- *                   stockMinimo:
- *                     type: integer
- *                   fechaUltimaCompra:
- *                     type: string
- *                     format: date
- *                   fechaUltimaVenta:
- *                     type: string
- *                     format: date
- *                   precioCompra:
- *                     type: number
- *                   precioVenta:
- *                     type: number
- *                   temporada:
- *                     type: string
- *                   margenGanancia:
- *                     type: number
- *                   tiempoReposicionProm:
- *                     type: number
- *                   demandaProm:
- *                     type: number
- *                   stockSeguridad:
- *                     type: number
- *       404:
- *         description: No se encontraron productos para este proveedor
- *       500:
- *         description: Error del servidor
- */
-// router.get("/:proveedor", auth(["admin", "dueno", "empleado"]), getProductosPorProveedor);
-router.get("/:proveedor",getProductosPorProveedor);
-
-
-module.exports = router;
-=======
 router.delete("/:id", auth(["admin", "dueno"], true), requireOtpVerification, deleteInventory);
 
 /**
@@ -474,4 +316,3 @@ router.get("/articles/all", getArticulos);
 router.get("/category/:categoria", getInventoryByCategory);
 
 module.exports = router;
->>>>>>> Stashed changes

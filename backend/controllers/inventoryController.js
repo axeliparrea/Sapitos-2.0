@@ -153,80 +153,6 @@ const getInventoryById = async (req, res) => {
     res.status(500).json({ error: "Error del servidor" });
   }
 };
-<<<<<<< Updated upstream
-
-// Actualizar un producto
-const updateInventory = async (req, res) => {
-  const id = req.params.id;
-  const { 
-    nombre, 
-    categoria, 
-    stockActual, 
-    stockMinimo, 
-    fechaUltimaCompra, 
-    precioCompra, 
-    precioVenta,
-    temporada
-  } = req.body;
-
-  try {
-    // Verificar si el producto existe
-    const checkQuery = `SELECT ID FROM DBADMIN.Productos WHERE ID = ?`;
-    
-    connection.exec(checkQuery, [id], (err, result) => {
-      if (err) {
-        console.error("Error al verificar el producto:", err);
-        return res.status(500).json({ error: "Error al verificar el producto" });
-      }
-
-      if (result.length === 0) {
-        return res.status(404).json({ error: "Producto no encontrado" });
-      }
-
-      // Construir la consulta de actualización
-      const updateQuery = `
-        UPDATE DBADMIN.Productos
-        SET 
-          Nombre = ?,
-          Categoria = ?,
-          StockActual = ?,
-          StockMinimo = ?,
-          FechaUltimaCompra = ?,
-          PrecioCompra = ?,
-          PrecioVenta = ?,
-          Temporada = ?
-        WHERE ID = ?
-      `;
-
-      const params = [
-        nombre,
-        categoria,
-        stockActual,
-        stockMinimo,
-        fechaUltimaCompra,
-        precioCompra,
-        precioVenta,
-        temporada,
-        id
-      ];
-
-      connection.prepare(updateQuery, (err, statement) => {
-        if (err) {
-          console.error("Error al preparar la consulta de actualización:", err);
-          return res.status(500).json({ error: "Error al preparar la consulta" });
-        }
-
-        statement.execute(params, (err, result) => {
-          if (err) {
-            console.error("Error al ejecutar la consulta de actualización:", err);
-            return res.status(500).json({ error: "Error al actualizar producto" });
-          }
-
-          res.status(200).json({ message: "Producto actualizado exitosamente" });
-        });
-      });
-    });
-=======
 const updateInventory = async (req, res) => {
   const id = req.params.id;
   const {
@@ -307,18 +233,12 @@ const updateInventory = async (req, res) => {
     });
 
     res.json({ message: "Inventario actualizado exitosamente" });
->>>>>>> Stashed changes
   } catch (error) {
     console.error("Error general:", error);
     res.status(500).json({ error: "Error del servidor" });
   }
 };
 
-<<<<<<< Updated upstream
-// Eliminar un producto
-=======
-
->>>>>>> Stashed changes
 const deleteInventory = async (req, res) => {
   const id = req.params.id;
 
@@ -444,6 +364,70 @@ const getProductosPorProveedor = async (req, res) => {
     res.status(500).json({ error: "Error del servidor" });
   }
 };
+const getLocaciones = async (req, res) => {
+  try {
+    const query = "SELECT * FROM Location2";
+    connection.exec(query, [], (err, result) => {
+      if (err) return res.status(500).json({ error: "Error al obtener ubicaciones" });
+      res.status(200).json(result);
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+const getInventoryByLocation = async (req, res) => {
+  const locationId = req.params.locationId;
+  try {
+    const query = "SELECT * FROM Inventario2 WHERE Location_ID = ?";
+    connection.exec(query, [locationId], (err, result) => {
+      if (err) return res.status(500).json({ error: "Error al obtener inventario por ubicación" });
+      res.status(200).json(result);
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+const getArticulos = async (req, res) => {
+  try {
+    const query = "SELECT * FROM Articulo2";
+    connection.exec(query, [], (err, result) => {
+      if (err) return res.status(500).json({ error: "Error al obtener artículos" });
+      res.status(200).json(result);
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+const getInventoryByCategory = async (req, res) => {
+  const categoria = req.params.categoria;
+  try {
+    const query = "SELECT * FROM Productos WHERE CATEGORIA = ?";
+    connection.exec(query, [categoria], (err, result) => {
+      if (err) return res.status(500).json({ error: "Error al obtener productos por categoría" });
+      res.status(200).json(result);
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+const getProductosEnRiesgo = async (req, res) => {
+  try {
+    const query = `
+      SELECT * FROM Productos 
+      WHERE StockActual < StockMinimo
+    `;
+    connection.exec(query, [], (err, result) => {
+      if (err) return res.status(500).json({ error: "Error al obtener productos en riesgo" });
+      res.status(200).json(result);
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
 
 module.exports = {
   getInventory,
@@ -452,5 +436,10 @@ module.exports = {
   updateInventory,
   deleteInventory,
   getProveedores,
-  getProductosPorProveedor
+  getProductosPorProveedor,
+  getLocaciones,
+  getInventoryByLocation,
+  getArticulos,
+  getInventoryByCategory,
+  getProductosEnRiesgo
 };
