@@ -143,9 +143,10 @@ const InvoiceAddLayer = () => {
         }
 
         setIsSubmitting(true);
-        setError(null);
-
-        const response = await axios.post("http://localhost:5000/pedido", pedidoData);
+        setError(null);        
+        const response = await axios.post("http://localhost:5000/pedido", pedidoData, {
+          withCredentials: true
+        });
         
         if (response.data?.ordenId) {
           setPedidoID(response.data.ordenId);

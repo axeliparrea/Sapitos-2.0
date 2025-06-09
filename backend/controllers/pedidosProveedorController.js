@@ -273,15 +273,8 @@ const enviarPedido = async (req, res) => {
         return res.status(400).json({ 
           error: "Solo se pueden enviar pedidos en estado Aprobado" 
         });
-      }
-
-      try {
-        await new Promise((resolve, reject) => {
-          connection.exec('BEGIN', [], (err) => {
-            if (err) reject(err);
-            else resolve();
-          });
-        });
+      }      try {
+        // SAP HANA handles transactions automatically
         const productos = await new Promise((resolve, reject) => {
           connection.exec(`
             SELECT 
@@ -301,9 +294,6 @@ const enviarPedido = async (req, res) => {
 
         for (const producto of productos) {
           if (producto.StockActual < producto.Cantidad) {
-            await new Promise((resolve) => {
-              connection.exec('ROLLBACK', [], () => resolve());
-            });
             return res.status(400).json({ 
               error: `Stock insuficiente para ${producto.NombreProducto}. Disponible: ${producto.StockActual}, Solicitado: ${producto.Cantidad}` 
             });
@@ -337,12 +327,6 @@ const enviarPedido = async (req, res) => {
             else resolve();
           });
         });
-        await new Promise((resolve, reject) => {
-          connection.exec('COMMIT', [], (err) => {
-            if (err) reject(err);
-            else resolve();
-          });
-        });
 
         res.status(200).json({ 
           message: "Pedido enviado exitosamente y stock actualizado",
@@ -351,11 +335,7 @@ const enviarPedido = async (req, res) => {
         });
 
       } catch (transactionError) {
-        await new Promise((resolve) => {
-          connection.exec('ROLLBACK', [], () => resolve());
-        });
-        
-        console.error("Error en transacción:", transactionError);
+        console.error("Error al procesar el envío:", transactionError);
         res.status(500).json({ error: "Error al procesar el envío" });
       }
     });

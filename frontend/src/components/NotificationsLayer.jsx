@@ -107,7 +107,7 @@ const Alert = ({ type, title, description, fecha, orden_id, usuario_id, onDelete
         <small className={`${textColor} text-xs`}>{fechaFormateada}</small>
         
         {/* Solo mostrar enlace si es una notificación de pedido */}
-        {(esPedido && (orden_id || ordenIdFromDesc)) && (
+        {(esPedido || orden_id || ordenIdFromDesc) && (
           <button 
             className={`btn btn-sm ${textColor} text-xs fw-medium`}
             onClick={handleClick}
@@ -140,111 +140,101 @@ const NotificationsLayer = () => {
     try {
       setLoading(true);
       
-      // Intentar obtener datos del backend
+      // Obtener datos de usuario
       const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
       
-      // Siempre intentar obtener datos reales
       try {
-        // Usar endpoint directo para pruebas
-        console.log("Intentando obtener notificaciones...");
-        
-        // Primero intentar crear alertas de prueba si no hay
-        try {
-          await axios.get('http://localhost:5000/alertas/create-test-alerts');
-          console.log("Alertas de prueba creadas");
-        } catch (error) {
-          console.log("No se pudieron crear alertas de prueba:", error.message);
-        }
-        
-        // Luego obtener las alertas
-        let url = 'http://localhost:5000/alertas/test-get';
-        
+        // Usar el endpoint correcto para obtener alertas
+        const url = '/alertas';
         console.log('Conectando al endpoint:', url);
         
-        const response = await axios.get(url);
+        const response = await axios.get(url, {
+          withCredentials: true
+        });
+        
         console.log('Respuesta del servidor:', response);
         
-        if (response.data && Array.isArray(response.data)) {
-          console.log('Datos recibidos del backend:', response.data);
+        if (response.data) {
+          console.log('Datos recibidos:', response.data);
           
-          // Procesar los datos para asegurar el formato correcto
-          const processedData = response.data.map(item => {
-            // Si ya tiene el formato correcto, usarlo directamente
-            if (item.tipo && item.titulo && item.descripcion) {
-              return item;
-            }
-            
-            // Si es un formato raw de la BD, convertirlo
-            let tipo = 'primary'; // Por defecto
-            const descripcion = item.descripcion || item.Descripcion || '';
-            
-            if (descripcion.includes('Error') || 
-                descripcion.includes('error') || 
-                descripcion.includes('fallo') ||
-                descripcion.includes('stock') ||
-                descripcion.includes('bajo') ||
-                descripcion.includes('agotará')) {
-              tipo = 'danger';
-            } else if (descripcion.includes('Completado') || 
-                      descripcion.includes('aceptada') ||
-                      descripcion.includes('exitosa')) {
-              tipo = 'success';
-            } else if (descripcion.includes('importada')) {
-              tipo = 'primary';
-            } else if (descripcion.includes('retrasada')) {
-              tipo = 'warning';
-            } else if (descripcion.includes('exportada')) {
-              tipo = 'info';
-            }
-            
-            // Extraer IDs si existen
-            const ordenIdMatch = descripcion.match(/[Oo]rden #?(\d+)/);
-            const ordenId = ordenIdMatch ? ordenIdMatch[1] : null;
-            
-            // Crear título conciso
-            let titulo = descripcion;
-            if (descripcion.includes('Inventario bajo') || descripcion.includes('stock')) {
-              titulo = 'Inventario bajo';
-            } else if (descripcion.includes('aceptada')) {
-              titulo = 'Pedido completado';
-            } else if (descripcion.includes('importadas')) {
-              titulo = 'Nueva importación de inventario';
-            } else if (descripcion.includes('retrasada')) {
-              titulo = 'Retraso en pedido';
-            } else if (descripcion.includes('exportadas')) {
-              titulo = 'Exportación de producto';
-            }
-            
-            return {
-              id: item.id || item.Alerta_ID,
-              tipo,
-              titulo,
-              descripcion,
-              fecha: item.fecha || item.FechaCreacion || new Date().toISOString(),
-              orden_id: ordenId,
-              location_id: item.location_id || item.Location_ID
-            };
-          });
+          // Procesar los datos según el formato del backend
+          let processedData = [];
+          
+          if (Array.isArray(response.data)) {
+            processedData = response.data.map(item => {
+              // Determinar el tipo de alerta basado en su descripción
+              let tipo = item.tipo || 'primary';
+              
+              // Si no tiene tipo pero tenemos descripción, determinar el tipo
+              if (!item.tipo && item.descripcion) {
+                const descripcion = item.descripcion;
+                
+                if (descripcion.includes('Error') || 
+                    descripcion.includes('error') || 
+                    descripcion.includes('fallo') ||
+                    descripcion.includes('stock') ||
+                    descripcion.includes('bajo') ||
+                    descripcion.includes('agotará')) {
+                  tipo = 'danger';
+                } else if (descripcion.includes('Completado') || 
+                          descripcion.includes('aceptada') ||
+                          descripcion.includes('exitosa')) {
+                  tipo = 'success';
+                } else if (descripcion.includes('importada')) {
+                  tipo = 'primary';
+                } else if (descripcion.includes('retrasada')) {
+                  tipo = 'warning';
+                } else if (descripcion.includes('exportada')) {
+                  tipo = 'info';
+                }
+              }
+              
+              // Extraer IDs si existen en la descripción y no están en los datos
+              const descripcion = item.descripcion || '';
+              const ordenIdMatch = descripcion.match(/[Oo]rden #?(\d+)/);
+              const ordenId = item.orden_id || (ordenIdMatch ? ordenIdMatch[1] : null);
+              
+              // Crear título conciso si no tiene uno
+              let titulo = item.titulo || descripcion;
+              
+              if (!item.titulo) {
+                if (descripcion.includes('Inventario bajo') || descripcion.includes('stock')) {
+                  titulo = 'Inventario bajo';
+                } else if (descripcion.includes('aceptada') || descripcion.includes('Nuevo pedido')) {
+                  titulo = 'Pedido nuevo';
+                } else if (descripcion.includes('completado') || descripcion.includes('finalizado')) {
+                  titulo = 'Pedido completado';
+                } else if (descripcion.includes('importadas')) {
+                  titulo = 'Nueva importación de inventario';
+                } else if (descripcion.includes('retrasada')) {
+                  titulo = 'Retraso en pedido';
+                } else if (descripcion.includes('exportadas')) {
+                  titulo = 'Exportación de producto';
+                }
+              }
+              
+              return {
+                id: item.id,
+                tipo,
+                titulo,
+                descripcion,
+                fecha: item.fecha,
+                orden_id: ordenId,
+                usuario_id: item.usuario_id
+              };
+            });
+          }
           
           setNotifications(processedData);
-          
-          // Si teníamos datos de prueba antes pero ahora recibimos datos reales
-          if (usingMockData) {
-            setUsingMockData(false);
-            notify('Usando datos reales para notificaciones', NotificationType.SUCCESS);
-          }
+          setUsingMockData(false);
         } else {
+          console.error('No se recibieron datos válidos del servidor');
           throw new Error('No se recibieron datos válidos');
         }
       } catch (error) {
         console.error('Error conectando al backend:', error.message);
-        
-        // Sólo usar datos de prueba si realmente no hay otra opción
-        if (!usingMockData) {
-          setNotifications(mockNotifications);
-          setUsingMockData(true);
-          notify('No se pudo conectar a la base de datos - usando datos de prueba', NotificationType.WARNING);
-        }
+        notify('Error al cargar notificaciones', NotificationType.ERROR);
+        setNotifications([]);
       }
     } catch (error) {
       console.error('Error al cargar notificaciones:', error);
@@ -256,22 +246,15 @@ const NotificationsLayer = () => {
 
   const handleDeleteNotification = async (id) => {
     try {
-      if (!usingMockData) {
-        await axios.delete(`http://localhost:5000/alertas/${id}`, {
-          withCredentials: true
-        });
-      }
+      await axios.delete(`/alertas/${id}`, {
+        withCredentials: true
+      });
       
       setNotifications(notifications.filter(notif => notif.id !== id));
       notify('Notificación eliminada', NotificationType.SUCCESS);
     } catch (error) {
       console.error('Error al eliminar la notificación:', error);
       notify('Error al eliminar la notificación', NotificationType.ERROR);
-      
-      // Si estamos en modo mock, eliminarla de todas formas
-      if (usingMockData) {
-        setNotifications(notifications.filter(notif => notif.id !== id));
-      }
     }
   };
 
@@ -281,7 +264,6 @@ const NotificationsLayer = () => {
         <div className='card-header border-bottom bg-base py-16 px-24 d-flex justify-content-between align-items-center'>
           <h6 className='text-lg fw-semibold mb-0'>
             Notificaciones
-            {usingMockData && <span className="badge bg-warning text-white ms-2 text-xs">Datos de prueba</span>}
           </h6>
           <button 
             className="btn btn-sm btn-outline-primary"
