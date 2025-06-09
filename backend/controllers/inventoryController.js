@@ -153,6 +153,7 @@ const getInventoryById = async (req, res) => {
     res.status(500).json({ error: "Error del servidor" });
   }
 };
+<<<<<<< Updated upstream
 
 // Actualizar un producto
 const updateInventory = async (req, res) => {
@@ -225,13 +226,99 @@ const updateInventory = async (req, res) => {
         });
       });
     });
+=======
+const updateInventory = async (req, res) => {
+  const id = req.params.id;
+  const {
+    stockActual,
+    importacion,
+    exportacion
+  } = req.body;
+
+  try {
+    // Verificar que el inventario exista
+    const getInventoryQuery = `
+      SELECT 
+        i.*, 
+        a.Nombre AS ArticuloNombre, 
+        l.Nombre AS LocationNombre 
+      FROM Inventario2 i
+      INNER JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID
+      INNER JOIN Location2 l ON i.Location_ID = l.Location_ID
+      WHERE i.Inventario_ID = ?
+    `;
+
+    const inventoryResult = await new Promise((resolve, reject) => {
+      connection.exec(getInventoryQuery, [id], (err, result) => {
+        if (err) {
+          console.error("Error al verificar inventario:", err);
+          reject(err);
+          return;
+        }
+        resolve(result);
+      });
+    });
+
+    if (!inventoryResult || inventoryResult.length === 0) {
+      return res.status(404).json({ error: "Inventario no encontrado" });
+    }
+
+    const inventarioActual = inventoryResult[0];
+
+    // Construir la consulta de actualización solo con los campos permitidos
+    let updateQuery = "UPDATE Inventario2 SET ";
+    let updateParams = [];
+    let updateFields = [];
+
+    if (stockActual !== undefined) {
+      updateFields.push("StockActual = ?");
+      updateParams.push(stockActual);
+    }
+
+    if (importacion !== undefined) {
+      updateFields.push("Importacion = ?");
+      updateParams.push(importacion);
+      updateFields.push("FechaUltimaImportacion = CURRENT_DATE");
+    }
+
+    if (exportacion !== undefined) {
+      updateFields.push("Exportacion = ?");
+      updateParams.push(exportacion);
+      updateFields.push("FechaUltimaExportacion = CURRENT_DATE");
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: "Solo se permite modificar StockActual, Importacion o Exportacion" });
+    }
+
+    updateQuery += updateFields.join(", ") + " WHERE Inventario_ID = ?";
+    updateParams.push(id);
+
+    // Ejecutar la actualización
+    await new Promise((resolve, reject) => {
+      connection.exec(updateQuery, updateParams, (err, result) => {
+        if (err) {
+          console.error("Error al actualizar inventario:", err);
+          reject(err);
+          return;
+        }
+        resolve(result);
+      });
+    });
+
+    res.json({ message: "Inventario actualizado exitosamente" });
+>>>>>>> Stashed changes
   } catch (error) {
     console.error("Error general:", error);
     res.status(500).json({ error: "Error del servidor" });
   }
 };
 
+<<<<<<< Updated upstream
 // Eliminar un producto
+=======
+
+>>>>>>> Stashed changes
 const deleteInventory = async (req, res) => {
   const id = req.params.id;
 

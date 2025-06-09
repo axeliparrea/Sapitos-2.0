@@ -1,5 +1,5 @@
 import MasterLayout from "../../components/masterLayout";
-import Inventory from "../../components/Inventory";
+import Inventory from "../../components/InventarioDueno";
 
 const Inventario = () => {
   return (

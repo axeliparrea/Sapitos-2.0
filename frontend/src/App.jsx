@@ -27,16 +27,54 @@ import OrdenesProveedoresDueno from "./pages/dueno/OrdenesProveedores";
 import OrdenesClientesDueno from "./pages/dueno/OrdenesClientes";
 import RecomendacionesIADueno from "./pages/dueno/RecomendacionesIA";
 
+<<<<<<< Updated upstream
 // Empleado (por ahora genérico)
 import HomeEmpleado from "./pages/empleado/Home";
 import InventarioEmpleado from "./pages/empleado/Inventario";
 import OrdenesEmpleado from "./pages/empleado/Ordenes";
+=======
+import CrearProducto from "./components/crearProducto";
+
+import OrdenesRecibidas from "./pages/dueno/OrdenesRecibidas";
+import PedirProducto from "./pages/dueno/Pedir";
+
+
+
+import HomeCliente from "./pages/cliente/Home";
+import InventarioCliente from "./pages/cliente/Inventario"
+
+import HomeProveedor from "./pages/proveedor/Home";
+import InvoiceListProveedorPage from "./pages/proveedor/InvoiceListProveedorPage";
+import InvoiceProveedorPage from "./pages/proveedor/InvoiceProveedorPage";
+import InvoicePreviewPage from "./pages/InvoicePreviewPage";
+import Notificaciones from "./pages/admin/Notificaciones";
+import Pedidos from "./pages/admin/Pedidos"
+import AiAssistantPage from "./pages/AiAssistantPage";
+
+
+
+// Para usuarios admin 
+import UsuariosShec from "./pages/admin/UsuariosShec";
+import AddUserLayer from "./components/AddUserLayer";
+import InvoiceAddLayer from "./components/InvoiceAddLayer";
+import EditUserLayer from "./components/EditUser";
+import Articulos from "./pages/admin/Articulos";
+import OtpPage from "./pages/OtpPage";
+import AuthHandler from './components/AuthHandler';
+import ProtectedRoute from './components/ProtectedRoute';
+import AddArticuloLayer from "./components/AddArticuloLayer";
+import Location from "./pages/admin/Location";
+import AddLocationLayer from "./components/AddLocationLayer";
+import EditArticuloLayer from "./components/EditArticuloLayer";
+import EditLocationLayer from "./components/EditarLocation";
+>>>>>>> Stashed changes
 
 const ROLE_ID_MAP = {
   1: "admin",
   2: "dueno",
   3: "empleado",
 };
+
 
 const App = () => {
   const [roleId, setRoleId] = useState(null);
@@ -98,6 +136,7 @@ const App = () => {
           </>
         )}
 
+<<<<<<< Updated upstream
         {/* Rutas de DUEÑO */}
         {role === "dueno" && (
           <>
@@ -108,6 +147,73 @@ const App = () => {
             <Route path="/recomendaciones-IA" element={<RecomendacionesIADueno />} />
           </>
         )}
+=======
+          <Route 
+            path="/agregar-usuario" 
+            element={
+              role === "admin" ? <AddUserLayer /> :
+              <Navigate to="/" />
+            } 
+          />
+          <Route 
+            path="/agregar-articulo"
+            element={
+              role === "admin" ? <AddArticuloLayer /> :
+              <Navigate to="/" />
+            }
+          />
+          <Route 
+            path="/agregar-Location"
+            element={
+              role === "admin" ? <AddLocationLayer /> :
+              <Navigate to="/" />
+            }
+          />
+                  <Route 
+            path="/editar-usuario/:userId" 
+            element={
+              role === "admin" ? <EditUserLayer /> :
+              <Navigate to="/" />
+            }
+          />
+          <Route 
+    path="/editar-articulo/:id" 
+    element={
+      role === "admin" ? <EditArticuloLayer /> :
+      <Navigate to="/" />
+    }
+  />
+  <Route 
+    path="/editar-Location/:id"
+    element={
+      role === "admin" ? <EditLocationLayer /> :
+      <Navigate to="/" />
+    }
+  />
+  <Route 
+  path="/crearProducto" 
+  element={
+    role === "dueno" ? <CrearProducto /> :
+    <Navigate to="/" />
+  }
+/>
+<Route 
+  path="/ordenes-recibidas" 
+  element={
+    role === "dueno" ? <OrdenesRecibidas /> :
+    <Navigate to="/" />
+  }
+/>
+<Route 
+  path="/pedir-producto" 
+  element={
+    role === "dueno" ? <PedirProducto /> :
+    <Navigate to="/" />
+  }
+/>
+
+
+>>>>>>> Stashed changes
 
         {/* Rutas de EMPLEADO genérico */}
         {role === "empleado" && (
