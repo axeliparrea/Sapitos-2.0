@@ -85,34 +85,49 @@ const insertPedido = async (req, res) => {
           organizacion: !organizacion ? "Faltante" : "OK", 
           productos: !productos?.length ? "Faltante o vacío" : "OK",
           total: total === undefined ? "Faltante" : "OK"
+        }      });
+    }
+
+    // Validar que el usuario existe
+    const userCheckQuery = `SELECT 1 FROM Usuario2 WHERE Usuario_ID = ?`;
+    const userResult = await new Promise((resolve, reject) => {
+      connection.exec(userCheckQuery, [creadoPorId], (err, result) => {
+        if (err) {
+          console.error("Error al verificar usuario:", err);
+          reject(err);
+        } else {
+          resolve(result);
         }
+      });
+    });
+
+    if (!userResult || userResult.length === 0) {
+      return res.status(400).json({ 
+        error: "El usuario especificado no existe",
+        creadoPorId: creadoPorId
       });
     }
 
-    console.log("Datos recibidos para pedido:", {
-      creadoPorId,
-      organizacion,
-      productos: productos.length,
-      total,
-      metodoPagoId,
-      descuentoAplicado,
-      tipoOrden
-    });
-
-    // Usamos la conexión de pool existente
-    conn = connection;
-
-    // Iniciar transacción con autocommit en false
-    await new Promise((resolve, reject) => {
-      conn.exec('SET TRANSACTION AUTOCOMMIT OFF', [], (err) => {
+    // Validar que el método de pago existe
+    const pagoCheckQuery = `SELECT 1 FROM MetodoPago2 WHERE MetodoPago_ID = ?`;
+    const pagoResult = await new Promise((resolve, reject) => {
+      connection.exec(pagoCheckQuery, [metodoPagoId], (err, result) => {
         if (err) {
-          console.error("Error al configurar transacción:", err);
+          console.error("Error al verificar método de pago:", err);
           reject(err);
         } else {
-          resolve();
+          resolve(result);
         }
       });
     });
+
+    if (!pagoResult || pagoResult.length === 0) {
+      return res.status(400).json({ 
+        error: "El método de pago especificado no existe",
+        metodoPagoId: metodoPagoId
+      });
+    }    // Usamos la conexión de pool existente
+    conn = connection;
 
     const insertOrdenQuery = `
       INSERT INTO Ordenes2 (
@@ -124,7 +139,7 @@ const insertPedido = async (req, res) => {
         Total, 
         MetodoPago_ID, 
         DescuentoAplicado
-      ) VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'Pendiente', ?, ?, ?)
+      ) VALUES (?, ?, ?, CURRENT_DATE, 'Pendiente', ?, ?, ?)
     `;
 
     const ordenId = await new Promise((resolve, reject) => {
@@ -134,27 +149,19 @@ const insertPedido = async (req, res) => {
           if (err) {
             console.error("Error al insertar orden:", err);
             reject(err);
-          } else {
-            conn.exec("SELECT CURRENT_IDENTITY_VALUE() AS ordenId FROM DUMMY", [], (err2, result2) => {
+          } else {            conn.exec("SELECT TOP 1 Orden_ID FROM Ordenes2 ORDER BY Orden_ID DESC", [], (err2, result2) => {
               if (err2) {
                 console.error("Error al obtener ID de orden:", err2);
-                reject(err2);
-              } else {
-                const ordenId = result2[0]?.ORDENID || result2[0]?.ordenId;
-                console.log("Orden creada con ID:", ordenId);
+                reject(err2);              } else {
+                const ordenId = result2[0]?.ORDEN_ID;
                 resolve(ordenId);
               }
             });
           }
         }
       );
-    });
-
-    if (!ordenId) {
-      // Hacer rollback si no se pudo obtener el ID
-      await new Promise((resolve) => {
-        conn.exec('ROLLBACK', [], () => resolve());
-      });
+    });    if (!ordenId) {
+      console.error("No se pudo obtener el ID de la orden creada");
       throw new Error("No se pudo obtener el ID de la orden creada");
     }
 
@@ -164,19 +171,13 @@ const insertPedido = async (req, res) => {
       conn.exec(verificarOrdenQuery, [ordenId], (err, result) => {
         if (err) {
           console.error("Error al verificar la existencia de la orden:", err);
-          reject(err);
-        } else {
-          console.log("Resultado de verificación de orden:", result);
+          reject(err);        } else {
           resolve(result);
         }
       });
-    });
-
-    const ordenExiste = ordenResult && ordenResult.length > 0;
+    });const ordenExiste = ordenResult && ordenResult.length > 0;
     if (!ordenExiste) {
-      await new Promise((resolve) => {
-        conn.exec('ROLLBACK', [], () => resolve());
-      });
+      console.error("La orden fue creada pero no se encontró en la base de datos");
       throw new Error("La orden fue creada pero no se encontró en la base de datos");
     }
 
@@ -186,9 +187,7 @@ const insertPedido = async (req, res) => {
     // Procesar productos secuencialmente para mejor control de errores
     for (let i = 0; i < productos.length; i++) {
       const producto = productos[i];
-      
-      try {
-        console.log(`Procesando producto ${i + 1}:`, producto);
+        try {
         
         // Validar que el artículo existe
         const checkArticuloQuery = `SELECT 1 FROM Articulo2 WHERE Articulo_ID = ?`;
@@ -227,22 +226,18 @@ const insertPedido = async (req, res) => {
         }
         
         const locationId = locationResult[0].LOCATION_ID;
-        
-        // Buscar inventario existente
+          // Buscar inventario existente
         const buscarInventarioQuery = `
-          SELECT Inventario_ID 
+          SELECT TOP 1 Inventario_ID 
           FROM Inventario2
           WHERE Articulo_ID = ? AND Location_ID = ?
-          LIMIT 1
         `;
 
         const inventarioResult = await new Promise((resolve, reject) => {
           conn.exec(buscarInventarioQuery, [producto.articuloId, locationId], (err, result) => {
             if (err) {
               console.error(`Error al buscar inventario para producto ${producto.articuloId}:`, err);
-              reject(err);
-            } else {
-              console.log(`Resultado búsqueda inventario para producto ${producto.articuloId}:`, result);
+              reject(err);            } else {
               resolve(result);
             }
           });
@@ -273,10 +268,9 @@ const insertPedido = async (req, res) => {
               }
             });
           });
-          
-          // Obtener el ID generado
+            // Obtener el ID generado
           const newInventarioResult = await new Promise((resolve, reject) => {
-            conn.exec("SELECT CURRENT_IDENTITY_VALUE() AS invId FROM DUMMY", [], (err, result) => {
+            conn.exec("SELECT TOP 1 Inventario_ID FROM Inventario2 ORDER BY Inventario_ID DESC", [], (err, result) => {
               if (err) {
                 console.error("Error al obtener ID del nuevo inventario:", err);
                 reject(err);
@@ -284,16 +278,11 @@ const insertPedido = async (req, res) => {
                 resolve(result);
               }
             });
-          });
-          
-          inventarioId = newInventarioResult[0]?.INVID || newInventarioResult[0]?.invId;
-          console.log(`Nuevo inventario creado con ID: ${inventarioId}`);
-        } else {
+          });          
+          inventarioId = newInventarioResult[0]?.INVENTARIO_ID;        } else {
           inventarioId = inventarioResult[0].INVENTARIO_ID;
         }
         
-        console.log(`Inventario encontrado/creado para producto ${producto.articuloId}: ${inventarioId}`);
-
         // Insertar producto en orden
         const insertProductoQuery = `
           INSERT INTO OrdenesProductos2 (
@@ -310,9 +299,7 @@ const insertPedido = async (req, res) => {
             (err, result) => {
               if (err) {
                 console.error(`Error al insertar producto ${producto.articuloId}:`, err);
-                reject(err);
-              } else {
-                console.log(`Producto ${producto.articuloId} insertado exitosamente`);
+                reject(err);              } else {
                 productosInsertados++;
                 resolve(result);
               }
@@ -324,39 +311,13 @@ const insertPedido = async (req, res) => {
         console.error(`Error procesando producto ${producto.articuloId}:`, error);
         erroresProductos.push(`Error en producto ${producto.articuloId}: ${error.message}`);
       }
-    }
-    
-    if (productosInsertados === 0) {
-      await new Promise((resolve) => {
-        conn.exec('ROLLBACK', [], () => {
-          resolve();
-        });
-      });
-
+    }    if (productosInsertados === 0) {
+      console.error("No se pudo insertar ningún producto");
       return res.status(400).json({
         error: "No se pudo insertar ningún producto",
         detalles: erroresProductos
       });
-    }
-
-    // Confirmar la transacción
-    await new Promise((resolve, reject) => {
-      conn.exec('COMMIT', [], (err) => {
-        if (err) {
-          console.error("Error al confirmar transacción:", err);
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
-
-    // Restaurar autocommit
-    await new Promise((resolve) => {
-      conn.exec('SET TRANSACTION AUTOCOMMIT ON', [], () => {
-        resolve();
-      });
-    });
+    }    console.log("Pedido procesado exitosamente, enviando respuesta...");
 
     const response = {
       message: "Pedido creado exitosamente",
@@ -407,25 +368,18 @@ const insertPedido = async (req, res) => {
     }
 
     res.status(201).json(response);
-
   } catch (error) {
-    // Asegurar que se hace rollback en caso de error general
-    if (conn) {
-      try {
-        await new Promise((resolve) => {
-          conn.exec('ROLLBACK', [], () => {
-            conn.exec('SET TRANSACTION AUTOCOMMIT ON', [], () => {
-              resolve();
-            });
-          });
-        });
-      } catch (rollbackError) {
-        console.error("Error adicional durante rollback:", rollbackError);
-      }
-    }
-    
+    // SAP HANA handles transactions automatically - no manual rollback needed
     console.error("Error general al crear pedido:", error);
-    res.status(500).json({ error: "Error al crear el pedido", detalle: error.message });
+    console.error("Stack trace:", error.stack);
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
+    res.status(500).json({ 
+      error: "Error al crear el pedido", 
+      detalle: error.message,
+      codigo: error.code,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -435,27 +389,39 @@ const deletePedido = async (req, res) => {
   if (!id || isNaN(id)) {
     return res.status(400).json({ error: "ID de pedido inválido" });
   }
-
   try {
-    await connection.exec('BEGIN');
+    // SAP HANA handles transactions automatically
     
     // Verificar que el pedido existe
-    const [pedido] = await connection.exec('SELECT Orden_ID FROM Ordenes2 WHERE Orden_ID = ?', [id]);
-    if (!pedido) {
-      await connection.exec('ROLLBACK');
+    const pedidoResult = await new Promise((resolve, reject) => {
+      connection.exec('SELECT Orden_ID FROM Ordenes2 WHERE Orden_ID = ?', [id], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+    
+    if (!pedidoResult || pedidoResult.length === 0) {
       return res.status(404).json({ error: "Pedido no encontrado" });
     }
     
     // Primero eliminar los productos asociados
-    await connection.exec('DELETE FROM OrdenesProductos2 WHERE Orden_ID = ?', [id]);
+    await new Promise((resolve, reject) => {
+      connection.exec('DELETE FROM OrdenesProductos2 WHERE Orden_ID = ?', [id], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
     
     // Luego eliminar el pedido
-    await connection.exec('DELETE FROM Ordenes2 WHERE Orden_ID = ?', [id]);
+    await new Promise((resolve, reject) => {
+      connection.exec('DELETE FROM Ordenes2 WHERE Orden_ID = ?', [id], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
     
-    await connection.exec('COMMIT');
     res.status(200).json({ message: "Pedido eliminado exitosamente" });
   } catch (error) {
-    await connection.exec('ROLLBACK');
     console.error("Error al eliminar pedido:", error);
     res.status(500).json({ error: "Error al eliminar el pedido" });
   }
@@ -950,7 +916,7 @@ const enviarAInventario = async (req, res) => {
     return res.status(400).json({ error: "ID de pedido inválido" });
   }
   try {
-    const mainWarehouseQuery = `SELECT Location_ID, Nombre FROM Location2 WHERE Tipo = 'Oficina' LIMIT 1`;
+    const mainWarehouseQuery = `SELECT TOP 1 Location_ID, Nombre FROM Location2 WHERE Tipo = 'Oficina'`;
     const mainWarehouseResult = await new Promise((resolve, reject) => {
       connection.exec(mainWarehouseQuery, [], (err, result) => {
         if (err) reject(err);
