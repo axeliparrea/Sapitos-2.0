@@ -7,7 +7,7 @@ const Articulos = () => {
     <MasterLayout>
       <main className="main-content">
         <section className="content-wrapper py-4 px-3">
-          <h2 className="mb-4 fw-bold text-primary">Gestión de Artículos</h2>
+
           <ArticulosListLayer />
         </section>
       </main>

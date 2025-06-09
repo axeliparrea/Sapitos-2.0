@@ -274,12 +274,11 @@ const ModelManagement = () => {
                 </div>
               )}
             </div>
-          )}
-          {activeTab==='schedule' && (
+          )}          {activeTab==='schedule' && (
             <div>
               {/* Status section */}
               <div className="card p-4 mb-4 text-center">
-                <span className={`badge ${modelStatus.status==='active'?'bg-success':'bg-danger'} fs-5`}>{modelStatus.status==='active'? 'Activo' : 'Inactivo'}</span>
+                <span className={`badge bg-success fs-5`}>Activo</span>
                 {modelStatus.lastUpdated && <p className="mt-2 small text-muted">Última: {formatDate(modelStatus.lastUpdated)}</p>}
               </div>
               {/* Schedule section */}

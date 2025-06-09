@@ -78,12 +78,12 @@ const ArticulosListLayer = () => {
         </Link>
       </div>
 
-      <div className="card-body p-24">
+      <div className="card-body p-24 d-flex flex-column" style={{ minHeight: '60vh' }}>
         {loading ? (
           <div className="text-center">Cargando artículos...</div>
         ) : (
           <>
-            <div className="table-responsive scroll-sm">
+            <div className="table-responsive scroll-sm flex-grow-1" style={{ minHeight: '50vh', maxHeight: '65vh', overflowY: 'auto' }}>
               <table className="table bordered-table sm-table mb-0">
                 <thead>
                   <tr>

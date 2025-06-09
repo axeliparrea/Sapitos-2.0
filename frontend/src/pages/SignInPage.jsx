@@ -33,6 +33,14 @@ const SignInPage = () => {
         }
 
         const data = await response.json();
+        
+        // Verificar si requiere OTP
+        if (data.requiresOtp) {
+          await generateOTP();
+          setCheckingSession(false);
+          return;
+        }
+
         let userRole;
         if (data.usuario && data.usuario.rol) {
           userRole = data.usuario.rol;
@@ -77,7 +85,6 @@ const SignInPage = () => {
 
     checkSession();
   }, [navigate]);
-
   const handleLogin = async (event) => {
     event.preventDefault();
     setIsLoading(true);
@@ -92,7 +99,18 @@ const SignInPage = () => {
         credentials: "include",
       });
       
+      console.log("Respuesta de login recibida:", {
+        status: response.status,
+        ok: response.ok
+      });
+      
       const data = await response.json();
+      console.log("Datos de login:", {
+        requiresOtp: !!data.requiresOtp,
+        hasUser: !!data.usuario,
+        hasToken: !!data.token,
+        mensaje: data.message || data.mensaje
+      });
       
       if (!response.ok) {
         let message = "Error en el inicio de sesión";
@@ -113,10 +131,24 @@ const SignInPage = () => {
       }
 
       console.log("Login exitoso:", data.usuario);
-      
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 100);
+        // OTP
+      if (data.requiresOtp) {
+        console.log("OTP verification required");
+        
+        // Generate OTP and store secret in session storage instead of state
+        const otpData = await generateOTP();
+        if (otpData && otpData.secret) {
+          sessionStorage.setItem('otpSecret', otpData.secret);
+        }
+        
+        // Redirect to OTP page instead of showing a modal
+        navigate('/otp');
+      } else {
+        // Redirect if OTP is not required
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 100);
+      }
       
     } catch (error) {
       console.error("Error:", error);
@@ -125,6 +157,44 @@ const SignInPage = () => {
       setIsLoading(false);
     }
   };
+  const generateOTP = async () => {
+    console.log("Iniciando generación de OTP...");
+    try {
+      const response = await fetch("http://localhost:5000/api/otp/generate", {
+        method: "GET",  
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        console.error(`Error HTTP: ${response.status} - ${response.statusText}`);
+        const errorData = await response.json().catch(() => null);
+        console.error("Detalles del error:", errorData);
+        throw new Error(errorData?.message || "Error al generar OTP");
+      }
+      
+      const data = await response.json();
+      console.log("Respuesta de generación OTP:", { 
+        success: data.success,
+        message: data.message,
+        hasSecret: !!data.secret,
+        devMode: process.env.NODE_ENV === 'development',
+        authOtp: data.authOtpEnabled // El backend debe enviar este valor
+      });
+        // We'll store the secret in sessionStorage in the login function instead
+      
+      // En desarrollo, podemos mostrar el OTP en consola
+      if (process.env.NODE_ENV === 'development' && data.otp) {
+        console.log("Código OTP (solo desarrollo):", data.otp);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error("Error generando OTP:", error);
+      setError(error.message || "Error generando OTP");
+      return null;
+    }
+  };
+  // OTP verification now handled in OtpPage.jsx
 
   const handleCloseDialog = () => {
     setDialogOpen(false);

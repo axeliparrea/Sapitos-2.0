@@ -10,11 +10,13 @@ const {
   getArticulos,
   getInventoryByCategory,
   getProveedores,
-  getProductosPorProveedor
+  getProductosPorProveedor,
+  getProductosEnRiesgo
 } = require("../controllers/inventoryController");
 const router = express.Router();
 
 const { auth } = require('../middleware/auth');
+const { requireOtpVerification } = require('../middleware/requireOtp');
 
 // Rutas principales de inventario
 /**
@@ -30,6 +32,20 @@ const { auth } = require('../middleware/auth');
  *         description: Error del servidor
  */
 router.get("/", getInventory);
+
+/**
+ * @swagger
+ * /inventory/risk-products:
+ *   get:
+ *     summary: Obtener productos en riesgo (stock crítico o bajo)
+ *     tags: [Inventory]
+ *     responses:
+ *       200:
+ *         description: Lista de productos en riesgo
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/risk-products", auth(["admin", "dueno", "empleado"]), getProductosEnRiesgo);
 
 /**
  * @swagger
@@ -50,7 +66,7 @@ router.get("/", getInventory);
  *       500:
  *         description: Error del servidor
  */
-router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
+router.get("/:id", auth(["admin", "dueno", "empleado"], true), requireOtpVerification, getInventoryById);
 
 /**
  * @swagger
@@ -79,7 +95,7 @@ router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
  *       500:
  *         description: Error del servidor
  */
-router.post("/", auth(["admin", "dueno"]), insertInventory);
+router.post("/", auth(["admin", "dueno"], true), requireOtpVerification, insertInventory);
 
 /**
  * @swagger
@@ -109,7 +125,7 @@ router.post("/", auth(["admin", "dueno"]), insertInventory);
  *       500:
  *         description: Error del servidor
  */
-router.put("/:id", auth(["admin", "dueno"]), updateInventory);
+router.put("/:id", auth(["admin", "dueno"], true), requireOtpVerification, updateInventory);
 
 /**
  * @swagger
@@ -130,7 +146,7 @@ router.put("/:id", auth(["admin", "dueno"]), updateInventory);
  *       500:
  *         description: Error del servidor
  */
-router.delete("/:id", auth(["admin", "dueno"]), deleteInventory);
+router.delete("/:id", auth(["admin", "dueno"], true), requireOtpVerification, deleteInventory);
 
 // Rutas adicionales de inventario
 /**
@@ -203,7 +219,7 @@ router.get("/articles/all", getArticulos);
  */
 router.get("/category/:categoria", getInventoryByCategory);
 
-// Rutas de proveedores (manteniendo el prefijo /inventory)
+
 /**
  * @swagger
  * /inventory/proveedores:
@@ -216,7 +232,7 @@ router.get("/category/:categoria", getInventoryByCategory);
  *       500:
  *         description: Error del servidor
  */
-// router.get("/proveedores/all", getProveedores);
+
 
 /**
  * @swagger
@@ -237,6 +253,6 @@ router.get("/category/:categoria", getInventoryByCategory);
  *       500:
  *         description: Error del servidor
  */
-// router.get("/proveedores/:proveedor", getProductosPorProveedor);
+
 
 module.exports = router;

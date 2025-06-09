@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js --quiet",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx jest --coverage"
   },
   "keywords": [],
   "author": "",
@@ -13,20 +13,30 @@
   "description": "",
   "dependencies": {
     "@sap/hana-client": "^2.23.27",
-    "bcryptjs": "^3.0.2",
+    "axios": "^1.9.0",
+    "bcryptjs": "^2.4.3",
     "child_process": "^1.0.2",
     "colors": "^1.4.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.0.3",
     "express": "^4.21.2",
-    "fs": "^0.0.1-security",
     "express-fileupload": "^1.5.1",
+    "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "mssql": "^11.0.1",
     "node-cron": "^3.0.3",
+    "nodemailer": "^7.0.3",
+    "openai": "^4.0.0",
     "path": "^0.12.7",
+    "speakeasy": "^2.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.5.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.1.1"
   }
 }

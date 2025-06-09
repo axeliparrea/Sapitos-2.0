@@ -43,11 +43,17 @@ const LocationListLayer = () => {
   }, [terminoBusqueda, locations]);
 
   const eliminarLocation = async (id) => {
+    const confirmar = window.confirm("¿Estás seguro que deseas eliminar esta ubicación?");
+    if (!confirmar) return;
+
     try {
-      await axios.delete(`http://localhost:5000/location2/${id}`);
+      await axios.delete(`http://localhost:5000/location2/${id}`, {
+        withCredentials: true
+      });
       fetchAllData();
     } catch (error) {
       console.error("Error al eliminar ubicación:", error);
+      alert("Error al eliminar la ubicación");
     }
   };
 
@@ -73,9 +79,8 @@ const LocationListLayer = () => {
           </form>
         </div>
         <Link to="/agregar-Location" className="btn btn-primary btn-sm">
-  <Icon icon="ic:baseline-plus" className="icon text-xl" /> Agregar Ubicación
-</Link>
-
+          <Icon icon="ic:baseline-plus" className="icon text-xl" /> Agregar Ubicación
+        </Link>
       </div>
 
       <div className="card-body p-24">
@@ -104,7 +109,7 @@ const LocationListLayer = () => {
                           <div className="d-flex align-items-center gap-10 justify-content-center">
                             <button
                               type="button"
-                              onClick={() => navigate(`/editar-ubicacion/${loc.LOCATION_ID}`)}
+                              onClick={() => navigate(`/editar-Location/${loc.LOCATION_ID}`)}
                               className="bg-success-focus text-success-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                             >
                               <Icon icon="lucide:edit" />

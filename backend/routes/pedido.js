@@ -181,7 +181,7 @@ const { auth } = require('../middleware/auth');
  *         description: Error del servidor
  */
 router.get("/", getPedido);
-// router.get("/", auth(["admin", "dueno", "empleado"]), getPedido);
+
 
 /**
  * @swagger
@@ -223,7 +223,7 @@ router.get("/", getPedido);
  *         description: Error del servidor
  */
 router.post("/", insertPedido);
-// router.post("/", auth(["admin", "dueno", "empleado"]), insertPedido);
+
 
 /**
  * @swagger
@@ -264,7 +264,7 @@ router.post("/", insertPedido);
  *         description: Error del servidor
  */
 router.put("/:id", updatePedido);
-// router.put("/:id", auth(["admin", "dueno"]), updatePedido);
+
 
 /**
  * @swagger
@@ -292,7 +292,7 @@ router.put("/:id", updatePedido);
  *         description: Error del servidor
  */
 router.delete("/:id", deletePedido);
-// router.delete("/:id", auth(["admin", "dueno"]), deletePedido);
+
 
 /**
  * @swagger
@@ -315,7 +315,7 @@ router.delete("/:id", deletePedido);
  *         description: Error del servidor
  */
 router.get("/proveedores", getProveedores);
-// router.get("/proveedores", auth(["admin", "dueno", "empleado"]), getProveedores);
+
 
 /**
  * @swagger
@@ -347,7 +347,6 @@ router.get("/proveedores", getProveedores);
  *         description: Error del servidor
  */
 router.get("/productos/:nombreProveedor", getProductosPorProveedor);
-// router.get("/productos/:nombreProveedor", auth(["admin", "dueno", "empleado"]), getProductosPorProveedor);
 
 /**
  * @swagger
@@ -375,7 +374,7 @@ router.get("/productos/:nombreProveedor", getProductosPorProveedor);
  *         description: Error del servidor
  */
 router.put("/:id/aprobar", aprobarPedido);
-// router.put("/:id/aprobar", auth(["proveedor", "admin"]), aprobarPedido);
+
 
 /**
  * @swagger
@@ -412,7 +411,7 @@ router.put("/:id/aprobar", aprobarPedido);
  *         description: Error del servidor
  */
 router.put("/:id/entregar", entregarPedido);
-// router.put("/:id/entregar", auth(["proveedor", "admin"]), entregarPedido);
+
 
 /**
  * @swagger
@@ -451,7 +450,7 @@ router.put("/:id/entregar", entregarPedido);
  *         description: Error del servidor
  */
 router.put("/:id/inventario", enviarAInventario);
-// router.put("/:id/inventario", auth(["admin", "dueno"]), enviarAInventario);
+
 
 /**
  * @swagger
@@ -506,7 +505,7 @@ router.put("/:id/inventario", enviarAInventario);
  *         description: Error del servidor
  */
 router.get("/proveedor/:correo", getPedidosProveedor);
-// router.get("/proveedor/:correo", auth(["proveedor", "admin"]), getPedidosProveedor);
+
 
 /**
  * @swagger
@@ -551,7 +550,7 @@ router.get("/proveedor/:correo", getPedidosProveedor);
  *         description: Error del servidor
  */
 router.get("/:id/detalles", getDetallesPedido);
-// router.get("/:id/detalles", auth(["admin", "dueno", "empleado", "proveedor"]), getDetallesPedido);
+
 
 /**
  * @swagger
@@ -574,7 +573,7 @@ router.get("/:id/detalles", getDetallesPedido);
  *         description: Error del servidor
  */
 router.get("/inventario/proveedores", getProveedoresInventario);
-// router.get("/inventario/proveedores", auth(["admin", "dueno", "empleado"]), getProveedoresInventario);
+
 
 /**
  * @swagger
@@ -606,7 +605,7 @@ router.get("/inventario/proveedores", getProveedoresInventario);
  *         description: Error del servidor
  */
 router.get("/inventario/productos/:nombreProveedor", getProductosInventarioPorProveedor);
-// router.get("/inventario/productos/:nombreProveedor", auth(["admin", "dueno", "empleado"]), getProductosInventarioPorProveedor);
+
 
 /**
  * @swagger
@@ -642,7 +641,7 @@ router.get("/inventario/productos/:nombreProveedor", getProductosInventarioPorPr
  *         description: Error del servidor
  */
 router.get("/locations", getAvailableLocations);
-// router.get("/locations", auth(["admin", "dueno"]), getAvailableLocations);
+
 
 /**
  * @swagger
