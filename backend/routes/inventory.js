@@ -10,8 +10,7 @@ const {
   getArticulos,
   getInventoryByCategory,
   getProveedores,
-  getProductosPorProveedor,
-  getProductosEnRiesgo
+  getProductosPorProveedor
 } = require("../controllers/inventoryController");
 const router = express.Router();
 
@@ -32,20 +31,6 @@ const { requireOtpVerification } = require('../middleware/requireOtp');
  *         description: Error del servidor
  */
 router.get("/", getInventory);
-
-/**
- * @swagger
- * /inventory/risk-products:
- *   get:
- *     summary: Obtener productos en riesgo (stock crítico o bajo)
- *     tags: [Inventory]
- *     responses:
- *       200:
- *         description: Lista de productos en riesgo
- *       500:
- *         description: Error del servidor
- */
-router.get("/risk-products", auth(["admin", "dueno", "empleado"]), getProductosEnRiesgo);
 
 /**
  * @swagger

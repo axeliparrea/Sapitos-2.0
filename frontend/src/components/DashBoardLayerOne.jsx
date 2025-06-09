@@ -13,6 +13,9 @@ const DashBoardLayerOne = () => {
   const [inventoryData, setInventoryData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [locationError, setLocationError] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState(null);
+  const [allLocations, setAllLocations] = useState([]);
   const [kpiData, setKpiData] = useState({
     ventas: { total: 0, percentage_change: 0 },
     unidades: { total: 0, percentage_change: 0 },
@@ -21,19 +24,21 @@ const DashBoardLayerOne = () => {
   });
 
   useEffect(() => {
-    const fetchKpiData = async () => {
+    const fetchKpiData = async (locationId) => {
       try {
         // Get user data to extract location ID
         const cookieData = getCookie("UserData");
-        let locationId = null;
+        let locationParam = '';
         
-        if (cookieData) {
+        if (locationId) {
+          locationParam = `?locationId=${locationId}`;
+        } else if (cookieData) {
           const parsedData = typeof cookieData === 'string' ? JSON.parse(cookieData) : cookieData;
-          locationId = parsedData?.LOCATION_ID || parsedData?.locationId;
+          const userLocationId = parsedData?.LOCATION_ID || parsedData?.locationId;
+          if (userLocationId) {
+            locationParam = `?locationId=${userLocationId}`;
+          }
         }
-
-        // Build query parameters for location filtering
-        const locationParam = locationId ? `?locationId=${locationId}` : '';
 
         const [
           ventasRes,
@@ -62,7 +67,34 @@ const DashBoardLayerOne = () => {
         console.error("Error fetching KPI data:", error);
       }
     };
-    fetchKpiData();
+
+    // Only fetch KPI data if we have user data
+    if (userData) {
+      const userLocationId = userData?.LOCATION_ID || userData?.locationId;
+      fetchKpiData(isAdmin ? "all" : userLocationId);
+    }
+  }, [userData, isAdmin, selectedLocationId]);
+
+  // Fetch all locations
+  useEffect(() => {
+    const fetchAllLocations = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/location2", {
+          credentials: "include"
+        });
+        
+        if (response.ok) {
+          const locationsData = await response.json();
+          setAllLocations(locationsData);
+        } else {
+          console.error("Error fetching locations:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching all locations:", error);
+      }
+    };
+    
+    fetchAllLocations();
   }, []);
 
   useEffect(() => {
@@ -76,9 +108,13 @@ const DashBoardLayerOne = () => {
           const parsedData = typeof cookieData === 'string' ? JSON.parse(cookieData) : cookieData;
           console.log("Parsed user data:", parsedData);
           setUserData(parsedData);
+          
+          // Check if user is admin
+          setIsAdmin(parsedData.ROL === 'ADMIN');
 
           // Verificar que el usuario tenga un LOCATION_ID válido
           const locationId = parsedData.LOCATION_ID || parsedData.locationId;
+          setSelectedLocationId(locationId);
           console.log("Location ID encontrado:", locationId);
 
           // Fetch location details if user has a location ID
@@ -95,7 +131,7 @@ const DashBoardLayerOne = () => {
               setUserLocation(locationData);
 
               // Fetch inventory data for the location
-              const inventoryResponse = await fetch(`http://localhost:5000/api/inventory/location/${locationId}`, {
+              const inventoryResponse = await fetch(`http://localhost:5000/inventory/location/${locationId}`, {
                 credentials: 'include'
               });
               console.log("Inventory response status:", inventoryResponse.status);
@@ -176,7 +212,7 @@ const DashBoardLayerOne = () => {
 
       <section className='row gy-4 mt-1'>
         {/* SalesStatisticOne */}
-        <SalesStatisticOne />
+        <SalesStatisticOne locationId={selectedLocationId ? String(selectedLocationId) : ''} />
 
         {/* RiskProductsOne */}
         <RiskProductsOne inventoryData={inventoryData} loading={loading} error={!inventoryData && !loading ? "No se pudo cargar la información de inventario." : null} />

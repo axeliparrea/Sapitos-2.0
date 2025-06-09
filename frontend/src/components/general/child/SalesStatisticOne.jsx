@@ -4,7 +4,7 @@ import { Icon } from '@iconify/react';
 import PropTypes from 'prop-types';
 import getCookie from '../../../utils/cookies';
 
-const SalesStatisticOne = () => {
+const SalesStatisticOne = ({ locationId = "all" }) => {
   const chartContainerRef = useRef(null);
   const [filter, setFilter] = useState(() => localStorage.getItem('graphFilter') || 'yearly');
   const [graphData, setGraphData] = useState([]);
@@ -46,7 +46,7 @@ const SalesStatisticOne = () => {
       }
     };
     fetchGraphData();
-  }, [filter]);
+  }, [filter, locationId]);
 
   useEffect(() => {
     if (graphData.length > 0) {
@@ -298,7 +298,7 @@ const SalesStatisticOne = () => {
 };
 
 SalesStatisticOne.propTypes = {
-  // ventasKpi: PropTypes.object,
+  locationId: PropTypes.string
 };
 
 export default SalesStatisticOne;
