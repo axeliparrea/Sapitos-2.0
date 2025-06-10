@@ -76,7 +76,6 @@ const InvoiceListLayer = () => {
           formattedPedidos = formattedPedidos.filter(pedido => {
             const matches = pedido.locationId === userLocationId || 
                            pedido.locationId === parseInt(userLocationId);
-            console.log(`Pedido ${pedido.id}: locationId=${pedido.locationId}, userLocationId=${userLocationId}, matches=${matches}`);
             return matches;
           });
           console.log(`Filtrado para ${userRole}: ${beforeFilterCount} -> ${formattedPedidos.length} pedidos`);

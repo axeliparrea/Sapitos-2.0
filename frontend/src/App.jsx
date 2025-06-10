@@ -40,6 +40,8 @@ import Location from "./pages/admin/Location";
 import AddLocationLayer from "./components/AddLocationLayer";
 import EditArticuloLayer from "./components/EditArticuloLayer";
 import EditLocationLayer from "./components/EditarLocation";
+import CrearPedidoWarehouse from "./pages/dueno/CrearPedidoWarehouse";
+
 
 const App = () => {
   const { user, isAuthenticated } = useAuth();
@@ -266,6 +268,17 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/pedidowarehouse"
+          element={
+            <ProtectedRoute allowedRoles={["dueno"]}>
+              <CrearPedidoWarehouse />
+            </ProtectedRoute>
+          }
+        />
+
+
 
         {/* Ruta de fallback para rutas no encontradas */}
         <Route path="*" element={<Navigate to="/" replace />} />
