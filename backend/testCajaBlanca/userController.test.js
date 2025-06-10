@@ -1,7 +1,3 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { registerUser, loginUser, getSession, getUsers } = require("../controllers/userController");
-
 jest.mock("bcryptjs");
 jest.mock("jsonwebtoken");
 jest.mock("../config/db", () => ({
@@ -9,6 +5,11 @@ jest.mock("../config/db", () => ({
     exec: jest.fn()
   }
 }));
+
+const { registerUser, loginUser, getSession, getUsers } = require("../controllers/userController");
+const dbMock = require("../config/db");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const mockRes = () => {
   const res = {};
@@ -42,8 +43,7 @@ describe("userController", () => {
       const res = mockRes();
 
       bcrypt.hash.mockResolvedValue("hashed123");
-      const db = require("../config/db");
-      db.connection.exec.mockImplementation((query, params, cb) => {
+      dbMock.connection.exec.mockImplementation((query, params, cb) => {
         if (query.includes("SELECT Rol_ID")) {
           cb(null, [{ ROL_ID: 2 }]);
         } else {
@@ -69,36 +69,52 @@ describe("userController", () => {
 
   describe("loginUser", () => {
     it("debería autenticar exitosamente con datos válidos", async () => {
+      const hashedPassword = await bcrypt.hash("1234", 10);
+
       const req = {
         body: { correo: "correo@test.com", contrasena: "1234" },
-        cookies: {},
-        clearCookie: jest.fn()
+        cookies: {}
       };
       const res = mockRes();
 
-      const mockUser = {
-        USUARIO_ID: 1,
-        NOMBRE: "Usuario Test",
-        ROLNOMBRE: "Admin",
-        CORREO: "correo@test.com",
-        USERNAME: "user123",
-        LOCATION_ID: 5,
-        CLAVE: "hashedPassword"
-      };
-
-      const db = require("../config/db");
-      db.connection.exec.mockImplementation((query, params, cb) => cb(null, [mockUser]));
+      dbMock.connection.exec
+        .mockImplementationOnce((query, params, cb) => {
+          cb(null, [{
+            USUARIO_ID: 1,
+            NOMBRE: "Usuario Test",
+            CORREO: "correo@test.com",
+            USERNAME: "user123",
+            CLAVE: hashedPassword,
+            ROLNOMBRE: "Admin",
+            LOCATION_ID: 5
+          }]);
+        })
+        .mockImplementationOnce((query, params, cb) => {
+          cb(null, [{ ORGANIZACION: "Empresa X" }]);
+        })
+        .mockImplementationOnce((query, params, cb) => {
+          cb(null, []); // otros usuarios
+        });
 
       bcrypt.compare.mockResolvedValue(true);
       jwt.sign.mockReturnValue("mockedToken");
 
       await loginUser(req, res);
 
-      expect(res.cookie).toBeDefined();
       expect(res.status).not.toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        message: "Login exitoso",
-        token: "mockedToken"
+        mensaje: "Login exitoso",
+        token: "mockedToken",
+        requiresOtp: expect.any(Boolean),
+        usuario: expect.objectContaining({
+          id: 1,
+          nombre: "Usuario Test",
+          correo: "correo@test.com",
+          rol: "Admin",
+          username: "user123",
+          locationId: 5
+        }),
+        organizationUsers: expect.any(Array)
       }));
     });
 
@@ -117,23 +133,41 @@ describe("userController", () => {
       const decoded = {
         id: 1,
         nombre: "Test",
-        rol: "Admin",
         correo: "correo@test.com",
-        username: "testuser"
+        rol: "Admin",
+        username: "testuser",
+        locationId: undefined
       };
+
+      const req = {
+        cookies: { Auth: token }
+      };
+
+      const res = mockRes();
 
       jwt.verify.mockReturnValue(decoded);
 
-      const req = { cookies: { Auth: token } };
-      const res = mockRes();
+      dbMock.connection.exec.mockImplementation((query, params, cb) => {
+        cb(null, [{ OTP_VERIFIED: 0, OTP_VERIFIED_AT: null }]);
+      });
 
       await getSession(req, res);
 
       expect(jwt.verify).toHaveBeenCalledWith(token, process.env.JWT_SECRET);
-      expect(res.json).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
         token,
-        usuario: decoded
-      });
+        otpVerified: expect.any(Boolean),
+        otpExpired: expect.any(Boolean),
+        usuario: expect.objectContaining({
+          id: 1,
+          nombre: "Test",
+          correo: "correo@test.com",
+          rol: "Admin",
+          username: "testuser",
+          locationId: undefined,
+          LOCATION_ID: undefined
+        })
+      }));
     });
 
     it("debería devolver 401 si no hay token", async () => {
@@ -175,8 +209,7 @@ describe("userController", () => {
         }
       ];
 
-      const db = require("../config/db");
-      db.connection.exec.mockImplementation((q, p, cb) => cb(null, mockUsuarios));
+      dbMock.connection.exec.mockImplementation((q, p, cb) => cb(null, mockUsuarios));
 
       await getUsers(req, res);
 

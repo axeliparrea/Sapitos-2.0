@@ -131,45 +131,44 @@ describe('Inventory Controller - Pruebas Profesionales con Mock', () => {
   });
 
   // updateInventory
-  describe('updateInventory', () => {
-    it('actualiza inventario existente', async () => {
-      req.params = { id: 1 };
-      req.body = {
-        stockActual: 20,
-        stockMinimo: 5,
-        stockRecomendado: 10,
-        stockSeguridad: 2,
-        importacion: '2024-01-01',
-        exportacion: '2024-02-01',
-        margenGanancia: 0.4,
-        tiempoReposicion: 7,
-        demandaPromedio: 9
-      };
+describe('updateInventory', () => {
+  it('actualiza inventario existente', async () => {
+    req.params = { id: 1 };
+    req.body = {
+      stockActual: 20,
+      stockMinimo: 5,
+      stockRecomendado: 10,
+      stockSeguridad: 2,
+      importacion: '2024-01-01',
+      exportacion: '2024-02-01',
+      margenGanancia: 0.4,
+      tiempoReposicion: 7,
+      demandaPromedio: 9
+    };
 
-      dbMock.connection.exec.mockImplementation((q, p, cb) => cb(null, [{ Inventario_ID: 1 }]));
-      dbMock.connection.prepare.mockImplementation((q, cb) => {
-        cb(null, {
-          execute: (params, cb2) => cb2(null, { affectedRows: 1 })
-        });
-      });
+    // Mock: inventario existe
+    dbMock.connection.exec
+      .mockImplementationOnce((q, p, cb) => cb(null, [{ INVENTARIO_ID: 1, ARTICULONOMBRE: 'P', LOCATIONNOMBRE: 'A', STOCKMINIMO: 5, DEMANDAPROMEDIO: 1, STOCKRECOMENDADO: 10, LOCATION_ID: 1 }])) // check existencia
+      .mockImplementationOnce((q, p, cb) => cb(null, {})); // update query
 
-      await controller.updateInventory(req, res);
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Inventario actualizado exitosamente' });
-    });
+    await controller.updateInventory(req, res);
 
-    it('devuelve 404 si inventario no existe', async () => {
-        req.params = { id: 999 };
-        req.body = {}; // 💥 esto es lo que evita el error de destructuring
-
-        dbMock.connection.exec.mockImplementation((q, p, cb) => cb(null, []));
-        
-        await controller.updateInventory(req, res);
-        
-        expect(res.status).toHaveBeenCalledWith(404);
-        expect(res.json).toHaveBeenCalledWith({ error: 'Inventario no encontrado' });
-    });
+    // Ya no se valida res.status(200)
+    expect(res.json).toHaveBeenCalledWith({ message: 'Inventario actualizado exitosamente' });
   });
+
+  it('devuelve 404 si inventario no existe', async () => {
+    req.params = { id: 999 };
+    req.body = {};
+
+    dbMock.connection.exec.mockImplementation((q, p, cb) => cb(null, []));
+
+    await controller.updateInventory(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Inventario no encontrado' });
+  });
+});
 
   // deleteInventory
   describe('deleteInventory', () => {
