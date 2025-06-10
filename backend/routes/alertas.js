@@ -4,12 +4,22 @@ const { getAlertas, deleteAlerta, generarNotificacion } = require("../controller
 const { auth } = require('../middleware/auth');
 
 /**
- * Ruta para obtener alertas por location_id
+ * Ruta para obtener todas las alertas
  */
-router.get("/location/:locationId", auth, (req, res) => {
-  // El location_id viene en los parámetros de ruta
+router.get("/", (req, res) => {
+  console.log("📣 Ruta principal de alertas accedida");
+  console.log("Query params recibidos:", req.query);
+  getAlertas(req, res);
+});
+
+/**
+ * Ruta para obtener alertas por location_id como parámetro de consulta
+ */
+router.get("/location/:locationId", (req, res) => {
+  console.log("📣 Ruta location/:locationId accedida");
+  console.log("Location ID de ruta:", req.params.locationId);
   req.query.location_id = req.params.locationId;
-  return getAlertas(req, res);
+  getAlertas(req, res);
 });
 
 /**
@@ -41,22 +51,11 @@ router.get("/location/:locationId", auth, (req, res) => {
 router.get("/", auth, getAlertas);
 
 /**
- * @swagger
- * /alertas/{id}:
- *   delete:
- *     summary: Eliminar una alerta
- *     tags: [Alertas]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID de la alerta a eliminar
- *     responses:
- *       200:
- *         description: Alerta eliminada correctamente
+ * Eliminar una alerta por ID
  */
-router.delete("/:id", auth, deleteAlerta);
+router.delete("/:id", (req, res) => {
+  console.log("📣 Eliminar alerta:", req.params.id);
+  deleteAlerta(req, res);
+});
 
 module.exports = router; 
