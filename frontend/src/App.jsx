@@ -91,7 +91,7 @@ const App = () => {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requireOtp={true}>
                 {role === "admin" ? <HomeAdmin /> :
                   role === "dueno" ? <HomeDueno /> :
                   role === "cliente" ? <HomeCliente /> :
@@ -103,7 +103,7 @@ const App = () => {
             <Route 
               path="/inventario" 
               element={
-                <ProtectedRoute allowedRoles={["admin", "cliente"]}>
+                <ProtectedRoute allowedRoles={["admin", "cliente"]} requireOtp={true}>
                 {role === "admin" ? <InventarioAdmin /> :
                   role === "cliente" ? <InventarioCliente /> :
                   <Navigate to="/dashboard" />}
@@ -114,7 +114,7 @@ const App = () => {
             <Route 
               path="/profile" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requireOtp={true}>
                 <Profile />
               </ProtectedRoute>
               } 
@@ -129,128 +129,160 @@ const App = () => {
             <Route 
               path="/preview" 
               element={
-                role === "admin" ? <InvoicePreviewPage /> :
-                role === "cliente" ? <InvoicePreviewPage/> :
-                <Navigate to="/dashboard" />
+                <ProtectedRoute allowedRoles={["admin", "cliente"]} requireOtp={true}>
+                  {role === "admin" ? <InvoicePreviewPage /> :
+                  role === "cliente" ? <InvoicePreviewPage/> :
+                  <Navigate to="/dashboard" />}
+                </ProtectedRoute>
               } 
             />
             <Route 
               path="/ordenes-proveedores" 
               element={
-                <Navigate to="/dashboard" />
-                }
-              />
+                <ProtectedRoute allowedRoles={["dueno"]} requireOtp={true}>
+                  <Navigate to="/dashboard" />
+                </ProtectedRoute>
+              }
+            />
             <Route 
               path="/ordenes-clientes" 
               element={
-                <Navigate to="/dashboard" />
-                }
-              />
+                <ProtectedRoute allowedRoles={["dueno"]} requireOtp={true}>
+                  <Navigate to="/dashboard" />
+                </ProtectedRoute>
+              }
+            />
             <Route 
               path="/recomendaciones-IA" 
               element={
-                <Navigate to="/dashboard" />
-                }
-              />
+                <ProtectedRoute allowedRoles={["dueno"]} requireOtp={true}>
+                  <Navigate to="/dashboard" />
+                </ProtectedRoute>
+              }
+            />
             <Route 
               path="/ordenes" 
               element={
-                role === "proveedor" ? <InvoiceProveedorPage/> :
-                <Navigate to="/"/>
-                }
-              />
+                <ProtectedRoute allowedRoles={["proveedor"]} requireOtp={true}>
+                  {role === "proveedor" ? <InvoiceProveedorPage/> :
+                  <Navigate to="/"/>}
+                </ProtectedRoute>
+              }
+            />
             <Route 
               path="/ordenes-aceptadas" 
               element={
-                role === "proveedor" ? <InvoiceListProveedorPage aceptadas={true}/> :
-                <Navigate to="/"/>
-                }
-              />
+                <ProtectedRoute allowedRoles={["proveedor"]} requireOtp={true}>
+                  {role === "proveedor" ? <InvoiceListProveedorPage aceptadas={true}/> :
+                  <Navigate to="/"/>}
+                </ProtectedRoute>
+              }
+            />
             <Route 
               path="/notificaciones" 
               element={
-                role === "admin" ? <Notificaciones /> :
-                <Navigate to="/"/>
-                }
-              />
+                <ProtectedRoute allowedRoles={["admin"]} requireOtp={true}>
+                  {role === "admin" ? <Notificaciones /> :
+                  <Navigate to="/"/>}
+                </ProtectedRoute>
+              }
+            />
             <Route 
               path="/ordenes/:id" 
               element={
-                role === "proveedor" ? <InvoiceProveedorPage/> :
-                <Navigate to="/"/>
-                }
-              />
+                <ProtectedRoute allowedRoles={["proveedor"]} requireOtp={true}>
+                  {role === "proveedor" ? <InvoiceProveedorPage/> :
+                  <Navigate to="/"/>}
+                </ProtectedRoute>
+              }
+            />
             <Route 
               path="/pedidos" 
               element={
-                role === "admin" ? <Pedidos/> :
-                <Navigate to="/"/>
-                }
-              />
+                <ProtectedRoute allowedRoles={["admin"]} requireOtp={true}>
+                  {role === "admin" ? <Pedidos/> :
+                  <Navigate to="/"/>}
+                </ProtectedRoute>
+              }
+            />
             <Route 
               path="/usuarios" 
               element={
-                role === "admin" ? <UsuariosShec /> :
+                <ProtectedRoute allowedRoles={["admin"]} requireOtp={true}>
+                  {role === "admin" ? <UsuariosShec /> :
+                  <Navigate to="/" />}
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/articulos" 
+              element={
+                <ProtectedRoute allowedRoles={["admin"]} requireOtp={true}>
+                  {role === "admin" ? <Articulos /> :
+                  <Navigate to="/" />}
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/location" 
+              element={
+                <ProtectedRoute allowedRoles={["admin"]} requireOtp={true}>
+                  {role === "admin" ? <Location /> :
+                  <Navigate to="/" />}
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/ai-assistant" 
+              element={
+                <ProtectedRoute requireOtp={true}>
+                  <AiAssistantPage />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="/agregar-usuario" 
+              element={
+                role === "admin" ? <AddUserLayer /> :
                 <Navigate to="/" />
               } 
             />
             <Route 
-      path="/articulos" 
+              path="/agregar-articulo"
+              element={
+                role === "admin" ? <AddArticuloLayer /> :
+                <Navigate to="/" />
+              }
+            />
+            <Route 
+              path="/agregar-Location"
+              element={
+                role === "admin" ? <AddLocationLayer /> :
+                <Navigate to="/" />
+              }
+            />
+                    <Route 
+              path="/editar-usuario/:userId" 
+              element={
+                role === "admin" ? <EditUserLayer /> :
+                <Navigate to="/" />
+              }
+            />
+            <Route 
+      path="/editar-articulo/:id" 
       element={
-        role === "admin" ? <Articulos /> :
+        role === "admin" ? <EditArticuloLayer /> :
         <Navigate to="/" />
       }
     />
     <Route 
-      path="/Location" 
+      path="/editar-Location/:id"
       element={
-        role === "admin" ? <Location /> :
+        role === "admin" ? <EditLocationLayer /> :
         <Navigate to="/" />
       }
     />
-
-          <Route 
-            path="/agregar-usuario" 
-            element={
-              role === "admin" ? <AddUserLayer /> :
-              <Navigate to="/" />
-            } 
-          />
-          <Route 
-            path="/agregar-articulo"
-            element={
-              role === "admin" ? <AddArticuloLayer /> :
-              <Navigate to="/" />
-            }
-          />
-          <Route 
-            path="/agregar-Location"
-            element={
-              role === "admin" ? <AddLocationLayer /> :
-              <Navigate to="/" />
-            }
-          />
-                  <Route 
-            path="/editar-usuario/:userId" 
-            element={
-              role === "admin" ? <EditUserLayer /> :
-              <Navigate to="/" />
-            }
-          />
-          <Route 
-    path="/editar-articulo/:id" 
-    element={
-      role === "admin" ? <EditArticuloLayer /> :
-      <Navigate to="/" />
-    }
-  />
-  <Route 
-    path="/editar-Location/:id"
-    element={
-      role === "admin" ? <EditLocationLayer /> :
-      <Navigate to="/" />
-    }
-  />
 
             <Route 
               path="/modelo-prediccion" 

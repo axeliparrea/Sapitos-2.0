@@ -289,6 +289,27 @@ const SignInPage = () => {
     await generateOTP();
   };
 
+  const handleReturnToSignIn = async () => {
+    try {
+      // Limpiar la sesión en el backend
+      await fetch("http://localhost:5000/users/logoutUser", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      // Resetear estados locales
+      setOtpValues(['', '', '', '', '', '']);
+      setOtpSecret("");
+      setEmail("");
+      setPassword("");
+      setError("");
+      setIsLoginMode(true);
+      
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
+
   const handleCloseDialog = () => {
     setDialogOpen(false);
   };
@@ -378,9 +399,26 @@ const SignInPage = () => {
               </form>
 
               {/* FORMULARIO DE VERIFICACIÓN OTP */}
-              <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(); }} className='sign-up-form'>
-                <div className="text-center" style={{ marginTop: '-2rem', marginBottom: '2.5rem' }}>
-                  <img src="/assets/images/logo.png" alt="Logo" className="img-fluid" style={{ maxWidth: '220px' }} />
+              <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(); }} className='sign-up-form' style={{ position: 'relative' }}>
+                <div className="text-center" style={{ 
+                  marginTop: '2rem', 
+                  marginBottom: '2rem', 
+                  position: 'relative',
+                  zIndex: '9999',
+                  backgroundColor: 'white'
+                }}>
+                  <img 
+                    src="/assets/images/logo.png" 
+                    alt="Logo" 
+                    className="img-fluid" 
+                    style={{ 
+                      maxWidth: '220px', 
+                      position: 'relative', 
+                      zIndex: '9999',
+                      display: 'block',
+                      margin: '0 auto'
+                    }} 
+                  />
                 </div>
                 <div className="text-center mb-4">
                   <h2 className='mb-3' style={{ fontSize: '2.2rem', fontWeight: '600' }}>Verificación de seguridad</h2>
@@ -448,6 +486,25 @@ const SignInPage = () => {
                     </button>
                   </div>
 
+                  <div className="text-center mt-4">
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-danger"
+                      onClick={handleReturnToSignIn}
+                      style={{
+                        padding: '0.75rem 2rem',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        borderColor: '#dc3545',
+                        color: '#dc3545',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Icon icon="mdi:arrow-left" className="me-2" />
+                      Regresar
+                    </button>
+                  </div>
+
                   {error && (
                     <div className="alert alert-danger d-flex align-items-center p-3 mb-0">
                       <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
@@ -476,7 +533,7 @@ const SignInPage = () => {
               />
             </div>
             <div className='panel right-panel'>
-              <img src='assets/images/auth/auth-img.png' className='image' alt='' />
+              <img src='assets/images/auth/auth-img2.png' className='image' alt='' />
             </div>
           </div>
         </div>
