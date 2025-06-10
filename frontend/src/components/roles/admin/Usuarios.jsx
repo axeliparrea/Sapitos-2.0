@@ -13,12 +13,7 @@ import Roles from "./Roles";
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [rolesMap, setRolesMap] = useState({});
-  const [nuevoUsuario, setNuevoUsuario] = useState({ 
-    nombre: "", correo: "", organizacion: "", contrasena: "", rol: "", diasordenprom: 0, valorordenprom: 0
-  });
-  const [usuarioEditando, setUsuarioEditando] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add"); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
