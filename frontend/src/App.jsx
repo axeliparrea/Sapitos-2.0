@@ -11,6 +11,7 @@ import ModelManagement from "./pages/admin/ModelManagement";
 
 import HomeDueno from "./pages/dueno/Home";
 import InventarioDueno from "./pages/dueno/Inventario";
+import PedidosDueno from "./pages/dueno/Pedidos";
 import OrdenesProveedoresDueno from "./pages/dueno/OrdenesProveedores";
 import OrdenesClientesDueno from "./pages/dueno/OrdenesClientes";
 import RecomendacionesIADueno from "./pages/dueno/RecomendacionesIA";
@@ -99,12 +100,12 @@ const App = () => {
                   <Navigate to="/" />}
               </ProtectedRoute>
               }
-            />
-            <Route 
+            />            <Route 
               path="/inventario" 
               element={
-                <ProtectedRoute allowedRoles={["admin", "cliente"]} requireOtp={true}>
+                <ProtectedRoute allowedRoles={["admin", "dueno", "cliente"]} requireOtp={true}>
                 {role === "admin" ? <InventarioAdmin /> :
+                  role === "dueno" ? <InventarioDueno /> :
                   role === "cliente" ? <InventarioCliente /> :
                   <Navigate to="/dashboard" />}
               </ProtectedRoute>
@@ -195,12 +196,12 @@ const App = () => {
                   <Navigate to="/"/>}
                 </ProtectedRoute>
               }
-            />
-            <Route 
+            />            <Route 
               path="/pedidos" 
               element={
-                <ProtectedRoute allowedRoles={["admin"]} requireOtp={true}>
+                <ProtectedRoute allowedRoles={["admin", "dueno"]} requireOtp={true}>
                   {role === "admin" ? <Pedidos/> :
+                  role === "dueno" ? <PedidosDueno/> :
                   <Navigate to="/"/>}
                 </ProtectedRoute>
               }
@@ -300,13 +301,14 @@ const App = () => {
                   <AiAssistantPage />
                 </ProtectedRoute>
               }
-            />
-
-            <Route 
+            />            <Route 
               path="/crearpedido" 
               element={
-                role === "admin" ? <InvoiceAddLayer /> :
-                <Navigate to="/" />
+                <ProtectedRoute allowedRoles={["admin", "dueno"]} requireOtp={true}>
+                  {role === "admin" ? <InvoiceAddLayer /> :
+                  role === "dueno" ? <InvoiceAddLayer /> :
+                  <Navigate to="/" />}
+                </ProtectedRoute>
               } 
             />
 

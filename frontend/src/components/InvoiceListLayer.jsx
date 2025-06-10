@@ -5,6 +5,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { Button, Form, Badge } from 'react-bootstrap';
 import { notify, NotificationType } from "./NotificationService";
+import getCookie from '../utils/cookies';
 
 const InvoiceListLayer = () => {
   const [pedidos, setPedidos] = useState([]);
@@ -27,13 +28,29 @@ const InvoiceListLayer = () => {
   useEffect(() => {
     fetchPedidos();
   }, []);
-
   const fetchPedidos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:5000/pedido");
+      
+      // Get user data from cookie to determine role and location
+      const cookieData = getCookie("UserData");
+      let endpoint = "http://localhost:5000/pedido"; // default endpoint for admin
+      
+      if (cookieData) {
+        const userData = typeof cookieData === 'string' ? JSON.parse(cookieData) : cookieData;
+        const userRole = userData?.ROL;
+        const locationId = userData?.LOCATION_ID || userData?.locationId;
+        
+        // If user is "dueno" and has a location, fetch location-specific orders
+        if (userRole === 'dueno' && locationId) {
+          // For dueño role, we'll filter pedidos by location on frontend since there's no specific backend endpoint yet
+          endpoint = "http://localhost:5000/pedido";
+        }
+      }
+      
+      const response = await axios.get(endpoint);
       const data = Array.isArray(response.data) ? response.data : (response.data.formatted || response.data.pedidos || []);
-      const formattedPedidos = data.map((pedido, index) => ({
+        let formattedPedidos = data.map((pedido, index) => ({
         numero: String(index + 1).padStart(2, '0'),
         id: `#${pedido.id}`,
         proveedor: pedido.organizacion || pedido.creadaPor || '',
@@ -41,8 +58,32 @@ const InvoiceListLayer = () => {
         email: pedido.creadaPor || '',
         fecha: formatDate(pedido.fechaCreacion),
         cantidad: pedido.total,
-        estatus: pedido.estatus
+        estatus: pedido.estatus,
+        locationId: pedido.locationId
       }));
+        // Filter by user's location if user is dueño
+      if (cookieData) {
+        const userData = typeof cookieData === 'string' ? JSON.parse(cookieData) : cookieData;
+        const userRole = userData?.ROL;
+        const userLocationId = userData?.LOCATION_ID || userData?.locationId;
+        
+        console.log('User role:', userRole);
+        console.log('User location ID:', userLocationId);
+        console.log('Total pedidos antes del filtro:', formattedPedidos.length);
+        console.log('Pedidos locationIds:', formattedPedidos.map(p => p.locationId));
+        
+        if (userRole === 'dueno' && userLocationId) {
+          const beforeFilterCount = formattedPedidos.length;
+          formattedPedidos = formattedPedidos.filter(pedido => {
+            const matches = pedido.locationId === userLocationId || 
+                           pedido.locationId === parseInt(userLocationId);
+            console.log(`Pedido ${pedido.id}: locationId=${pedido.locationId}, userLocationId=${userLocationId}, matches=${matches}`);
+            return matches;
+          });
+          console.log(`Filtrado para dueño: ${beforeFilterCount} -> ${formattedPedidos.length} pedidos`);
+        }
+      }
+      
       formattedPedidos.sort((a, b) => {
         const idA = parseInt(a.id.replace('#', ''));
         const idB = parseInt(b.id.replace('#', ''));
