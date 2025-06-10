@@ -283,11 +283,11 @@ const InvoiceListProveedor = () => {
                           pedido.estado === 'Rechazado' ? 'bg-danger-focus text-danger-main' :
                           'bg-warning-focus text-warning-main'
                         }`}>
-                          {pedido.estado}
+                        {pedido.estado}
                         </span>
                       </td>
                       <td className="align-middle">
-                        <button 
+                        <button
                           onClick={() => showDetails(pedido)}
                           className='w-24-px h-24-px me-4 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
                           style={{ border: 'none' }}
@@ -302,10 +302,10 @@ const InvoiceListProveedor = () => {
                   <tr>
                     <td colSpan="10" className="text-center py-4">
                       <div className="d-flex flex-column align-items-center gap-2">
-                        {searchTerm ? 
-                          `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
-                          "No hay pedidos aceptados/enviados registrados"
-                        }
+                      {searchTerm ? 
+                        `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
+                        "No hay pedidos aceptados/enviados registrados"
+                      }
                       </div>
                     </td>
                   </tr>
@@ -313,8 +313,8 @@ const InvoiceListProveedor = () => {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+         )}
+       </div>
     </div>
   );
 };
