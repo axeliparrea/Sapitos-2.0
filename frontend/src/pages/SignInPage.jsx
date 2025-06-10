@@ -194,7 +194,7 @@ const SignInPage = () => {
     setError('');
 
     try {
-      const response = await fetch("http://localhost:5000/api/otp/verify", {
+      const response = await fetch(`${API_BASE_URL}/api/otp/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -235,7 +235,7 @@ const SignInPage = () => {
   const handleReturnToSignIn = async () => {
     try {
       // Limpiar la sesión en el backend
-      await fetch("http://localhost:5000/users/logoutUser", {
+      await fetch(`${API_BASE_URL}/users/logoutUser`, {
         method: "POST",
         credentials: "include",
       });

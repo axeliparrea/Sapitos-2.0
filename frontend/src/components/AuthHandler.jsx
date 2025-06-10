@@ -33,7 +33,7 @@ const AuthHandler = ({ children }) => {
 
     const checkSession = async () => {
       try {
-        const response = await fetch("http://localhost:5000/users/getSession", {
+        const response = await fetch(`${API_BASE_URL}/users/getSession`, {
           credentials: "include",
         });
 
@@ -85,7 +85,7 @@ const AuthHandler = ({ children }) => {
 
   const clearSession = async () => {
     try {
-      await fetch("http://localhost:5000/users/logoutUser", {
+      await fetch(`${API_BASE_URL}/users/logoutUser`, {
         method: "POST",
         credentials: "include",
       });

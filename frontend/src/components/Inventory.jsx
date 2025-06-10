@@ -33,7 +33,7 @@ const Inventory = () => {
     const fetchInventory = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/inventory`, {
+        let response = await axios.get(`${API_BASE_URL}/inventory`, {
           withCredentials: true
         });
         console.log('Datos del inventario:', response.data);
@@ -73,7 +73,8 @@ const Inventory = () => {
           }
         }
         
-        const response = await axios.get(endpoint);        console.log('Tipo de response.data:', typeof response.data, response.data);
+        // Use the same response variable
+        response = await axios.get(endpoint);        console.log('Tipo de response.data:', typeof response.data, response.data);
         setInventory(response.data);
         
         setError(null);
