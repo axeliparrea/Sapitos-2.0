@@ -111,7 +111,7 @@ const OrdenesProveedor = () => {
         <div className="card-header d-flex justify-content-between align-items-center py-16 px-24">
           <div className="d-flex align-items-center gap-3">
             <Icon icon="mdi:clipboard-list-outline" className="text-primary me-2 text-xl" />
-            <span className="text-md fw-medium mb-0">Pedidos Pendientes</span>
+          <span className="text-md fw-medium mb-0">Pedidos Pendientes</span>
           </div>
         </div>
         
@@ -125,29 +125,29 @@ const OrdenesProveedor = () => {
           ) : pedidos.length > 0 ? (
             <div className="table-responsive scroll-sm">
               <table className="table bordered-table mb-0">
-                <thead>
-                  <tr>
-                    <th>ID Pedido</th>
-                    <th>Cliente</th>
-                    <th>Producto</th>
-                    <th>Fecha</th>
-                    <th>Cantidad</th>
+                  <thead>
+                    <tr>
+                      <th>ID Pedido</th>
+                      <th>Cliente</th>
+                      <th>Producto</th>
+                      <th>Fecha</th>
+                      <th>Cantidad</th>
                     <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pedidos.map((pedido) => (
-                    <tr key={pedido.idOriginal}>
-                      <td className="align-middle">{pedido.id}</td>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pedidos.map((pedido) => (
+                       <tr key={pedido.idOriginal}>
+                         <td className="align-middle">{pedido.id}</td>
                       <td className="align-middle">
                         <div className="d-flex flex-column">
                           <span className="fw-medium">{pedido.cliente}</span>
                           <small className="text-muted">{pedido.email}</small>
                         </div>
                       </td>
-                      <td className="align-middle">{pedido.producto}</td>
-                      <td className="align-middle">{pedido.fecha}</td>
+                         <td className="align-middle">{pedido.producto}</td>
+                         <td className="align-middle">{pedido.fecha}</td>
                       <td className="align-middle fw-medium">${pedido.cantidad}</td>
                       <td className="align-middle">
                         <span className="px-12 py-1 rounded-pill fw-medium text-xs bg-warning-focus text-warning-main">
@@ -156,7 +156,7 @@ const OrdenesProveedor = () => {
                       </td>
                       <td className="align-middle">
                         <div className="d-flex gap-2">
-                          <button 
+                          <button
                             onClick={() => aceptarPedido(pedido.idOriginal)}
                             className='w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
                             style={{ border: 'none' }}
@@ -164,7 +164,7 @@ const OrdenesProveedor = () => {
                           >
                             <Icon icon='mdi:check-bold' width="20" height="20" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => rechazarPedido(pedido.idOriginal)}
                             className='w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
                             style={{ border: 'none' }}
@@ -181,17 +181,17 @@ const OrdenesProveedor = () => {
                             <Icon icon='iconamoon:eye-light' width="20" height="20" />
                           </button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                         </td>
+                       </tr>
+                    ))}
+                   </tbody>
               </table>
             </div>
           ) : (
             <div className="alert alert-info mb-0 text-center py-3">
               <div className="d-flex flex-column align-items-center gap-2">
                 <Icon icon="mdi:clipboard-text-off-outline" className="text-muted text-4xl" />
-                No tienes pedidos pendientes por aceptar
+              No tienes pedidos pendientes por aceptar
               </div>
             </div>
           )}

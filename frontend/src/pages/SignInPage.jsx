@@ -37,7 +37,7 @@ const SignInPage = () => {
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard', { replace: true });
-    }
+      }
   }, [isAuthenticated, navigate]);
 
   const handleLogin = async (event) => {
@@ -410,8 +410,8 @@ const SignInPage = () => {
                       </>
                     ) : (
                       <>
-                        <Icon icon="solar:shield-check-bold" className="me-2" />
-                        <span>Verificar código</span>
+                    <Icon icon="solar:shield-check-bold" className="me-2" />
+                    <span>Verificar código</span>
                       </>
                     )}
                   </button>

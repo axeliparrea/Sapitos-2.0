@@ -275,6 +275,37 @@ const AiAssistantPage = () => {
             .rounded-chat-user {
               border-top-right-radius: 0 !important;
             }
+            .btn-group {
+              position: relative;
+            }
+            .dropdown-menu {
+              position: absolute;
+              right: 0;
+              left: auto;
+              max-height: 80vh;
+              overflow-y: auto;
+              transform: translateY(0);
+            }
+            .dropdown-menu.show {
+              transform: none !important;
+              top: 100% !important;
+              margin-top: 0.5rem;
+            }
+            @media (max-width: 768px) {
+              .dropdown-menu {
+                position: fixed;
+                top: auto !important;
+                bottom: 100%;
+                right: 1rem;
+                left: 1rem;
+                transform: none;
+                max-height: calc(100vh - 200px);
+              }
+              .dropdown-menu.show {
+                bottom: auto;
+                top: 4rem !important;
+              }
+            }
           `}
         </style>
       </div>
