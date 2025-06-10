@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 
-const ProtectedRoute = ({ children, allowedRoles = [], requireOtp = true }) => {
+const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [redirectTo, setRedirectTo] = useState(null);
-  const [otpSettings, setOtpSettings] = useState(null);
   const location = useLocation();
   const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
@@ -71,23 +70,13 @@ const ProtectedRoute = ({ children, allowedRoles = [], requireOtp = true }) => {
           setIsLoading(false);
           return;
         }
+
         const decoded = jwtDecode(data.token);
         const userRole = decoded.rol || "";
 
-        if (requireOtp && otpSettings.requireOtp) {
-          const otpVerified = decoded.otpVerified === true;
-          
-          if (!otpVerified) {
-            console.log("OTP verification required by server settings");
-            sessionStorage.setItem('returnUrl', location.pathname);
-            setRedirectTo("/otp");
-            setIsLoading(false);
-            return;
-          }
-        }
         const roleAuthorized = allowedRoles.length === 0 || 
-                              allowedRoles.includes(userRole);
-                              
+                            allowedRoles.includes(userRole);
+                            
         if (!roleAuthorized) {
           console.log("User role not authorized");
           setRedirectTo("/dashboard");

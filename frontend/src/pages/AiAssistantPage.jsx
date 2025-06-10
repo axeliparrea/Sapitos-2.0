@@ -1,9 +1,11 @@
+// ✅ Final visual alignment fix for input+button, right edge flush & vertically centered with min-width limit
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import MasterLayout from '../components/masterLayout';
 import { Icon } from '@iconify/react';
 import { notify, NotificationType } from '../components/NotificationService';
 import { useState, useRef, useEffect } from 'react';
+import getCookie from '../utils/cookies';
 
 const SUGGESTED_QUESTIONS = {
   pedidos: [
@@ -41,6 +43,24 @@ const AiAssistantPage = () => {
   const [showDropdownSuggestions, setShowDropdownSuggestions] = useState(false);
   const chatContainerRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    // Obtener datos del usuario de la cookie
+    const cookieData = getCookie("UserData");
+    if (cookieData) {
+      try {
+        let parsedData;
+        if (typeof cookieData === "string") {
+          parsedData = JSON.parse(cookieData);
+        } else {
+          parsedData = cookieData;
+        }
+        setUserData(parsedData);
+      } catch (error) {
+        console.error("Error obteniendo datos del usuario:", error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -99,10 +119,13 @@ const AiAssistantPage = () => {
     setMessages(prevMessages => [...prevMessages, message]);
   };
 
+  // Usar el rol del usuario de la cookie o localStorage
+  const userRole = userData?.ROL || localStorage.getItem('userRole') || 'admin';
+
   return (
-    <MasterLayout role={role}>
+    <MasterLayout role={userRole}>
       <div className="chat-wrapper d-flex justify-content-center align-items-center w-100 h-100 p-3">
-        <div className="chat-main card w-100" style={{ maxWidth: '720px', height: '85vh' }}>
+        <div className="chat-main card w-100" style={{ maxWidth: '1110px', height: '85vh' }}>
           <div className='chat-sidebar-single active d-flex align-items-center gap-3 p-3 border-bottom'>
             <div className='rounded-circle bg-primary d-flex align-items-center justify-content-center assistant-avatar'>
               <Icon icon="simple-icons:openai" width="24" height="24" className="text-white" />
@@ -177,24 +200,29 @@ const AiAssistantPage = () => {
           </div>
 
           <div className="p-3 border-top">
-            <form onSubmit={handleSubmit} className="d-flex align-items-center border rounded-pill px-3 py-2 bg-white shadow-sm w-100">
-              <input
-                type="text"
-                className="form-control border-0 shadow-none"
-                placeholder="Escribe tu pregunta aquí..."
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                disabled={isLoading}
-                ref={inputRef}
-              />
-              <button 
-                type="submit" 
-                className="btn btn-primary rounded-circle d-flex align-items-center justify-content-center ms-2"
-                disabled={isLoading || !question.trim()}
-                style={{ width: '40px', height: '40px' }}
-              >
-                <Icon icon="mdi:send" width="20" height="20" />
-              </button>
+            <form onSubmit={handleSubmit} className="d-flex justify-content-center w-100">
+              <div className="w-100" style={{ maxWidth: '1110px', minWidth: '300px' }}>
+                <div className="d-flex align-items-center bg-white shadow-sm rounded-pill px-4 py-2">
+                  <input
+                    type="text"
+                    className="form-control border-0 shadow-none flex-grow-1"
+                    placeholder="Escribe tu pregunta aquí..."
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    disabled={isLoading}
+                    ref={inputRef}
+                    style={{ height: '36px' }}
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-primary rounded-circle d-flex align-items-center justify-content-center ms-2"
+                    disabled={isLoading || !question.trim()}
+                    style={{ width: '36px', height: '36px', flexShrink: 0 }}
+                  >
+                    <Icon icon="mdi:send" width="18" height="18" />
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
         </div>

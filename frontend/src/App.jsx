@@ -32,7 +32,6 @@ import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
 import Articulos from "./pages/admin/Articulos";
-import OtpPage from "./pages/OtpPage";
 import AuthHandler from './components/AuthHandler';
 import ProtectedRoute from './components/ProtectedRoute';
 import AddArticuloLayer from "./components/AddArticuloLayer";
@@ -131,7 +130,7 @@ const App = () => {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute requireOtp={true}>
+                <ProtectedRoute>
                 {role === "admin" ? <HomeAdmin /> :
                   role === "dueno" ? <HomeDueno /> :
                   role === "cliente" ? <HomeCliente /> :
@@ -143,9 +142,8 @@ const App = () => {
             <Route 
               path="/inventario" 
               element={
-                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "dueno", "cliente"]}>
+                <ProtectedRoute allowedRoles={["admin", "cliente"]}>
                 {role === "admin" ? <InventarioAdmin /> :
-                  role === "dueno" ? <InventarioDueno /> :
                   role === "cliente" ? <InventarioCliente /> :
                   <Navigate to="/dashboard" />}
               </ProtectedRoute>
@@ -155,7 +153,7 @@ const App = () => {
             <Route 
               path="/profile" 
               element={
-                <ProtectedRoute requireOtp={true}>
+                <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
               } 
@@ -171,30 +169,26 @@ const App = () => {
               path="/preview" 
               element={
                 role === "admin" ? <InvoicePreviewPage /> :
-                role === "dueno" ? <InvoicePreviewPage/> :
                 role === "cliente" ? <InvoicePreviewPage/> :
-                <Navigate to="/" />
+                <Navigate to="/dashboard" />
               } 
             />
             <Route 
               path="/ordenes-proveedores" 
               element={
-                role === "dueno" ? <InvoiceProveedorPage/> :
-                <Navigate to="/"/>
+                <Navigate to="/dashboard" />
                 }
               />
             <Route 
               path="/ordenes-clientes" 
               element={
-                role === "dueno" ? <OrdenesClientesDueno/> :
-                <Navigate to="/"/>
+                <Navigate to="/dashboard" />
                 }
               />
             <Route 
               path="/recomendaciones-IA" 
               element={
-                role === "dueno" ? <RecomendacionesIADueno/> :
-                <Navigate to="/"/>
+                <Navigate to="/dashboard" />
                 }
               />
             <Route 
@@ -300,15 +294,16 @@ const App = () => {
             <Route 
               path="/modelo-prediccion" 
               element={
-                role === "admin" ? <ModelManagement /> :
-                <Navigate to="/" />
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <ModelManagement />
+                </ProtectedRoute>
               }
             />
 
             <Route 
               path="/asistente-ia" 
               element={
-                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "dueno", "cliente"]}>
+                <ProtectedRoute allowedRoles={["admin", "dueno", "cliente", "proveedor"]}>
                   <AiAssistantPage />
                 </ProtectedRoute>
               }
@@ -326,9 +321,8 @@ const App = () => {
               path="/detalle-pedido/:id"
               element={
                 role === "admin" ? <InvoicePreviewPage /> :
-                role === "dueno" ? <InvoicePreviewPage/> :
                 role === "cliente" ? <InvoicePreviewPage/> :
-                <Navigate to="/" />
+                <Navigate to="/dashboard" />
               }
             />
           <Route path="/otp" element={<OtpPage />} />

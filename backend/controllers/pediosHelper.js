@@ -344,46 +344,68 @@ const deleteLocation = async (req, res) => {
   
   if (!id || isNaN(id)) {
     return res.status(400).json({ error: "ID de location inválido" });
-  }
-  
+  }  
   try {
-    await connection.execSync('BEGIN');
+    // SAP HANA handles transactions automatically
     
     // Verificar que la location existe
-    const [location] = await connection.execSync('SELECT Location_ID FROM Location2 WHERE Location_ID = ?', [id]);
-    if (!location) {
-      await connection.execSync('ROLLBACK');
+    const locationResult = await new Promise((resolve, reject) => {
+      connection.exec('SELECT Location_ID FROM Location2 WHERE Location_ID = ?', [id], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+    
+    if (!locationResult || locationResult.length === 0) {
       return res.status(404).json({ error: "Location no encontrada" });
     }
     
     // Verificar si hay usuarios asociados
-    const [usuariosCount] = await connection.execSync('SELECT COUNT(*) as total FROM Usuario2 WHERE Location_ID = ?', [id]);
-    if (usuariosCount && usuariosCount.total > 0) {
-      await connection.execSync('ROLLBACK');
+    const usuariosResult = await new Promise((resolve, reject) => {
+      connection.exec('SELECT COUNT(*) as total FROM Usuario2 WHERE Location_ID = ?', [id], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+    
+    if (usuariosResult && usuariosResult[0] && usuariosResult[0].total > 0) {
       return res.status(400).json({ 
         error: "No se puede eliminar la location porque tiene usuarios asociados" 
       });
     }
     
     // Verificar si hay inventario asociado
-    const [inventarioCount] = await connection.execSync('SELECT COUNT(*) as total FROM Inventario2 WHERE Location_ID = ?', [id]);
-    if (inventarioCount && inventarioCount.total > 0) {
-      await connection.execSync('ROLLBACK');
+    const inventarioResult = await new Promise((resolve, reject) => {
+      connection.exec('SELECT COUNT(*) as total FROM Inventario2 WHERE Location_ID = ?', [id], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+    
+    if (inventarioResult && inventarioResult[0] && inventarioResult[0].total > 0) {
       return res.status(400).json({ 
         error: "No se puede eliminar la location porque tiene inventario asociado" 
       });
     }
     
     // Eliminar registros de fabricación asociados
-    await connection.execSync('DELETE FROM Fabricacion2 WHERE Location_ID = ?', [id]);
+    await new Promise((resolve, reject) => {
+      connection.exec('DELETE FROM Fabricacion2 WHERE Location_ID = ?', [id], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
     
     // Eliminar la location
-    await connection.execSync('DELETE FROM Location2 WHERE Location_ID = ?', [id]);
+    await new Promise((resolve, reject) => {
+      connection.exec('DELETE FROM Location2 WHERE Location_ID = ?', [id], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
     
-    await connection.execSync('COMMIT');
     res.status(200).json({ message: "Location eliminada exitosamente" });
   } catch (error) {
-    await connection.execSync('ROLLBACK');
     console.error("Error al eliminar location:", error);
     res.status(500).json({ error: "Error al eliminar location" });
   }

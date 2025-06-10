@@ -3,8 +3,7 @@ import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 /**
- * AuthHandler component that intercepts API responses and handles OTP verification
- * redirects when needed
+ * AuthHandler component that intercepts API responses and handles authentication
  */
 const AuthHandler = ({ children }) => {
   const navigate = useNavigate();
@@ -12,10 +11,10 @@ const AuthHandler = ({ children }) => {
   const [isChecking, setIsChecking] = useState(true);
   const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
 
-  // Check if user needs OTP verification on initial load
+  // Check if user needs authentication on initial load
   useEffect(() => {
-    // Skip OTP check on login, register, and OTP pages
-    const noCheckPaths = ['/', '/register', '/otp'];
+    // Skip check on login and register pages
+    const noCheckPaths = ['/', '/register'];
     if (noCheckPaths.includes(location.pathname)) {
       setIsChecking(false);
       return;
@@ -66,9 +65,9 @@ const AuthHandler = ({ children }) => {
         return response;
       },
       error => {
-        // Check if error response indicates OTP is required
+        // Check if error response indicates authentication is required
         if (error.response && error.response.status === 401) {
-          const { requiresOtp, message } = error.response.data;
+          const { requiresAuth } = error.response.data;
           
           if (requiresOtp) {
             console.log('OTP verification required, redirecting to OTP page:', message);
@@ -108,15 +107,11 @@ const AuthHandler = ({ children }) => {
             return new Promise(() => {});
           }
         }
-        
-        // For other errors, reject with the error
         return Promise.reject(error);
       }
     );
-    
-    setIsChecking(false);
-    
-    // Clean up the interceptor when the component unmounts
+
+    // Clean up interceptor on unmount
     return () => {
       axios.interceptors.response.eject(interceptor);
     };

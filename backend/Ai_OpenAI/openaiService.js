@@ -223,6 +223,18 @@ Ejemplos de SQL exitosos para diferentes tipos de preguntas:
 4. Para inventario bajo:
    Pregunta: "Productos con stock bajo"
    SQL: SELECT a.Articulo_ID, a.Nombre, i.StockActual, i.StockMinimo FROM Inventario2 i JOIN Articulo2 a ON i.Articulo_ID = a.Articulo_ID WHERE i.StockActual < i.StockMinimo
+
+5. Para total de pedidos:
+   Pregunta: "¿Cuántos pedidos hay en total?"
+   SQL: SELECT COUNT(*) as TotalPedidos FROM Ordenes2
+
+6. Para artículos más caros:
+   Pregunta: "¿Cuáles son los artículos más caros?"
+   SQL: SELECT a.Articulo_ID, a.Nombre, a.PrecioVenta FROM Articulo2 a ORDER BY a.PrecioVenta DESC LIMIT 10
+
+7. Para productos en inventario:
+   Pregunta: "¿Cuántos productos tenemos en inventario?"
+   SQL: SELECT SUM(i.StockActual) as TotalProductos FROM Inventario2 i
 `;
 
 // Inicializar la conexión con OpenAI
@@ -257,17 +269,29 @@ const initializeOpenAI = async () => {
 };
 
 // Función para convertir la pregunta del usuario en una consulta SQL
-const generateSQLQuery = async (question) => {
+const generateSQLQuery = async (question, options = {}) => {
   try {
-    const messages = [
-      {
-        role: "system",
-        content: `Eres un experto en SQL para bases de datos SAP 4 HANA, especializado en convertir preguntas en lenguaje natural a consultas SQL. Tu tarea es generar consultas SQL válidas basadas en el siguiente esquema de base de datos si no entiendes algo te recomiendo volver a preguntar y dar preguntas que te orienten a poder resolver tu duda NO ALUCINES NI INVENTES COSAS, solo puedes usar lo de la DB:
+    const { locationId, restricted } = options;
+    
+    // Base de instrucciones del sistema
+    let systemContent = `Eres un experto en SQL para bases de datos SAP 4 HANA, especializado en convertir preguntas en lenguaje natural a consultas SQL. Tu tarea es generar consultas SQL válidas basadas en el siguiente esquema de base de datos si no entiendes algo te recomiendo volver a preguntar y dar preguntas que te orienten a poder resolver tu duda NO ALUCINES NI INVENTES COSAS, solo puedes usar lo de la DB:
         
 ${DB_SCHEMA}
 
 Algunos ejemplos de consultas exitosas:
-${EXAMPLE_REWARD_QUERIES}
+${EXAMPLE_REWARD_QUERIES}`;
+
+    // Agregar restricciones según el rol del usuario
+    if (locationId) {
+      systemContent += `\n\nRESTRICCIÓN IMPORTANTE: El usuario solo puede ver datos de la ubicación con ID ${locationId}. 
+      SIEMPRE debes incluir un filtro Location_ID = ${locationId} en TODAS las consultas que involucren las tablas Location2, Inventario2, Alertas2, HistorialProductos2 o cualquier tabla que contenga información específica de una ubicación.
+      NUNCA generes una consulta que permita ver datos de otras ubicaciones.`;
+    }
+    
+    const messages = [
+      {
+        role: "system",
+        content: systemContent + `
 
 Reglas importantes:
 1. Genera SOLO la consulta SQL, sin explicaciones ni texto adicional.
@@ -308,12 +332,46 @@ Prioriza la precisión sobre la simplicidad. Es mejor generar una consulta compl
       };
     }
 
+    // Forzar el filtro de ubicación si es necesario
+    let finalQuery = sqlQuery;
+    if (locationId) {
+      // Verificar si la consulta incluye tablas que deberían tener filtro de ubicación
+      const locationTables = ['Inventario2', 'Location2', 'Alertas2', 'HistorialProductos2'];
+      const needsLocationFilter = locationTables.some(table => sqlQuery.includes(table));
+      
+      // Si la consulta involucra estas tablas pero no tiene el filtro de ubicación, añadirlo
+      if (needsLocationFilter && !sqlQuery.includes(`Location_ID = ${locationId}`)) {
+        // Verificar si hay una cláusula WHERE
+        if (sqlQuery.includes('WHERE')) {
+          // Añadir el filtro como una condición adicional
+          finalQuery = sqlQuery.replace(/WHERE/i, `WHERE Location_ID = ${locationId} AND`);
+        } else {
+          // Añadir una nueva cláusula WHERE antes de cualquier ORDER BY, GROUP BY, etc.
+          const clauses = ['ORDER BY', 'GROUP BY', 'HAVING', 'LIMIT'];
+          let insertPosition = sqlQuery.length;
+          
+          for (const clause of clauses) {
+            const pos = sqlQuery.toUpperCase().indexOf(clause);
+            if (pos !== -1 && pos < insertPosition) {
+              insertPosition = pos;
+            }
+          }
+          
+          finalQuery = sqlQuery.substring(0, insertPosition) + 
+                      ` WHERE Location_ID = ${locationId} ` + 
+                      sqlQuery.substring(insertPosition);
+        }
+        
+        logger.info(`Consulta modificada para incluir filtro de ubicación: ${finalQuery}`);
+      }
+    }
+
     // Registrar consultas exitosas para aprendizaje
-    logger.info(`Consulta SQL generada: ${sqlQuery}`);
+    logger.info(`Consulta SQL generada: ${finalQuery}`);
 
     return {
       canConvert: true,
-      query: sqlQuery
+      query: finalQuery
     };
   } catch (error) {
     logger.error(`Error al generar consulta SQL: ${error.message}`);
@@ -452,22 +510,41 @@ Por favor, responde a la pregunta del usuario basándote en estos resultados.`
 };
 
 // Función principal para consultar al asistente con una pregunta
-const queryAssistant = async (question) => {
+const queryAssistant = async (question, options = {}) => {
   try {
-    logger.info(`Procesando pregunta: ${question}`);
+    const { locationId, restricted } = options;
+    logger.info(`Procesando pregunta: ${question}, opciones: ${JSON.stringify(options)}`);
+
+    // Lista de preguntas comunes que deberían generar SQL
+    const commonQueries = [
+      "pedidos", "ordenes", "total", "inventario", "productos", "stock", 
+      "ventas", "compras", "artículos", "caros", "baratos", "precio"
+    ];
+    
+    // Verificar si la pregunta contiene palabras clave que deberían generar SQL
+    const shouldForceSql = commonQueries.some(term => 
+      question.toLowerCase().includes(term.toLowerCase())
+    );
 
     // Paso 1: Convertir la pregunta en una consulta SQL
-    const sqlResult = await generateSQLQuery(question);
+    let sqlResult = await generateSQLQuery(question, options);
+    
+    // Si no pudo convertir pero la pregunta debería generar SQL, intentar reformular
+    if (!sqlResult.canConvert && shouldForceSql) {
+      logger.info(`Intentando reformular la consulta: "${question}" para generar SQL`);
+      
+      // Modificar la pregunta para ser más específica
+      const modifiedQuestion = `Genera una consulta SQL para: ${question}. La consulta debe incluir la información solicitada de manera precisa.`;
+      
+      // Intentar nuevamente con la pregunta reformulada
+      sqlResult = await generateSQLQuery(modifiedQuestion, options);
+      logger.info(`Resultado después de reformular: canConvert=${sqlResult.canConvert}`);
+    }
     
     if (!sqlResult.canConvert) {
       // Si no se puede convertir a SQL, intentar responder directamente
-      const directResponse = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        store: true,
-        messages: [
-          {
-            role: "system",
-            content: `Eres un asistente especializado en sistemas de inventario y pedidos para negocios. Tu base de conocimiento incluye:
+      // Construir instrucciones del sistema según el rol
+      let systemContent = `Eres un asistente especializado en sistemas de inventario y pedidos para negocios. Tu base de conocimiento incluye:
 
 1. Gestión de pedidos a proveedores y de clientes
 2. Control de inventario y stock
@@ -477,9 +554,24 @@ const queryAssistant = async (question) => {
 Responde de manera profesional y directa. Si no puedes responder una pregunta específica sobre los datos, sugiere qué información podrían consultar.
 
 Aquí hay ejemplos de preguntas que puedes responder:
-${EXAMPLE_QUERIES}
+${EXAMPLE_QUERIES}`;
 
-Si te preguntan sobre un proveedor específico, explica que necesitas el nombre del proveedor para consultar sus pedidos o información relacionada.`
+      // Agregar restricciones según el rol del usuario
+      if (options.locationId) {
+        systemContent += `\n\nRESTRICCIÓN IMPORTANTE: Solo puedes dar información de la ubicación con ID ${options.locationId}. 
+        No debes responder consultas generales sobre todas las ubicaciones.
+        Si te preguntan por pedidos totales, inventario total, o estadísticas generales, SIEMPRE aclara que sólo puedes dar información 
+        para la ubicación específica con ID ${options.locationId}.
+        Debes decir "Solo puedo mostrarte información de tu ubicación" antes de responder.`;
+      }
+      
+      const directResponse = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        store: true,
+        messages: [
+          {
+            role: "system",
+            content: systemContent
           },
           {
             role: "user",

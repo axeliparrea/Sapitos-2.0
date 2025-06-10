@@ -65,7 +65,6 @@ const ModelManagement = () => {
         withCredentials: true // Include credentials (cookies) with the request
       });
       setLogs(response.data);
-      setLoading(false);
     } catch (error) {
       if (!handleAuthError(error)) {
         console.error("Error fetching logs:", error);
@@ -81,6 +80,7 @@ const ModelManagement = () => {
           });
         }
       }
+    } finally {
       setLoading(false);
     }
   }, [handleAuthError]);
@@ -93,7 +93,6 @@ const ModelManagement = () => {
       setLoading(true);
       const response = await axios.get(`${API_BASE_URL}/ml/status`, { withCredentials: true });
       setModelStatus(response.data);
-      setLoading(false);
     } catch (error) {
       if (!handleAuthError(error)) {
         console.error("Error fetching model status:", error);
@@ -101,6 +100,7 @@ const ModelManagement = () => {
         // Fall back to default state (inactive)
         setModelStatus({ status: 'inactive', lastUpdated: null });
       }
+    } finally {
       setLoading(false);
     }
   }, [handleAuthError]);
@@ -114,7 +114,6 @@ const ModelManagement = () => {
         withCredentials: true // Include credentials (cookies) with the request
       });
       setNextUpdate(response.data.schedule);
-      setLoading(false);
     } catch (error) {
       if (!handleAuthError(error)) {
         console.error("Error fetching schedule info:", error);
@@ -130,6 +129,7 @@ const ModelManagement = () => {
           });
         }
       }
+    } finally {
       setLoading(false);
     }
   }, [handleAuthError]);  // Ya no se necesita toggleModelStatus porque el estado del modelo es solo informativo
@@ -161,19 +161,19 @@ const ModelManagement = () => {
       await fetchLogs();
       await fetchModelStatus();
       await fetchMetrics();
-      setLoading(false);
     } catch (error) {
       if (!handleAuthError(error)) {
         setMessage({ type: 'error', text: 'Error al iniciar actualización: ' + (error.response?.data?.message || error.message) });
       }
+    } finally {
       setLoading(false);
     }
   }, [handleAuthError, fetchLogs, fetchModelStatus, fetchMetrics]);
   
   // Check authenticated session and fetch schedule information on component mount
   useEffect(() => {
-    const checkSession = async () => {
-      try {        
+    const initializeData = async () => {
+      try {
         // Clear any previous error messages
         setMessage(null);
         
@@ -191,17 +191,19 @@ const ModelManagement = () => {
           return;
         }
           // If session is valid and user is admin, fetch all model data
-        fetchScheduleInfo();
-        fetchLogs();
-        fetchModelStatus();
-        fetchMetrics();
+        await Promise.all([
+          fetchScheduleInfo(),
+          fetchLogs(),
+          fetchModelStatus(),
+          fetchMetrics()
+        ]);
       } catch (error) {
         console.error("Session validation error:", error);
         navigate('/');
       }
     };
     
-    checkSession();
+    initializeData();
   }, [navigate, fetchScheduleInfo, fetchLogs, fetchModelStatus, fetchMetrics]);
   
   // Format date for display

@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import ErrorDialog from "../components/ErrorDialog";
+import './SignInPage.css';
 
 const SignInPage = () => {
   const [email, setEmail] = useState("");
@@ -17,6 +18,23 @@ const SignInPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "https://sapitos-backend.cfapps.us10-001.hana.ondemand.com";
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  
+  // OTP related states
+  const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
+  const [otpSecret, setOtpSecret] = useState("");
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const inputRefs = Array(6).fill(0).map(_ => useRef(null));
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0 && resendDisabled) {
+      setResendDisabled(false);
+    }
+  }, [countdown, resendDisabled]);
 
   useEffect(() => {
     if (hasCheckedSession.current) return;
@@ -36,8 +54,7 @@ const SignInPage = () => {
         }
 
         const data = await response.json();
-        
-        // Verificar si requiere OTP
+
         if (data.requiresOtp) {
           await generateOTP();
           setCheckingSession(false);
@@ -51,7 +68,7 @@ const SignInPage = () => {
         } else if (data.token) {
           try {
             const decoded = jwtDecode(data.token);
-            userRole = decoded.rol; 
+            userRole = decoded.rol;
           } catch {
             await clearInvalidSession();
             setCheckingSession(false);
@@ -77,7 +94,6 @@ const SignInPage = () => {
       }
     };
 
-    // Función para limpiar sesión inválida
     const clearInvalidSession = async () => {
       try {
         await fetch(`${API_BASE_URL}/users/logoutUser`, {
@@ -104,20 +120,9 @@ const SignInPage = () => {
         body: JSON.stringify({ correo: email, contrasena: password }),
         credentials: "include",
       });
-      
-      console.log("Respuesta de login recibida:", {
-        status: response.status,
-        ok: response.ok
-      });
-      
+
       const data = await response.json();
-      console.log("Datos de login:", {
-        requiresOtp: !!data.requiresOtp,
-        hasUser: !!data.usuario,
-        hasToken: !!data.token,
-        mensaje: data.message || data.mensaje
-      });
-      
+
       if (!response.ok) {
         let message = "Error en el inicio de sesión";
         if (data.error === "Usuario no encontrado") {
@@ -136,19 +141,12 @@ const SignInPage = () => {
         throw new Error("Datos de sesión incompletos");
       }
 
-      console.log("Login exitoso:", data.usuario);
-        // OTP
       if (data.requiresOtp) {
-        console.log("OTP verification required");
-        
-        // Generate OTP and store secret in session storage instead of state
         const otpData = await generateOTP();
         if (otpData && otpData.secret) {
-          sessionStorage.setItem('otpSecret', otpData.secret);
+          setOtpSecret(otpData.secret);
         }
-        
-        // Redirect to OTP page instead of showing a modal
-        navigate('/otp');
+        setIsLoginMode(false);
       } else {
         // Redirect immediately without setTimeout to prevent flashing
         console.log("Login successful, redirecting to dashboard");
@@ -160,52 +158,149 @@ const SignInPage = () => {
         // Navigate immediately
         navigate('/dashboard', { replace: true });
       }
-      
+
     } catch (error) {
-      console.error("Error:", error);
       setError(error.message || "Error en el inicio de sesión");
     } finally {
       setIsLoading(false);
     }
   };
+
   const generateOTP = async () => {
-    console.log("Iniciando generación de OTP...");
+    setIsLoading(true);
+    setError('');
+    
     try {
       const response = await fetch(`${API_BASE_URL}/api/otp/generate`, {
         method: "GET",  
         credentials: "include",
       });
-      
+
       if (!response.ok) {
-        console.error(`Error HTTP: ${response.status} - ${response.statusText}`);
-        const errorData = await response.json().catch(() => null);
-        console.error("Detalles del error:", errorData);
-        throw new Error(errorData?.message || "Error al generar OTP");
+        throw new Error("No se pudo generar el código de verificación");
       }
-      
+
       const data = await response.json();
-      console.log("Respuesta de generación OTP:", { 
-        success: data.success,
-        message: data.message,
-        hasSecret: !!data.secret,
-        devMode: process.env.NODE_ENV === 'development',
-        authOtp: data.authOtpEnabled // El backend debe enviar este valor
-      });
-        // We'll store the secret in sessionStorage in the login function instead
       
-      // En desarrollo, podemos mostrar el OTP en consola
-      if (process.env.NODE_ENV === 'development' && data.otp) {
-        console.log("Código OTP (solo desarrollo):", data.otp);
+      if (data.secret) {
+        setOtpSecret(data.secret);
       }
+      
+      setResendDisabled(true);
+      setCountdown(60);
       
       return data;
     } catch (error) {
-      console.error("Error generando OTP:", error);
-      setError(error.message || "Error generando OTP");
+      console.error("Error al generar OTP:", error);
+      setError(error.message || "Error al generar el código de verificación");
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
-  // OTP verification now handled in OtpPage.jsx
+
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+
+    const newOtpValues = [...otpValues];
+    newOtpValues[index] = value;
+    setOtpValues(newOtpValues);
+
+    if (value && index < 5 && inputRefs[index + 1]?.current) {
+      inputRefs[index + 1].current.focus();
+    }
+
+    if (newOtpValues.every(val => val) && newOtpValues.join('').length === 6) {
+      setTimeout(() => {
+        handleVerifyOtp(newOtpValues.join(''));
+      }, 300);
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpValues[index] && index > 0 && inputRefs[index - 1]?.current) {
+      inputRefs[index - 1].current.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData('text').trim();
+    if (!/^\d+$/.test(pasteData)) return;
+
+    const newOtpValues = [...otpValues];
+    for (let i = 0; i < Math.min(pasteData.length, 6); i++) {
+      newOtpValues[i] = pasteData[i];
+    }
+    setOtpValues(newOtpValues);
+
+    const focusIndex = Math.min(pasteData.length, 6) - 1;
+    if (focusIndex >= 0 && inputRefs[focusIndex]?.current) {
+      inputRefs[focusIndex].current.focus();
+    }
+    if (pasteData.length >= 6) {
+      setTimeout(() => {
+        handleVerifyOtp(pasteData.substring(0, 6));
+      }, 300);
+    }
+  };
+
+  const handleVerifyOtp = async (code = null) => {
+    const otpCode = code || otpValues.join('');
+    
+    if (!otpCode || otpCode.length !== 6) {
+      setError("Por favor ingresa los 6 dígitos del código");
+      return;
+    }
+
+    if (!otpSecret) {
+      setError("No se encontró información de verificación. Intenta generar un nuevo código.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch("http://localhost:5000/api/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          otp: otpCode, 
+          secret: otpSecret 
+        }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Error verificando código");
+      }
+
+      if (data.verified) {
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 500);
+      } else {
+        throw new Error("Código de verificación inválido");
+      }
+      
+    } catch (error) {
+      console.error("Error verificando OTP:", error);
+      setError(error.message || "Error verificando código");
+      
+      setOtpValues(['', '', '', '', '', '']);
+      if (inputRefs[0]?.current) inputRefs[0].current.focus();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendDisabled) return;
+    await generateOTP();
+  };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
@@ -227,79 +322,183 @@ const SignInPage = () => {
 
 
   return (
-    <section className='auth bg-base d-flex flex-wrap'>
-      <div className='auth-right py-32 px-24 d-flex flex-column justify-content-center'>
-        <div className='max-w-464-px mx-auto w-100'>
-          <div>
-            <Link to='/' className='mb-40 max-w-290-px d-block'>
-              <img src='assets/images/logo.png' alt='Logo' className='img-fluid' />
-            </Link>
-            <h4 className='mb-12'>Iniciar sesión</h4>
-            <p className='mb-32 text-secondary-light text-lg'>
-              Por favor ingrese sus datos
-            </p>
+    <section className='auth d-flex align-items-center justify-content-center min-vh-100' style={{
+      background: '#f5f5f5',
+      position: 'relative'
+    }}>
+      <div className='container-slider' style={{
+        width: '100vw',
+        height: '100vh',
+        background: 'white',
+        overflow: 'hidden',
+        position: 'relative'
+      }}>
+        <div className={`slider-content ${isLoginMode ? '' : 'right-panel-active'}`}>
+          {/* Panel de Formularios */}
+          <div className='forms-container'>
+            <div className='signin-signup'>
+
+              {/* FORMULARIO DE LOGIN */}
+              <form onSubmit={handleLogin} className='sign-in-form needs-validation' noValidate>
+                <div className="text-center" style={{ marginTop: '-1rem', marginBottom: '2rem' }}>
+                  <img src="/assets/images/logo.png" alt="Logo" className="img-fluid" style={{ maxWidth: '220px' }} />
+                </div>
+                <div className="text-center mb-4">
+                  <h2 className='mb-3' style={{ fontSize: '2.2rem', fontWeight: '600' }}>Iniciar sesión</h2>
+                  <p className='mb-4 text-secondary-light' style={{ fontSize: '1.1rem' }}>
+                    Por favor ingrese sus datos
+                  </p>
+                </div>
+
+                <div className='icon-field mb-4.5' style={{ maxWidth: '500px', margin: '0 auto', width: '90%', marginBottom: '2rem' }}>
+                  <span className='icon top-50 translate-middle-y'>
+                    <Icon icon='mdi:email-outline' className='text-muted' />
+                  </span>
+                  <input
+                    type='email'
+                    id='username'
+                    className='form-control h-56-px bg-neutral-50 radius-12'
+                    placeholder='Correo electrónico'
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete='email'
+                  />
+                </div>
+
+                <div className='position-relative mb-4' style={{ maxWidth: '500px', margin: '0 auto', width: '90%' }}>
+                  <div className='icon-field'>
+                    <span className='icon top-50 translate-middle-y'>
+                      <Icon icon='solar:lock-password-outline' className='text-muted' />
+                    </span>
+                    <input
+                      type='password'
+                      id='password'
+                      className='form-control h-56-px bg-neutral-50 radius-12'
+                      placeholder='Contraseña'
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete='current-password'
+                    />
+                  </div>
+                </div>
+
+                {/* BOTÓN LOGIN CON MARGEN SUPERIOR */}
+                <div className='d-grid gap-3 mt-4.5' style={{ maxWidth: '500px', margin: '0 auto', width: '90%', marginTop: '2rem' }}>
+                  <button
+                    id='loginButton'
+                    type='submit'
+                    className='btn btn-primary h-56-px'
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Procesando...' : 'Iniciar sesión'}
+                  </button>
+                </div>
+              </form>
+
+              {/* FORMULARIO DE VERIFICACIÓN OTP */}
+              <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(); }} className='sign-up-form'>
+                <div className="text-center" style={{ marginTop: '-2rem', marginBottom: '2.5rem' }}>
+                  <img src="/assets/images/logo.png" alt="Logo" className="img-fluid" style={{ maxWidth: '220px' }} />
+                </div>
+                <div className="text-center mb-4">
+                  <h2 className='mb-3' style={{ fontSize: '2.2rem', fontWeight: '600' }}>Verificación de seguridad</h2>
+                  <p className='mb-4 text-secondary-light' style={{ fontSize: '1.1rem' }}>
+                    Hemos enviado un código de verificación a tu correo electrónico.
+                    Por favor, ingresa el código para continuar.
+                  </p>
+                </div>
+
+                <div className='mb-4 mt-2'>
+                  <label className='form-label mb-3'>Código de verificación</label>
+                  <div className="d-flex justify-content-center gap-2 mb-3">
+                    {otpValues.map((value, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        className="form-control text-center h-56-px bg-neutral-50 radius-12"
+                        style={{ 
+                          width: '50px', 
+                          fontSize: '2rem', 
+                          fontWeight: 'bold',
+                          padding: '0.25rem 0'
+                        }}
+                        value={value}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(index, e)}
+                        onPaste={index === 0 ? handlePaste : undefined}
+                        maxLength={1}
+                        ref={inputRefs[index]}
+                        autoComplete={index === 0 ? "one-time-code" : "off"}
+                        inputMode="numeric"
+                        autoFocus={index === 0}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                <div className='d-grid gap-3 mt-3'>
+                  <button 
+                    type='submit'
+                    className='btn btn-primary h-48-px d-flex align-items-center justify-content-center radius-12'
+                    disabled={isLoading || otpValues.some(val => !val)}
+                  >
+                    {isLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>Verificando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Icon icon="solar:shield-check-bold" className="me-2" />
+                        <span>Verificar código</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <div className="text-center mt-3">
+                    <button 
+                      type="button" 
+                      className="btn btn-link text-decoration-none"
+                      onClick={handleResendCode}
+                      disabled={resendDisabled}
+                    >
+                      {resendDisabled ? `Reenviar código (${countdown}s)` : 'Reenviar código'}
+                    </button>
+                  </div>
+
+                  {error && (
+                    <div className="alert alert-danger d-flex align-items-center p-3 mb-0">
+                      <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
+                      <div className="text-sm">{error}</div>
+                    </div>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
-           
-          <form onSubmit={handleLogin} className='needs-validation' noValidate>
-            <div className='icon-field mb-16'>
-              <span className='icon top-50 translate-middle-y'>
-                <Icon icon='mdi:email-outline' className='text-muted' />
-              </span>
-              <input
-                type='email'
-                id='username'
-                className='form-control h-56-px bg-neutral-50 radius-12'
-                placeholder='Correo electrónico'
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete='email'
+
+          {/* PANEL IZQUIERDO CON IMAGEN GRANDE Y CENTRADA */}
+          <div className='panels-container'>
+            <div className='panel left-panel d-flex align-items-center justify-content-center'>
+              <img
+                src='assets/images/auth/auth-img.png'
+                className='image left-image'
+                alt='Imagen'
+                style={{
+                  width: '120%',
+                  height: 'auto',
+                  transform: 'scale(1.2)',
+                  objectFit: 'contain',
+                  transition: 'opacity 0.5s ease-in-out'
+                }}
               />
             </div>
-
-            <div className='position-relative mb-20'>
-              <div className='icon-field'>
-                <span className='icon top-50 translate-middle-y'>
-                  <Icon icon='solar:lock-password-outline' className='text-muted' />
-                </span>
-                <input
-                  type='password'
-                  id='password'
-                  className='form-control h-56-px bg-neutral-50 radius-12'
-                  placeholder='Contraseña'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete='current-password'
-                />
-              </div>
+            <div className='panel right-panel'>
+              <img src='assets/images/auth/auth-img.png' className='image' alt='' />
             </div>
-             
-            <div className='d-grid gap-3'>
-              <button 
-                id='loginButton' 
-                type='submit'
-                className='btn btn-primary h-48-px d-flex align-items-center justify-content-center radius-12'
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    <span>Procesando...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Iniciar sesión</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-      <div className='auth-left d-lg-block d-none'>
-        <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
-          <img src='assets/images/auth/auth-img.png' alt='Logo' className='img-fluid' />
+          </div>
         </div>
       </div>
 
