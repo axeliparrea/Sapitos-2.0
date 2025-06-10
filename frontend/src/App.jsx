@@ -155,7 +155,7 @@ const App = () => {
         />        <Route
           path="/pedidos"
           element={
-            <ProtectedRoute allowedRoles={["dueno"]}>
+            <ProtectedRoute allowedRoles={["admin", "dueno"]}>
               <PedidosRouter />
             </ProtectedRoute>
           }
@@ -429,8 +429,9 @@ const PedidosRouter = () => {
         </div>
       </div>
     );
-  }
-  switch (role) {
+  }  switch (role) {
+    case "admin":
+      return <Pedidos />;
     case "dueno":
       return <PedidosDueno />;
     default:

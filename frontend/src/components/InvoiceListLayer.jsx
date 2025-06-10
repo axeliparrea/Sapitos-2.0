@@ -71,8 +71,7 @@ const InvoiceListLayer = () => {
         console.log('User location ID:', userLocationId);
         console.log('Total pedidos antes del filtro:', formattedPedidos.length);
         console.log('Pedidos locationIds:', formattedPedidos.map(p => p.locationId));
-        
-        if (userRole === 'dueno' && userLocationId) {
+          if ((userRole === 'dueno' || userRole === 'admin') && userLocationId) {
           const beforeFilterCount = formattedPedidos.length;
           formattedPedidos = formattedPedidos.filter(pedido => {
             const matches = pedido.locationId === userLocationId || 
@@ -80,7 +79,7 @@ const InvoiceListLayer = () => {
             console.log(`Pedido ${pedido.id}: locationId=${pedido.locationId}, userLocationId=${userLocationId}, matches=${matches}`);
             return matches;
           });
-          console.log(`Filtrado para dueño: ${beforeFilterCount} -> ${formattedPedidos.length} pedidos`);
+          console.log(`Filtrado para ${userRole}: ${beforeFilterCount} -> ${formattedPedidos.length} pedidos`);
         }
       }
       
@@ -351,32 +350,13 @@ const InvoiceListLayer = () => {
               </Form.Group>
             </div>            <div className="col-md-2">
               <Form.Group>
-                <Form.Label className="small text-muted mb-1">Estatus</Form.Label>
-                <Form.Select 
+                <Form.Label className="small text-muted mb-1">Estatus</Form.Label>                <Form.Select 
                   size="sm"
                   value={filters.estatus}
                   onChange={(e) => handleFilterChange('estatus', e.target.value)}
                 >
                   <option value="">Todos los estatus</option>
                   <option value="Pendiente">Pendiente</option>
-                  {(() => {
-                    const cookieData = getCookie("UserData");
-                    if (cookieData) {
-                      const userData = typeof cookieData === 'string' ? JSON.parse(cookieData) : cookieData;
-                      const userRole = userData?.ROL;
-                      
-                      // Si el usuario es dueno, no mostrar "Aprobado" y "Rechazado"
-                      if (userRole !== 'dueno') {
-                        return (
-                          <>
-                            <option value="Aprobado">Aprobado</option>
-                            <option value="Rechazado">Rechazado</option>
-                          </>
-                        );
-                      }
-                    }
-                    return null;
-                  })()}
                   <option value="En Reparto">En Reparto</option>
                   <option value="Completado">Completado</option>
                 </Form.Select>
@@ -476,12 +456,9 @@ const InvoiceListLayer = () => {
                       <td><h6 className='text-md mb-0 fw-medium'>{pedido.proveedor}</h6></td>
                       <td>{pedido.fecha}</td>
                       <td>{pedido.cantidad}</td>
-                      <td>
-                        <span className={`px-12 py-1 rounded-pill fw-medium text-xs ${
+                      <td>                        <span className={`px-12 py-1 rounded-pill fw-medium text-xs ${
                           pedido.estatus === 'Completado' ? 'bg-success-focus text-success-main' : 
                           pedido.estatus === 'En Reparto' ? 'bg-primary-focus text-primary-main' :
-                          pedido.estatus === 'Aprobado' ? 'bg-info-focus text-info-main' :
-                          pedido.estatus === 'Rechazado' ? 'bg-danger-focus text-danger-main' :
                           'bg-warning-focus text-warning-main'
                         }`}>
                           {pedido.estatus}

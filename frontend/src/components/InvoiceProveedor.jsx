@@ -105,18 +105,17 @@ const InvoiceProveedor = () => {
     const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
     return `${day} ${months[month]} ${year}`;
   };
-
   const handleActualizarEstatus = async (id, nuevoEstatus) => {
     try {
       // Mostrar confirmación antes de proceder
       const result = await Swal.fire({
         title: '¿Estás seguro?',
-        text: `¿Deseas ${nuevoEstatus === "Aprobado" ? "aceptar" : "rechazar"} este pedido?`,
+        text: `¿Deseas aceptar este pedido? El estado cambiará a "En Reparto".`,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: nuevoEstatus === "Aprobado" ? '#28a745' : '#dc3545',
+        confirmButtonColor: '#28a745',
         cancelButtonColor: '#6c757d',
-        confirmButtonText: `Sí, ${nuevoEstatus === "Aprobado" ? "aceptar" : "rechazar"}`,
+        confirmButtonText: 'Sí, aceptar',
         cancelButtonText: 'Cancelar'
       });
 
@@ -124,12 +123,10 @@ const InvoiceProveedor = () => {
         return;
       }
 
-      // ENDPOINTS CORREGIDOS para coincidir con las rutas del backend
-      const endpoint = nuevoEstatus === "Aprobado" 
-        ? `http://localhost:5000/proveedor/pedido/${id}/aprobar` 
-        : `http://localhost:5000/proveedor/pedido/${id}/rechazar`;
+      // Endpoint para aceptar pedido (cambia a "En Reparto")
+      const endpoint = `http://localhost:5000/proveedor/pedido/${id}/aprobar`;
       
-      console.log("Actualizando pedido:", id, "a estado:", nuevoEstatus);
+      console.log("Aceptando pedido:", id);
       console.log("Endpoint:", endpoint);
       
       const response = await axios.put(endpoint, {}, {
@@ -143,20 +140,20 @@ const InvoiceProveedor = () => {
       
       Swal.fire({
         icon: "success",
-        title: "Actualizado",
-        text: `El pedido ha sido ${nuevoEstatus === "Aprobado" ? "aceptado" : "rechazado"} exitosamente`
+        title: "Pedido Aceptado",
+        text: "El pedido ha sido aceptado y está ahora En Reparto"
       });
       
       // Recargar la lista de pedidos
       fetchPedidos();
       
     } catch (error) {
-      console.error("Error al actualizar el pedido:", error);
+      console.error("Error al aceptar el pedido:", error);
       console.error("Respuesta completa del error:", error.response);
       
       const errorMessage = error.response?.data?.error || 
                           error.response?.data?.message || 
-                          "No se pudo actualizar el pedido";
+                          "No se pudo aceptar el pedido";
       
       Swal.fire({
         icon: "error",
@@ -164,6 +161,63 @@ const InvoiceProveedor = () => {
         text: errorMessage
       });
     }
+  };
+
+  const handleRechazarPedido = async (id) => {
+    try {
+      // Mostrar confirmación antes de proceder
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: '¿Deseas rechazar este pedido? Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, rechazar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      // Endpoint para rechazar pedido
+      const endpoint = `http://localhost:5000/proveedor/pedido/${id}/rechazar`;
+      
+      console.log("Rechazando pedido:", id);
+      console.log("Endpoint:", endpoint);
+      
+      const response = await axios.put(endpoint, {}, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log("Respuesta de rechazo:", response.data);
+      
+      Swal.fire({
+        icon: "success",
+        title: "Pedido Rechazado",
+        text: "El pedido ha sido rechazado exitosamente"
+      });
+      
+      // Recargar la lista de pedidos
+      fetchPedidos();
+      
+    } catch (error) {
+      console.error("Error al rechazar el pedido:", error);
+      console.error("Respuesta completa del error:", error.response);
+      
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message || 
+                          "No se pudo rechazar el pedido";
+      
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: errorMessage
+      });    }
   };
 
   const handleEnviarPedido = async (id) => {
@@ -250,25 +304,21 @@ const InvoiceProveedor = () => {
     (pedido.displayId || "").includes(searchTerm) ||
     (pedido.organizacion || "").toLowerCase().includes(searchTerm.toLowerCase())
   ) : [];
-
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'Pendiente': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-warning-focus text-warning-main';
-      case 'Aprobado': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-info-focus text-info-main';
       case 'En Reparto': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-primary-focus text-primary-main';
       case 'Completado': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-success-focus text-success-main';
-      case 'Rechazado': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-danger-focus text-danger-main';
       default: return 'px-12 py-1 rounded-pill fw-medium text-xs bg-secondary-focus text-secondary-main';
     }
   };
-
   const getActionButtons = (pedido) => {
     switch (pedido.estatus) {
       case 'Pendiente':
         return (
           <div className="d-flex gap-2">
             <button 
-              onClick={() => handleActualizarEstatus(pedido.id, "Aprobado")}
+              onClick={() => handleActualizarEstatus(pedido.id, "En Reparto")}
               className='w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
               style={{ border: 'none' }}
               title="Aceptar pedido"
@@ -276,34 +326,12 @@ const InvoiceProveedor = () => {
               <Icon icon='mdi:check-bold' width="20" height="20" />
             </button>
             <button 
-              onClick={() => handleActualizarEstatus(pedido.id, "Rechazado")}
+              onClick={() => handleRechazarPedido(pedido.id)}
               className='w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
               style={{ border: 'none' }}
               title="Rechazar pedido"
             >
               <Icon icon='mingcute:close-circle-line' width="20" height="20" />
-            </button>
-            <button 
-              onClick={() => handleVerDetalles(pedido.id)}
-              className='w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-              style={{ border: 'none' }}
-              title="Ver detalles"
-            >
-              <Icon icon='iconamoon:eye-light' width="20" height="20" />
-            </button>
-          </div>
-        );
-      
-      case 'Aprobado':
-        return (
-          <div className="d-flex gap-2">
-            <button 
-              onClick={() => handleEnviarPedido(pedido.id)}
-              className='w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center'
-              style={{ border: 'none' }}
-              title="Enviar pedido"
-            >
-              <Icon icon='mdi:truck-delivery' width="20" height="20" />
             </button>
             <button 
               onClick={() => handleVerDetalles(pedido.id)}
