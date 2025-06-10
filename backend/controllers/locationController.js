@@ -44,9 +44,26 @@ const deleteLocation = (req, res) => {
   });
 };
 
+const getLocationById = (req, res) => {
+  const { id } = req.params;
+  const query = `SELECT * FROM Location2 WHERE Location_ID = ?`;
+  connection.prepare(query, (err, statement) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    statement.exec([id], (execErr, rows) => {
+      if (execErr) return res.status(500).json({ error: execErr.message });
+      if (rows.length === 0) return res.status(404).json({ error: "Ubicación no encontrada" });
+
+      res.json(rows[0]); // retorna solo un objeto, no arreglo
+    });
+  });
+};
+
+
 module.exports = {
   getLocations,
   createLocation,
   updateLocation,
-  deleteLocation
+  deleteLocation,
+  getLocationById
 };

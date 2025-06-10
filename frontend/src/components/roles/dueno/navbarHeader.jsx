@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import UserMenu from "../../general/userMenu";
 import getCookie from "../../../utils/cookies";
+import axios from 'axios';
+
 
 const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
   const [userData, setUserData] = useState(null);
@@ -22,7 +24,8 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
 
         // Fetch location details if user has a location ID
         if (parsedData.LOCATION_ID) {
-          const locationResponse = await fetch(`http://localhost:5000/location2/${parsedData.LOCATION_ID}`);
+          const res = await axios.get(`http://localhost:5000/location2/getByID/${locationId}`);
+
           if (locationResponse.ok) {
             const locationData = await locationResponse.json();
             setUserLocation(locationData);

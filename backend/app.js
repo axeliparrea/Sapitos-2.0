@@ -19,6 +19,8 @@ const alertasRoutes = require("./routes/alertas"); // Added Alertas routes
 const aiRoutes = require("./Ai_OpenAI/aiRoutes");
 const pedidosHelperRoutes = require("./routes/pedidosH");
 const kpiRoutes = require("./routes/kpi.js");
+const ordenesRoutes = require("./routes/ordenes");
+
 
 const app = express();
 
@@ -55,6 +57,9 @@ app.use("/inventory", inventoryRoutes);
 
 // roles routes
 app.use("/rol", rolRoutes);
+
+// ordenes routes
+app.use("/ordenes", ordenesRoutes); // 👈 Esta línea debe existir
 
 // locations routes
 app.use("/location2", locationRoutes); 

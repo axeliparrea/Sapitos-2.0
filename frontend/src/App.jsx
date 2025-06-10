@@ -14,6 +14,10 @@ import InventarioDueno from "./pages/dueno/Inventario";
 import OrdenesProveedoresDueno from "./pages/dueno/OrdenesProveedores";
 import OrdenesClientesDueno from "./pages/dueno/OrdenesClientes";
 import RecomendacionesIADueno from "./pages/dueno/RecomendacionesIA";
+import CrearProducto from "./components/crearProducto";
+import OrdenesRecibidas from "./pages/dueno/OrdenesRecibidas";
+import Pedir from "./pages/dueno/Pedir";
+
 
 import HomeCliente from "./pages/cliente/Home";
 import InventarioCliente from "./pages/cliente/Inventario"
@@ -103,15 +107,36 @@ const App = () => {
               }
             />
             <Route 
-              path="/inventario" 
-              element={
-                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "cliente"]}>
-                {role === "admin" ? <InventarioAdmin /> :
-                  role === "cliente" ? <InventarioCliente /> :
-                  <Navigate to="/dashboard" />}
-              </ProtectedRoute>
-              } 
-            />
+  path="/inventario" 
+  element={
+    <ProtectedRoute requireOtp={true} allowedRoles={["admin", "cliente", "dueno"]}>
+      {role === "admin" ? <InventarioAdmin /> :
+       role === "cliente" ? <InventarioCliente /> :
+       role === "dueno" ? <InventarioDueno /> :
+       <Navigate to="/dashboard" />}
+    </ProtectedRoute>
+  } 
+/>
+
+<Route
+  path="/ordenes-Recibidas"
+  element={
+    <ProtectedRoute requireOtp={true} allowedRoles={["dueno"]}>
+      {
+       role === "dueno" ? <OrdenesRecibidas /> :
+       <Navigate to="/dashboard" />}
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/pedir-producto"
+  element={ 
+    <ProtectedRoute requireOtp={true} allowedRoles={["dueno"]}>
+      {role === "dueno" ? <Pedir /> :
+        <Navigate to="/dashboard" />}
+    </ProtectedRoute>
+  }
+/>
 
             <Route 
               path="/profile" 
@@ -189,6 +214,14 @@ const App = () => {
                 <Navigate to="/"/>
                 }
               />
+              <Route
+  path="/crear-producto"
+  element={
+    role === "dueno" ? <CrearProducto /> :
+    <Navigate to="/inventario" />
+  }
+/>
+
             <Route 
               path="/usuarios" 
               element={
@@ -217,13 +250,6 @@ const App = () => {
               role === "admin" ? <AddUserLayer /> :
               <Navigate to="/" />
             } 
-          />
-          <Route 
-            path="/agregar-articulo"
-            element={
-              role === "admin" ? <AddArticuloLayer /> :
-              <Navigate to="/" />
-            }
           />
           <Route 
             path="/agregar-Location"

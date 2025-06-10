@@ -4,7 +4,9 @@ const {
   getLocations,
   createLocation,
   updateLocation,
-  deleteLocation
+  deleteLocation,
+  
+  getLocationById // importación nueva
 } = require("../controllers/locationController");
 
 /**
@@ -99,5 +101,27 @@ router.put("/:id", updateLocation);
  *         description: Ubicación eliminada
  */
 router.delete("/:id", deleteLocation);
+
+/**
+ * @swagger
+ * /location2/getByID/{id}:
+ *   get:
+ *     summary: Obtener una ubicación por ID
+ *     tags: [Location2]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la ubicación
+ *     responses:
+ *       200:
+ *         description: Datos de la ubicación
+ *       404:
+ *         description: Ubicación no encontrada
+ */
+router.get("/getByID/:id", getLocationById);
+
 
 module.exports = router;
