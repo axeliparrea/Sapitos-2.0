@@ -463,7 +463,7 @@ const SignInPage = () => {
           <div className='panels-container'>
             <div className='panel left-panel d-flex align-items-center justify-content-center'>
               <img
-                src='assets/images/auth/auth-img.png'
+                src='assets/images/auth/auth-img2.png'
                 className='image left-image'
                 alt='Imagen'
                 style={{
