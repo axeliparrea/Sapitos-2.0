@@ -62,11 +62,10 @@ const App = () => {
               <DashboardRouter />
             </ProtectedRoute>
           }
-        />
-        <Route
+        />        <Route
           path="/inventario"
           element={
-            <ProtectedRoute allowedRoles={["admin", "cliente"]}>
+            <ProtectedRoute allowedRoles={["admin", "dueno", "cliente"]}>
               <InventarioRouter />
             </ProtectedRoute>
           }
@@ -153,12 +152,11 @@ const App = () => {
               <Navigate to="/"/>}
             </ProtectedRoute>
           }
-        />
-        <Route
+        />        <Route
           path="/pedidos"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <Pedidos />
+            <ProtectedRoute allowedRoles={["admin", "dueno"]}>
+              <PedidosRouter />
             </ProtectedRoute>
           }
         />
@@ -251,12 +249,10 @@ const App = () => {
               <ModelManagement />
             </ProtectedRoute>
           }
-        />
-
-        <Route
+        />        <Route
           path="/crearpedido"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "dueno"]}>
               <InvoiceAddLayer />
             </ProtectedRoute>
           }
@@ -379,13 +375,67 @@ const InventarioRouter = () => {
         </div>
       </div>
     );
+  }  switch (role) {
+    case "admin":
+      return <InventarioAdmin />;
+    case "dueno":
+      return <InventarioDueno />;
+    case "cliente":
+      return <InventarioCliente />;
+    default:
+      return <Navigate to="/dashboard" replace />;
+  }
+};
+
+// Componente auxiliar para manejar los pedidos según el rol
+const PedidosRouter = () => {
+  const checkRole = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/users/getSession", {
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      if (data.token) {
+        const decoded = jwtDecode(data.token);
+        return decoded.rol;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error checking role:", error);
+      return null;
+    }
+  };
+
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkRole().then(userRole => {
+      setRole(userRole);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    );
   }
 
   switch (role) {
     case "admin":
-      return <InventarioAdmin />;
-    case "cliente":
-      return <InventarioCliente />;
+      return <Pedidos />;
+    case "dueno":
+      return <PedidosDueno />;
     default:
       return <Navigate to="/dashboard" replace />;
   }
