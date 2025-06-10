@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 
-const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+const ProtectedRoute = ({ children, allowedRoles = [], requireOtp = true }) => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [redirectTo, setRedirectTo] = useState(null);
@@ -26,6 +26,13 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
         
         if (!data.token) {
           console.log("No token found in session");
+          setRedirectTo("/");
+          setIsLoading(false);
+          return;
+        }
+
+        if (requireOtp && data.requiresOtp) {
+          console.log("OTP verification required");
           setRedirectTo("/");
           setIsLoading(false);
           return;
@@ -55,14 +62,14 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     };
 
     checkAuth();
-  }, [allowedRoles, location.pathname]);
+  }, [allowedRoles, location.pathname, requireOtp]);
 
   if (isLoading) {
     return <div className="loading">Verificando autenticación...</div>;
   }
 
   if (!isAuthorized && redirectTo) {
-    return <Navigate to={redirectTo} replace />;
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   return children;

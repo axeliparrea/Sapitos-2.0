@@ -289,6 +289,27 @@ const SignInPage = () => {
     await generateOTP();
   };
 
+  const handleReturnToSignIn = async () => {
+    try {
+      // Limpiar la sesión en el backend
+      await fetch("http://localhost:5000/users/logoutUser", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      // Resetear estados locales
+      setOtpValues(['', '', '', '', '', '']);
+      setOtpSecret("");
+      setEmail("");
+      setPassword("");
+      setError("");
+      setIsLoginMode(true);
+      
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
+
   const handleCloseDialog = () => {
     setDialogOpen(false);
   };
@@ -465,6 +486,25 @@ const SignInPage = () => {
                     </button>
                   </div>
 
+                  <div className="text-center mt-4">
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-danger"
+                      onClick={handleReturnToSignIn}
+                      style={{
+                        padding: '0.75rem 2rem',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        borderColor: '#dc3545',
+                        color: '#dc3545',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Icon icon="mdi:arrow-left" className="me-2" />
+                      Regresar
+                    </button>
+                  </div>
+
                   {error && (
                     <div className="alert alert-danger d-flex align-items-center p-3 mb-0">
                       <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
@@ -480,7 +520,7 @@ const SignInPage = () => {
           <div className='panels-container'>
             <div className='panel left-panel d-flex align-items-center justify-content-center'>
               <img
-                src='assets/images/auth/auth-img2.png'
+                src='assets/images/auth/auth-img.png'
                 className='image left-image'
                 alt='Imagen'
                 style={{

@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import axios from "axios";
 import { notify, NotificationType } from "./NotificationService";
 import { useNavigate } from "react-router-dom";
+import './NotificationsLayer.css';
 
 // Función para formatear fecha de manera amigable
 const formatearFechaRelativa = (fechaStr) => {
@@ -266,11 +267,14 @@ const NotificationsLayer = () => {
             Notificaciones
           </h6>
           <button 
-            className="btn btn-sm btn-outline-primary"
+            className="refresh-button"
             onClick={fetchNotifications}
             disabled={loading}
           >
-            <Icon icon="mdi:refresh" className={loading ? "animate-spin" : ""} />
+            <Icon 
+              icon="mdi:refresh" 
+              className={`text-xl ${loading ? "animate-spin" : ""}`}
+            />
           </button>
         </div>
         <div className='card-body p-24 d-flex flex-column gap-4'>

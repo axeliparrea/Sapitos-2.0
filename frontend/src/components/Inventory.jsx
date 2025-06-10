@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Form, InputGroup, Button, Modal, Dropdown, Badge } from 'react-bootstrap';
 import { Icon } from "@iconify/react/dist/iconify.js";
 import axios from 'axios';
+import './Inventory.css';
 
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
@@ -167,15 +168,17 @@ const Inventory = () => {
             </span>
           </div>
         </div>        <div className='d-flex flex-wrap align-items-center gap-3'>
-          <Button 
+          <button 
             id="btnExportarCSV"
-            variant="success" 
+            className="btn-export-excel"
             onClick={exportToCSV}
-            className="btn-sm"
-            size="sm"
           >
-            <Icon icon="bi:download" /> Exportar CSV
-          </Button>
+            <Icon 
+              icon="mdi:microsoft-excel" 
+              className="icon"
+            />
+            Exportar Excel
+          </button>
           <Button 
             variant="outline-primary" 
             onClick={() => setShowFilters(!showFilters)}
