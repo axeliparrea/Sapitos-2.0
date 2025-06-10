@@ -92,7 +92,7 @@ const App = () => {
         <Route
           path="/preview"
           element={
-            <ProtectedRoute allowedRoles={["admin", "cliente"]} requireOtp={true}>
+            <ProtectedRoute allowedRoles={["admin", "cliente"]} requireOtp={false}>
               {role === "admin" ? <InvoicePreviewPage /> :
               role === "cliente" ? <InvoicePreviewPage/> :
               <Navigate to="/dashboard" />}
@@ -142,7 +142,7 @@ const App = () => {
         <Route
           path="/notificaciones"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <Notificaciones />
             </ProtectedRoute>
           }
@@ -158,7 +158,7 @@ const App = () => {
         />        <Route
           path="/pedidos"
           element={
-            <ProtectedRoute allowedRoles={["admin", "dueno"]}>
+            <ProtectedRoute allowedRoles={["admin", "dueno"]} requireOtp={false}>
               <PedidosRouter />
             </ProtectedRoute>
           }
@@ -174,7 +174,7 @@ const App = () => {
         <Route
           path="/usuarios"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <UsuariosShec />
             </ProtectedRoute>
           }
@@ -182,7 +182,7 @@ const App = () => {
         <Route
           path="/articulos"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <Articulos />
             </ProtectedRoute>
           }
@@ -190,7 +190,7 @@ const App = () => {
         <Route
           path="/location"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <Location />
             </ProtectedRoute>
           }
@@ -207,7 +207,7 @@ const App = () => {
         <Route
           path="/agregar-usuario"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <AddUserLayer />
             </ProtectedRoute>
           }
@@ -215,7 +215,7 @@ const App = () => {
         <Route
           path="/agregar-articulo"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <AddArticuloLayer />
             </ProtectedRoute>
           }
@@ -223,7 +223,7 @@ const App = () => {
         <Route
           path="/agregar-Location"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <AddLocationLayer />
             </ProtectedRoute>
           }
@@ -231,7 +231,7 @@ const App = () => {
         <Route
           path="/editar-usuario/:userId"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <EditUserLayer />
             </ProtectedRoute>
           }
@@ -239,7 +239,7 @@ const App = () => {
         <Route
           path="/editar-articulo/:id"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <EditArticuloLayer />
             </ProtectedRoute>
           }
@@ -247,7 +247,7 @@ const App = () => {
         <Route
           path="/editar-Location/:id"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <EditLocationLayer />
             </ProtectedRoute>
           }
@@ -256,14 +256,14 @@ const App = () => {
         <Route
           path="/modelo-prediccion"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <ModelManagement />
             </ProtectedRoute>
           }
         />        <Route
           path="/crearpedido"
           element={
-            <ProtectedRoute allowedRoles={["dueno"]}>
+            <ProtectedRoute allowedRoles={["admin", "dueno"]} requireOtp={false}>
               <InvoiceAddLayer />
             </ProtectedRoute>
           }
@@ -272,7 +272,7 @@ const App = () => {
         <Route
           path="/detalle-pedido/:id"
           element={
-            <ProtectedRoute allowedRoles={["admin", "cliente"]}>
+            <ProtectedRoute allowedRoles={["admin", "cliente"]} requireOtp={false}>
               <InvoicePreviewPage />
             </ProtectedRoute>
           }
@@ -281,7 +281,7 @@ const App = () => {
         <Route
           path="/pedidowarehouse"
           element={
-            <ProtectedRoute allowedRoles={["dueno"]}>
+            <ProtectedRoute allowedRoles={["admin", "dueno"]} requireOtp={false}>
               <CrearPedidoWarehouse />
             </ProtectedRoute>
           }
