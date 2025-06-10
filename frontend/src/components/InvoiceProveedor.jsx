@@ -323,7 +323,7 @@ const InvoiceProveedor = () => {
               style={{ border: 'none' }}
               title="Aceptar pedido"
             >
-              <Icon icon='mdi:check-bold' width="20" height="20" />
+              <Icon icon='mdi:check-bold' width="24" height="24" />
             </button>
             <button 
               onClick={() => handleRechazarPedido(pedido.id)}
@@ -331,7 +331,7 @@ const InvoiceProveedor = () => {
               style={{ border: 'none' }}
               title="Rechazar pedido"
             >
-              <Icon icon='mingcute:close-circle-line' width="20" height="20" />
+              <Icon icon='mingcute:close-circle-line' width="24" height="24" />
             </button>
             <button 
               onClick={() => handleVerDetalles(pedido.id)}
@@ -339,7 +339,29 @@ const InvoiceProveedor = () => {
               style={{ border: 'none' }}
               title="Ver detalles"
             >
-              <Icon icon='iconamoon:eye-light' width="20" height="20" />
+              <Icon icon='iconamoon:eye-light' width="24" height="24" />
+            </button>
+          </div>
+        );
+      
+      case 'Aprobado':
+        return (
+          <div className="d-flex gap-2">
+            <button 
+              onClick={() => handleEnviarPedido(pedido.id)}
+              className='w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center'
+              style={{ border: 'none' }}
+              title="Enviar pedido"
+            >
+              <Icon icon='mdi:truck-delivery' width="24" height="24" />
+            </button>
+            <button 
+              onClick={() => handleVerDetalles(pedido.id)}
+              className='w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
+              style={{ border: 'none' }}
+              title="Ver detalles"
+            >
+              <Icon icon='iconamoon:eye-light' width="24" height="24" />
             </button>
           </div>
         );
@@ -353,7 +375,7 @@ const InvoiceProveedor = () => {
               style={{ border: 'none' }}
               title="Ver detalles"
             >
-              <Icon icon='iconamoon:eye-light' width="20" height="20" />
+              <Icon icon='iconamoon:eye-light' width="24" height="24" />
             </button>
           </div>
         );
@@ -380,12 +402,13 @@ const InvoiceProveedor = () => {
           </div>
         </div>
         <button 
-          className="btn btn-primary btn-sm"
+          className="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center"
           onClick={fetchPedidos}
           disabled={loading}
+          style={{ border: 'none' }}
+          title="Actualizar"
         >
-          <Icon icon='mdi:refresh' className="me-1" />
-          Actualizar
+          <Icon icon='mdi:refresh' width="20" height="20" />
         </button>
       </div>
       
