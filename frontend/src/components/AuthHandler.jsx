@@ -3,18 +3,17 @@ import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 /**
- * AuthHandler component that intercepts API responses and handles OTP verification
- * redirects when needed
+ * AuthHandler component that intercepts API responses and handles authentication
  */
 const AuthHandler = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
 
-  // Check if user needs OTP verification on initial load
+  // Check if user needs authentication on initial load
   useEffect(() => {
-    // Skip OTP check on login, register, and OTP pages
-    const noCheckPaths = ['/', '/register', '/otp'];
+    // Skip check on login and register pages
+    const noCheckPaths = ['/', '/register'];
     if (noCheckPaths.includes(location.pathname)) {
       setIsChecking(false);
       return;
@@ -47,63 +46,30 @@ const AuthHandler = ({ children }) => {
         return response;
       },
       error => {
-        // Check if error response indicates OTP is required
+        // Check if error response indicates authentication is required
         if (error.response && error.response.status === 401) {
-          const { requiresOtp, message } = error.response.data;
+          const { requiresAuth } = error.response.data;
           
-          if (requiresOtp) {
-            console.log('OTP verification required, redirecting to OTP page:', message);
-            
-            // Don't generate OTP on the OTP page itself to prevent loops
-            if (location.pathname !== '/otp') {
-              // Generate OTP if possible
-              try {
-                fetch("http://localhost:5000/api/otp/generate", {
-                  method: "GET",
-                  credentials: "include",
-                })
-                .then(res => res.json())
-                .then(data => {
-                  if (data.secret) {
-                    // Store secret in sessionStorage for the OTP page
-                    sessionStorage.setItem('otpSecret', data.secret);
-                    // Store the return URL to redirect back after OTP verification
-                    sessionStorage.setItem('returnUrl', location.pathname);
-                  }
-                  // Redirect to OTP page
-                  navigate('/otp');
-                })
-                .catch(err => console.error("Error generating OTP:", err));
-              } catch (e) {
-                console.error("Failed to generate OTP:", e);
-                navigate('/otp');
-              }
-            }
-            
-            // Don't reject the promise in this case
-            return new Promise(() => {});
-          } else if (message === 'Unauthorized' || message === 'Invalid token') {
-            // Handle general authentication issues
-            console.log('Authentication required, redirecting to login page');
+          if (requiresAuth) {
+            console.log('Authentication required, redirecting to login');
             navigate('/');
-            return new Promise(() => {});
           }
         }
-        
-        // For other errors, reject with the error
         return Promise.reject(error);
       }
     );
-    
-    setIsChecking(false);
-    
-    // Clean up the interceptor when the component unmounts
+
+    // Clean up interceptor on unmount
     return () => {
       axios.interceptors.response.eject(interceptor);
     };
   }, [navigate]);
-  
-  return isChecking ? <div>Checking authentication...</div> : children;
+
+  if (isChecking) {
+    return null;
+  }
+
+  return children;
 };
 
 export default AuthHandler;

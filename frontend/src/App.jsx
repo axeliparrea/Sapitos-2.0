@@ -32,7 +32,6 @@ import AddUserLayer from "./components/AddUserLayer";
 import InvoiceAddLayer from "./components/InvoiceAddLayer";
 import EditUserLayer from "./components/EditUser";
 import Articulos from "./pages/admin/Articulos";
-import OtpPage from "./pages/OtpPage";
 import AuthHandler from './components/AuthHandler';
 import ProtectedRoute from './components/ProtectedRoute';
 import AddArticuloLayer from "./components/AddArticuloLayer";
@@ -89,11 +88,10 @@ const App = () => {
         <AuthHandler>
           <Routes>
             <Route path="/" element={<SignInPage />} />
-          <Route path="/otp" element={<OtpPage />} />
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute requireOtp={true}>
+                <ProtectedRoute>
                 {role === "admin" ? <HomeAdmin /> :
                   role === "dueno" ? <HomeDueno /> :
                   role === "cliente" ? <HomeCliente /> :
@@ -105,7 +103,7 @@ const App = () => {
             <Route 
               path="/inventario" 
               element={
-                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "cliente"]}>
+                <ProtectedRoute allowedRoles={["admin", "cliente"]}>
                 {role === "admin" ? <InventarioAdmin /> :
                   role === "cliente" ? <InventarioCliente /> :
                   <Navigate to="/dashboard" />}
@@ -116,7 +114,7 @@ const App = () => {
             <Route 
               path="/profile" 
               element={
-                <ProtectedRoute requireOtp={true}>
+                <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
               } 
@@ -257,15 +255,16 @@ const App = () => {
             <Route 
               path="/modelo-prediccion" 
               element={
-                role === "admin" ? <ModelManagement /> :
-                <Navigate to="/" />
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <ModelManagement />
+                </ProtectedRoute>
               }
             />
 
             <Route 
               path="/asistente-ia" 
               element={
-                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "dueno", "cliente", "proveedor"]}>
+                <ProtectedRoute allowedRoles={["admin", "dueno", "cliente", "proveedor"]}>
                   <AiAssistantPage />
                 </ProtectedRoute>
               }
@@ -287,7 +286,6 @@ const App = () => {
                 <Navigate to="/dashboard" />
               }
             />
-          <Route path="/otp" element={<OtpPage />} />
           </Routes> 
         </AuthHandler>
       </BrowserRouter>
