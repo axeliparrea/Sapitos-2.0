@@ -105,9 +105,8 @@ const App = () => {
             <Route 
               path="/inventario" 
               element={
-                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "dueno", "cliente"]}>
+                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "cliente"]}>
                 {role === "admin" ? <InventarioAdmin /> :
-                  role === "dueno" ? <InventarioDueno /> :
                   role === "cliente" ? <InventarioCliente /> :
                   <Navigate to="/dashboard" />}
               </ProtectedRoute>
@@ -133,30 +132,26 @@ const App = () => {
               path="/preview" 
               element={
                 role === "admin" ? <InvoicePreviewPage /> :
-                role === "dueno" ? <InvoicePreviewPage/> :
                 role === "cliente" ? <InvoicePreviewPage/> :
-                <Navigate to="/" />
+                <Navigate to="/dashboard" />
               } 
             />
             <Route 
               path="/ordenes-proveedores" 
               element={
-                role === "dueno" ? <InvoiceProveedorPage/> :
-                <Navigate to="/"/>
+                <Navigate to="/dashboard" />
                 }
               />
             <Route 
               path="/ordenes-clientes" 
               element={
-                role === "dueno" ? <OrdenesClientesDueno/> :
-                <Navigate to="/"/>
+                <Navigate to="/dashboard" />
                 }
               />
             <Route 
               path="/recomendaciones-IA" 
               element={
-                role === "dueno" ? <RecomendacionesIADueno/> :
-                <Navigate to="/"/>
+                <Navigate to="/dashboard" />
                 }
               />
             <Route 
@@ -270,7 +265,7 @@ const App = () => {
             <Route 
               path="/asistente-ia" 
               element={
-                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "dueno", "cliente"]}>
+                <ProtectedRoute requireOtp={true} allowedRoles={["admin", "dueno", "cliente", "proveedor"]}>
                   <AiAssistantPage />
                 </ProtectedRoute>
               }
@@ -288,9 +283,8 @@ const App = () => {
               path="/detalle-pedido/:id"
               element={
                 role === "admin" ? <InvoicePreviewPage /> :
-                role === "dueno" ? <InvoicePreviewPage/> :
                 role === "cliente" ? <InvoicePreviewPage/> :
-                <Navigate to="/" />
+                <Navigate to="/dashboard" />
               }
             />
           <Route path="/otp" element={<OtpPage />} />

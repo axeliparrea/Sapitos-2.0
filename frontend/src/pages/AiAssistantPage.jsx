@@ -5,6 +5,7 @@ import MasterLayout from '../components/masterLayout';
 import { Icon } from '@iconify/react';
 import { notify, NotificationType } from '../components/NotificationService';
 import { useState, useRef, useEffect } from 'react';
+import getCookie from '../utils/cookies';
 
 const SUGGESTED_QUESTIONS = {
   pedidos: [
@@ -30,8 +31,7 @@ const SUGGESTED_QUESTIONS = {
 
 const AiAssistantPage = () => {
   const location = useLocation();
-  const role = location.state?.role || localStorage.getItem('userRole') || 'admin';
-
+  const [userData, setUserData] = useState(null);
   const [question, setQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([
@@ -41,6 +41,24 @@ const AiAssistantPage = () => {
   const [showDropdownSuggestions, setShowDropdownSuggestions] = useState(false);
   const chatContainerRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    // Obtener datos del usuario de la cookie
+    const cookieData = getCookie("UserData");
+    if (cookieData) {
+      try {
+        let parsedData;
+        if (typeof cookieData === "string") {
+          parsedData = JSON.parse(cookieData);
+        } else {
+          parsedData = cookieData;
+        }
+        setUserData(parsedData);
+      } catch (error) {
+        console.error("Error obteniendo datos del usuario:", error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -99,8 +117,11 @@ const AiAssistantPage = () => {
     setMessages(prevMessages => [...prevMessages, message]);
   };
 
+  // Usar el rol del usuario de la cookie o localStorage
+  const userRole = userData?.ROL || localStorage.getItem('userRole') || 'admin';
+
   return (
-    <MasterLayout role={role}>
+    <MasterLayout role={userRole}>
       <div className="chat-wrapper d-flex justify-content-center align-items-center w-100 h-100 p-3">
         <div className="chat-main card w-100" style={{ maxWidth: '1110px', height: '85vh' }}>
           <div className='chat-sidebar-single active d-flex align-items-center gap-3 p-3 border-bottom'>

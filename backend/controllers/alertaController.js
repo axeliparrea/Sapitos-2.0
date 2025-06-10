@@ -1,12 +1,12 @@
 const { connection } = require("../config/db");
 
 /**
- * Obtener todas las alertas, opcionalmente filtradas por rol
+ * Obtener todas las alertas, opcionalmente filtradas por rol, usuario o ubicación
  */
 const getAlertas = (req, res) => {
-  const { rol_id, usuario_id } = req.query;
+  const { rol_id, usuario_id, location_id } = req.query;
   
-  console.log('GET /alertas - Query params:', { rol_id, usuario_id });
+  console.log('GET /alertas - Query params:', { rol_id, usuario_id, location_id });
   
   let query = `
     SELECT 
@@ -16,24 +16,38 @@ const getAlertas = (req, res) => {
       a.Location_ID as location_id,
       a.Prioridad as prioridad,
       a.OrdenesProductos_ID as orden_producto_id
-    FROM Alertas2 
+    FROM Alertas2 a
   `;
   
   let params = [];
+  let whereClauseAdded = false;
+  
+  // Filtrar por location_id si está presente
+  if (location_id) {
+    query += " WHERE a.Location_ID = ?";
+    params.push(location_id);
+    whereClauseAdded = true;
+  }
   
   // Filtrar por rol_id si está presente
   if (rol_id) {
-    query += " WHERE u.Rol_ID = ?";
-    params.push(rol_id);
-    
-    // Añadir filtro de usuario_id si también está presente
-    if (usuario_id) {
-      query += " AND u.Usuario_ID = ?";
-      params.push(usuario_id);
+    if (whereClauseAdded) {
+      query += " AND u.Rol_ID = ?";
+    } else {
+      query += " WHERE u.Rol_ID = ?";
+      whereClauseAdded = true;
     }
-  } else if (usuario_id) {
-    // Solo filtrar por usuario_id si no hay rol_id
-    query += " WHERE u.Usuario_ID = ?";
+    params.push(rol_id);
+  }
+  
+  // Añadir filtro de usuario_id si está presente
+  if (usuario_id) {
+    if (whereClauseAdded) {
+      query += " AND u.Usuario_ID = ?";
+    } else {
+      query += " WHERE u.Usuario_ID = ?";
+      whereClauseAdded = true;
+    }
     params.push(usuario_id);
   }
   
@@ -135,38 +149,6 @@ const deleteAlerta = (req, res) => {
 };
 
 /**
- * Crear una nueva alerta (útil para pruebas o notificaciones manuales)
- */
-const createAlerta = (req, res) => {
-  const { descripcion, location_id, prioridad = 1, orden_producto_id = null } = req.body;
-  
-  if (!descripcion || !location_id) {
-    return res.status(400).json({ error: "La descripción y el location_id son obligatorios" });
-  }
-  
-  const query = `
-    INSERT INTO Alertas2 (
-      Descripcion, 
-      FechaCreacion, 
-      Location_ID, 
-      Prioridad, 
-      OrdenesProductos_ID
-    ) VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?)
-  `;
-  
-  connection.exec(query, [descripcion, location_id, prioridad, orden_producto_id], (err, result) => {
-    if (err) {
-      console.error("Error al crear alerta:", err);
-      return res.status(500).json({ error: "Error al crear la alerta" });
-    }
-    
-    res.status(201).json({ message: "Alerta creada correctamente" });
-  });
-};
-
-
-
-/**
  * Función para crear notificaciones del sistema que puede ser llamada desde otros controladores
  * Esta función abstrae la creación de alertas para facilitar su uso desde cualquier parte
  * @param {string} descripcion - Descripción detallada de la alerta
@@ -240,6 +222,5 @@ const generarNotificacion = async (descripcion, titulo, tipo, location_id, orden
 module.exports = {
   getAlertas,
   deleteAlerta,
-  createAlerta,
   generarNotificacion
 }; 

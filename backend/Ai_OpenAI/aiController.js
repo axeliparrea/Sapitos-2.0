@@ -1,5 +1,6 @@
 const openaiService = require('./openaiService');
 const logger = require('../utils/logger');
+const jwt = require('jsonwebtoken');
 
 // Inicializar OpenAI cuando se carga el módulo
 let isInitialized = false;
@@ -51,8 +52,36 @@ const askAssistant = async (req, res) => {
       }
     }
     
-    logger.info('Consultando al asistente de IA...');
-    const result = await openaiService.queryAssistant(question);
+    // Extraer información del usuario del token
+    const token = req.cookies.Auth;
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'No estás autorizado para usar este servicio'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userRole = decoded.rol || decoded.ROL;
+    const userLocationId = decoded.locationId || decoded.LOCATION_ID;
+    
+    logger.info(`Usuario rol: ${userRole}, Location ID: ${userLocationId}`);
+    
+    // Consultar al asistente de IA con restricciones según el rol
+    let result;
+    if (userRole === 'admin') {
+      // Administrador tiene acceso sin restricciones
+      logger.info('Consultando al asistente de IA sin restricciones (admin)');
+      result = await openaiService.queryAssistant(question);
+    } else if ((userRole === 'dueno' || userRole === 'proveedor') && userLocationId) {
+      // Dueño y Proveedor solo pueden consultar datos de su ubicación
+      logger.info(`Consultando al asistente de IA con restricción de ubicación: ${userLocationId} para rol ${userRole}`);
+      result = await openaiService.queryAssistant(question, { locationId: userLocationId });
+    } else {
+      // Otros roles tienen acceso restringido por defecto
+      logger.info(`Consultando al asistente de IA con restricciones estándar`);
+      result = await openaiService.queryAssistant(question, { restricted: true });
+    }
     
     if (result.success) {
       logger.info('Respuesta obtenida exitosamente');
