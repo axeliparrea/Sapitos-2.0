@@ -1,6 +1,6 @@
 const { connection } = require("../config/db");
 const jwt = require("jsonwebtoken");
-const { generarNotificacion } = require("./alertaController"); // Importar la función de notificaciones
+const { generarNotificacion } = require("./alertaController");
 
 const getInventory = async (req, res) => {
   try {

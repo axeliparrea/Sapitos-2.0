@@ -3,66 +3,93 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import axios from "axios";
 import { notify, NotificationType } from "./NotificationService";
 import { useNavigate } from "react-router-dom";
+import getCookie from "../utils/cookies";
 
 // Función para formatear fecha de manera amigable
 const formatearFechaRelativa = (fechaStr) => {
   if (!fechaStr) return '';
   
-  const fecha = new Date(fechaStr);
-  const ahora = new Date();
-  const diferencia = ahora - fecha;
-  
-  // Si es inválida, retornar string vacío
-  if (isNaN(fecha.getTime())) return '';
-  
-  // Menos de un minuto
-  if (diferencia < 60 * 1000) {
-    return 'hace unos segundos';
+  try {
+    const fecha = new Date(fechaStr);
+    const ahora = new Date();
+    
+    // Si es inválida o fecha futura, mostrar la fecha formatada normal
+    if (isNaN(fecha.getTime()) || fecha > ahora) {
+      return fecha.toLocaleDateString('es-ES', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    const diferencia = ahora - fecha;
+    
+    // Menos de un minuto
+    if (diferencia < 60 * 1000) {
+      return 'hace unos segundos';
+    }
+    
+    // Menos de una hora
+    if (diferencia < 60 * 60 * 1000) {
+      const minutos = Math.floor(diferencia / (60 * 1000));
+      return `hace ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
+    }
+    
+    // Menos de un día
+    if (diferencia < 24 * 60 * 60 * 1000) {
+      const horas = Math.floor(diferencia / (60 * 60 * 1000));
+      return `hace ${horas} ${horas === 1 ? 'hora' : 'horas'}`;
+    }
+    
+    // Menos de una semana
+    if (diferencia < 7 * 24 * 60 * 60 * 1000) {
+      const dias = Math.floor(diferencia / (24 * 60 * 60 * 1000));
+      return `hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
+    }
+    
+    // Más antiguo - mostrar fecha formateada
+    return fecha.toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch (e) {
+    console.error("Error al formatear fecha:", fechaStr, e);
+    return fechaStr || 'Fecha desconocida';
   }
-  
-  // Menos de una hora
-  if (diferencia < 60 * 60 * 1000) {
-    const minutos = Math.floor(diferencia / (60 * 1000));
-    return `hace ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
-  }
-  
-  // Menos de un día
-  if (diferencia < 24 * 60 * 60 * 1000) {
-    const horas = Math.floor(diferencia / (60 * 60 * 1000));
-    return `hace ${horas} ${horas === 1 ? 'hora' : 'horas'}`;
-  }
-  
-  // Menos de una semana
-  if (diferencia < 7 * 24 * 60 * 60 * 1000) {
-    const dias = Math.floor(diferencia / (24 * 60 * 60 * 1000));
-    return `hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
-  }
-  
-  // Formatear fecha completa
-  return fecha.toLocaleDateString('es-ES', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  });
 };
-
 
 
 const Alert = ({ type, title, description, fecha, orden_id, usuario_id, onDelete }) => {
   const navigate = useNavigate();
-  const typeClass = {
-    primary: 'bg-primary-50 text-primary-600 border-primary-50',
-    success: 'bg-success-100 text-success-600 border-success-100',
-    danger: 'bg-danger-100 text-danger-600 border-danger-100',
-    warning: 'bg-warning-100 text-warning-600 border-warning-100',
-    info: 'bg-info-100 text-info-600 border-info-100',
-  }[type] || 'bg-base text-neutral-800 border-base';
-
-  const textColor = typeClass.split(' ')[1];
+  
+  // Determinar clases CSS basadas en el tipo
+  const getAlertClasses = () => {
+    switch(type) {
+      case 'success': return 'alert-success border-success';
+      case 'danger': return 'alert-danger border-danger';
+      case 'warning': return 'alert-warning border-warning';
+      case 'info': return 'alert-info border-info';
+      default: return 'alert-primary border-primary';
+    }
+  };
+  
+  // Determinar icono basado en el tipo
+  const getIcon = () => {
+    switch(type) {
+      case 'success': return 'mdi:check-circle-outline';
+      case 'danger': return 'mdi:alert-circle-outline';
+      case 'warning': return 'mdi:alert-outline';
+      case 'info': return 'mdi:information-outline';
+      default: return 'mdi:bell-outline';
+    }
+  };
   
   // Formatear la fecha de manera relativa
   const fechaFormateada = formatearFechaRelativa(fecha);
-
+  
   // Determinar si es una notificación de pedido por la descripción
   const esPedido = orden_id || description.includes('Orden #') || description.includes('orden #') || 
                   description.includes('pedido') || description.includes('Pedido');
@@ -86,36 +113,41 @@ const Alert = ({ type, title, description, fecha, orden_id, usuario_id, onDelete
       navigate(`/admin/usuarios`);
     }
   };
-
+  
   return (
-    <div
-      className={`alert ${typeClass} px-24 py-11 mb-0 fw-semibold text-lg radius-8`}
-      role='alert'
-    >
-      <div className='d-flex align-items-center justify-content-between text-lg'>
-        {title}
-        <button 
-          className={`remove-button ${textColor} text-xxl line-height-1`}
-          onClick={onDelete}
-        >
-          <Icon icon='iconamoon:sign-times-light' className='icon' />
-        </button>
-      </div>
-      <p className={`fw-medium ${textColor} text-sm mt-8`}>{description}</p>
-      
-      <div className="d-flex justify-content-between align-items-center mt-8">
-        <small className={`${textColor} text-xs`}>{fechaFormateada}</small>
-        
-        {/* Solo mostrar enlace si es una notificación de pedido */}
-        {(esPedido || orden_id || ordenIdFromDesc) && (
-          <button 
-            className={`btn btn-sm ${textColor} text-xs fw-medium`}
-            onClick={handleClick}
-          >
-            Ver Pedido
-            <Icon icon="heroicons:arrow-small-right" className="ms-1" />
-          </button>
-        )}
+    <div className={`alert ${getAlertClasses()} p-3 mb-0 shadow-sm`}>
+      <div className="d-flex align-items-start">
+        <div className="me-3 pt-1">
+          <Icon icon={getIcon()} className="fs-5" />
+        </div>
+        <div className="flex-grow-1">
+          <div className="d-flex justify-content-between align-items-center">
+            <h6 className="fw-bold mb-1">{title}</h6>
+            <button 
+              className="btn-close ms-2" 
+              onClick={(e) => { 
+                e.stopPropagation();
+                onDelete();
+              }}
+              aria-label="Close"
+            ></button>
+          </div>
+          <p className="mb-1 text-wrap">{description}</p>
+          <div className="d-flex justify-content-between align-items-center mt-2">
+            <small className="text-muted">{fechaFormateada}</small>
+            
+            {/* Solo mostrar enlace si es una notificación de pedido */}
+            {(esPedido || orden_id || ordenIdFromDesc) && (
+              <button 
+                className="btn btn-sm btn-outline-secondary"
+                onClick={handleClick}
+              >
+                Ver Pedido
+                <Icon icon="heroicons:arrow-small-right" className="ms-1" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -141,12 +173,25 @@ const NotificationsLayer = () => {
     try {
       setLoading(true);
       
-      // Obtener datos de usuario
-      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      // Obtener datos de usuario desde la cookie
+      const userInfo = getCookie("UserData");
+      let locationId;
+      
+      if (userInfo) {
+        // Si userInfo es un string, parsearlo a objeto
+        const userData = typeof userInfo === 'string' ? JSON.parse(userInfo) : userInfo;
+        locationId = userData?.LOCATION_ID || userData?.locationId;
+      }
       
       try {
         // Usar el endpoint correcto para obtener alertas
-        const url = '/alertas';
+        let url = '/alertas';
+        
+        // Si tenemos un location_id, lo añadimos como filtro
+        if (locationId) {
+          url = `/alertas?location_id=${locationId}`;
+        }
+        
         console.log('Conectando al endpoint:', url);
         
         const response = await axios.get(url, {
@@ -155,78 +200,60 @@ const NotificationsLayer = () => {
         
         console.log('Respuesta del servidor:', response);
         
-        if (response.data) {
+        if (response.data !== undefined) {
+          console.log('Tipo de datos recibidos:', typeof response.data);
+          console.log('Es array?', Array.isArray(response.data));
+          console.log('Longitud de datos:', Array.isArray(response.data) ? response.data.length : 'No es un array');
           console.log('Datos recibidos:', response.data);
           
-          // Procesar los datos según el formato del backend
-          let processedData = [];
+          // Obtener el array de alertas - ahora el backend devuelve directamente el array
+          const alertsData = response.data;
           
-          if (Array.isArray(response.data)) {
-            processedData = response.data.map(item => {
-              // Determinar el tipo de alerta basado en su descripción
+          if (Array.isArray(alertsData) && alertsData.length > 0) {
+            // Procesar los datos para que tengan todos los campos necesarios
+            const processedData = alertsData.map(item => {
+              // Asegurarse de que cada alerta tenga un tipo apropiado
               let tipo = item.tipo || 'primary';
-              
-              // Si no tiene tipo pero tenemos descripción, determinar el tipo
-              if (!item.tipo && item.descripcion) {
-                const descripcion = item.descripcion;
-                
-                if (descripcion.includes('Error') || 
-                    descripcion.includes('error') || 
-                    descripcion.includes('fallo') ||
-                    descripcion.includes('stock') ||
-                    descripcion.includes('bajo') ||
-                    descripcion.includes('agotará')) {
+              if (!tipo) {
+                // Determinar el tipo basado en la prioridad si existe
+                const prioridad = item.prioridad?.toUpperCase();
+                if (prioridad === 'ALTA' || prioridad === 'HIGH') {
                   tipo = 'danger';
-                } else if (descripcion.includes('Completado') || 
-                          descripcion.includes('aceptada') ||
-                          descripcion.includes('exitosa')) {
-                  tipo = 'success';
-                } else if (descripcion.includes('importada')) {
-                  tipo = 'primary';
-                } else if (descripcion.includes('retrasada')) {
+                } else if (prioridad === 'MEDIA' || prioridad === 'MEDIUM') {
                   tipo = 'warning';
-                } else if (descripcion.includes('exportada')) {
+                } else if (prioridad === 'BAJA' || prioridad === 'LOW') {
                   tipo = 'info';
                 }
-              }
-              
-              // Extraer IDs si existen en la descripción y no están en los datos
-              const descripcion = item.descripcion || '';
-              const ordenIdMatch = descripcion.match(/[Oo]rden #?(\d+)/);
-              const ordenId = item.orden_id || (ordenIdMatch ? ordenIdMatch[1] : null);
-              
-              // Crear título conciso si no tiene uno
-              let titulo = item.titulo || descripcion;
-              
-              if (!item.titulo) {
-                if (descripcion.includes('Inventario bajo') || descripcion.includes('stock')) {
-                  titulo = 'Inventario bajo';
-                } else if (descripcion.includes('aceptada') || descripcion.includes('Nuevo pedido')) {
-                  titulo = 'Pedido nuevo';
-                } else if (descripcion.includes('completado') || descripcion.includes('finalizado')) {
-                  titulo = 'Pedido completado';
-                } else if (descripcion.includes('importadas')) {
-                  titulo = 'Nueva importación de inventario';
-                } else if (descripcion.includes('retrasada')) {
-                  titulo = 'Retraso en pedido';
-                } else if (descripcion.includes('exportadas')) {
-                  titulo = 'Exportación de producto';
+                
+                // También determinar por descripción si corresponde
+                const desc = (item.descripcion || '').toLowerCase();
+                if (desc.includes('error') || desc.includes('fallo') || desc.includes('agotado')) {
+                  tipo = 'danger';
+                } else if (desc.includes('completado') || desc.includes('exitoso')) {
+                  tipo = 'success';
+                } else if (desc.includes('pendiente')) {
+                  tipo = 'warning';
                 }
               }
               
               return {
                 id: item.id,
                 tipo,
-                titulo,
-                descripcion,
+                titulo: item.titulo || 'Alerta',
+                descripcion: item.descripcion || '',
                 fecha: item.fecha,
-                orden_id: ordenId,
-                usuario_id: item.usuario_id
+                orden_id: item.orden_id,
+                usuario_id: item.usuario_id,
+                prioridad: item.prioridad
               };
             });
+            
+            setNotifications(processedData);
+          } else {
+            setNotifications([]);
+            console.log('No se encontraron alertas o el formato es incorrecto');
           }
           
-          setNotifications(processedData);
           setUsingMockData(false);
         } else {
           console.error('No se recibieron datos válidos del servidor');
@@ -265,6 +292,9 @@ const NotificationsLayer = () => {
         <div className='card-header border-bottom bg-base py-16 px-24 d-flex justify-content-between align-items-center'>
           <h6 className='text-lg fw-semibold mb-0'>
             Notificaciones
+            {notifications.length > 0 && (
+              <span className="badge bg-primary rounded-pill ms-2">{notifications.length}</span>
+            )}
           </h6>
           <button 
             className="btn btn-sm btn-outline-primary"
@@ -274,7 +304,7 @@ const NotificationsLayer = () => {
             <Icon icon="mdi:refresh" className={loading ? "animate-spin" : ""} />
           </button>
         </div>
-        <div className='card-body p-24 d-flex flex-column gap-4'>
+        <div className='card-body p-24 d-flex flex-column gap-3'>
           {loading ? (
             <div className="text-center py-4">
               <Icon icon="mdi:loading" className="text-primary text-4xl animate-spin" />
@@ -288,7 +318,7 @@ const NotificationsLayer = () => {
           ) : (
             notifications.map(notification => (
               <Alert
-                key={notification.id}
+                key={notification.id || Math.random()}
                 type={notification.tipo}
                 title={notification.titulo}
                 description={notification.descripcion}
