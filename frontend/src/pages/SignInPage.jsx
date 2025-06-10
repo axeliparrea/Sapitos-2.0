@@ -17,6 +17,22 @@ const SignInPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoginMode, setIsLoginMode] = useState(true);
+  
+  // OTP related states
+  const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
+  const [otpSecret, setOtpSecret] = useState("");
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const inputRefs = Array(6).fill(0).map(_ => useRef(null));
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0 && resendDisabled) {
+      setResendDisabled(false);
+    }
+  }, [countdown, resendDisabled]);
 
   useEffect(() => {
     if (hasCheckedSession.current) return;
@@ -123,11 +139,11 @@ const SignInPage = () => {
       if (data.requiresOtp) {
         const otpData = await generateOTP();
         if (otpData && otpData.secret) {
-          sessionStorage.setItem('otpSecret', otpData.secret);
+          setOtpSecret(otpData.secret);
         }
-        navigate('/otp');
-      } else {
         setIsLoginMode(false);
+      } else {
+        navigate('/dashboard');
       }
 
     } catch (error) {
@@ -138,6 +154,9 @@ const SignInPage = () => {
   };
 
   const generateOTP = async () => {
+    setIsLoading(true);
+    setError('');
+    
     try {
       const response = await fetch("http://localhost:5000/api/otp/generate", {
         method: "GET",
@@ -145,24 +164,133 @@ const SignInPage = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "Error al generar OTP");
+        throw new Error("No se pudo generar el código de verificación");
       }
 
       const data = await response.json();
+      
+      if (data.secret) {
+        setOtpSecret(data.secret);
+      }
+      
+      setResendDisabled(true);
+      setCountdown(60);
+      
       return data;
     } catch (error) {
-      setError(error.message || "Error generando OTP");
+      console.error("Error al generar OTP:", error);
+      setError(error.message || "Error al generar el código de verificación");
       return null;
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+
+    const newOtpValues = [...otpValues];
+    newOtpValues[index] = value;
+    setOtpValues(newOtpValues);
+
+    if (value && index < 5 && inputRefs[index + 1]?.current) {
+      inputRefs[index + 1].current.focus();
+    }
+
+    if (newOtpValues.every(val => val) && newOtpValues.join('').length === 6) {
+      setTimeout(() => {
+        handleVerifyOtp(newOtpValues.join(''));
+      }, 300);
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpValues[index] && index > 0 && inputRefs[index - 1]?.current) {
+      inputRefs[index - 1].current.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData('text').trim();
+    if (!/^\d+$/.test(pasteData)) return;
+
+    const newOtpValues = [...otpValues];
+    for (let i = 0; i < Math.min(pasteData.length, 6); i++) {
+      newOtpValues[i] = pasteData[i];
+    }
+    setOtpValues(newOtpValues);
+
+    const focusIndex = Math.min(pasteData.length, 6) - 1;
+    if (focusIndex >= 0 && inputRefs[focusIndex]?.current) {
+      inputRefs[focusIndex].current.focus();
+    }
+    if (pasteData.length >= 6) {
+      setTimeout(() => {
+        handleVerifyOtp(pasteData.substring(0, 6));
+      }, 300);
+    }
+  };
+
+  const handleVerifyOtp = async (code = null) => {
+    const otpCode = code || otpValues.join('');
+    
+    if (!otpCode || otpCode.length !== 6) {
+      setError("Por favor ingresa los 6 dígitos del código");
+      return;
+    }
+
+    if (!otpSecret) {
+      setError("No se encontró información de verificación. Intenta generar un nuevo código.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch("http://localhost:5000/api/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          otp: otpCode, 
+          secret: otpSecret 
+        }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Error verificando código");
+      }
+
+      if (data.verified) {
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 500);
+      } else {
+        throw new Error("Código de verificación inválido");
+      }
+      
+    } catch (error) {
+      console.error("Error verificando OTP:", error);
+      setError(error.message || "Error verificando código");
+      
+      setOtpValues(['', '', '', '', '', '']);
+      if (inputRefs[0]?.current) inputRefs[0].current.focus();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendDisabled) return;
+    await generateOTP();
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
-  };
-
-  const toggleMode = () => {
-    setIsLoginMode(!isLoginMode);
   };
 
   if (checkingSession) {
@@ -246,8 +374,8 @@ const SignInPage = () => {
                 </div>
               </form>
 
-              {/* FORMULARIO DE REGISTRO */}
-              <form className='sign-up-form'>
+              {/* FORMULARIO DE VERIFICACIÓN OTP */}
+              <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(); }} className='sign-up-form'>
                 <div className="text-center mb-3 mt-4">
                   <h4 className='mb-2'>Verificación de seguridad</h4>
                   <p className='mb-4 text-secondary-light px-4'>
@@ -259,7 +387,7 @@ const SignInPage = () => {
                 <div className='mb-4 mt-2'>
                   <label className='form-label mb-3'>Código de verificación</label>
                   <div className="d-flex justify-content-center gap-2 mb-3">
-                    {[0,1,2,3,4,5].map((index) => (
+                    {otpValues.map((value, index) => (
                       <input
                         key={index}
                         type="text"
@@ -270,9 +398,14 @@ const SignInPage = () => {
                           fontWeight: 'bold',
                           padding: '0.25rem 0'
                         }}
+                        value={value}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(index, e)}
+                        onPaste={index === 0 ? handlePaste : undefined}
                         maxLength={1}
-                        inputMode="numeric"
+                        ref={inputRefs[index]}
                         autoComplete={index === 0 ? "one-time-code" : "off"}
+                        inputMode="numeric"
                         autoFocus={index === 0}
                       />
                     ))}
@@ -283,19 +416,38 @@ const SignInPage = () => {
                   <button 
                     type='submit'
                     className='btn btn-primary h-48-px d-flex align-items-center justify-content-center radius-12'
+                    disabled={isLoading || otpValues.some(val => !val)}
                   >
-                    <Icon icon="solar:shield-check-bold" className="me-2" />
-                    <span>Verificar código</span>
+                    {isLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>Verificando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Icon icon="solar:shield-check-bold" className="me-2" />
+                        <span>Verificar código</span>
+                      </>
+                    )}
                   </button>
                   
                   <div className="text-center mt-3">
                     <button 
                       type="button" 
                       className="btn btn-link text-decoration-none"
+                      onClick={handleResendCode}
+                      disabled={resendDisabled}
                     >
-                      Reenviar código
+                      {resendDisabled ? `Reenviar código (${countdown}s)` : 'Reenviar código'}
                     </button>
                   </div>
+
+                  {error && (
+                    <div className="alert alert-danger d-flex align-items-center p-3 mb-0">
+                      <Icon icon="mdi:alert-circle" className="me-2 flex-shrink-0 text-danger" />
+                      <div className="text-sm">{error}</div>
+                    </div>
+                  )}
                 </div>
               </form>
             </div>
@@ -318,7 +470,6 @@ const SignInPage = () => {
               />
             </div>
             <div className='panel right-panel'>
-
               <img src='assets/images/auth/auth-img.png' className='image' alt='' />
             </div>
           </div>
