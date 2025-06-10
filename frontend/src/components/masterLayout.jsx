@@ -9,12 +9,15 @@ const ClienteNavbar = lazy(() => import("./roles/cliente/navbarHeader"));
 const ClienteSidebar = lazy(() => import("./roles/cliente/sidebar"));
 const ProveedorNavbar = lazy(() => import("./roles/proveedor/navbarHeader"));
 const ProveedorSidebar = lazy(() => import("./roles/proveedor/sidebar"));
+const SuperAdminNavbar = lazy(() => import("./roles/superadmin/navbarHeader"));
+const SuperAdminSidebar = lazy(() => import("./roles/superadmin/sidebar"));
 
 const ROLE_COMPONENTS = {
   admin: { Navbar: AdminNavbar, Sidebar: AdminSidebar },
   dueno: { Navbar: DuenoNavbar, Sidebar: DuenoSidebar },
   cliente: { Navbar: ClienteNavbar, Sidebar: ClienteSidebar },
-  proveedor: { Navbar: ProveedorNavbar, Sidebar: ProveedorSidebar }
+  proveedor: { Navbar: ProveedorNavbar, Sidebar: ProveedorSidebar },
+  SuperAdmin: { Navbar: SuperAdminNavbar, Sidebar: SuperAdminSidebar }
 };
 
 const MasterLayout = ({ children, role }) => {

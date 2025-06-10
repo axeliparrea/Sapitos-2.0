@@ -56,7 +56,7 @@ const { requireOtpVerification } = require('../middleware/requireOtp');
  *       500:
  *         description: Server error
  */
-router.post('/update', auth(['admin'], true), requireOtpVerification, runModelUpdate);
+router.post('/update', auth(['admin', 'SuperAdmin'], true), requireOtpVerification, runModelUpdate);
 
 /**
  * @swagger
@@ -76,7 +76,7 @@ router.post('/update', auth(['admin'], true), requireOtpVerification, runModelUp
  *       500:
  *         description: Server error
  */
-router.get('/logs', auth(['admin'], true), requireOtpVerification, getModelUpdateLogs);
+router.get('/logs', auth(['admin', 'SuperAdmin'], true), requireOtpVerification, getModelUpdateLogs);
 
 /**
  * @swagger
@@ -92,7 +92,7 @@ router.get('/logs', auth(['admin'], true), requireOtpVerification, getModelUpdat
  *       500:
  *         description: Server error
  */
-router.get('/schedule', auth(['admin'], true), requireOtpVerification, getNextScheduledUpdate);
+router.get('/schedule', auth(['admin', 'SuperAdmin'], true), requireOtpVerification, getNextScheduledUpdate);
 
 /**
  * @swagger
@@ -110,7 +110,7 @@ router.get('/schedule', auth(['admin'], true), requireOtpVerification, getNextSc
  *       500:
  *         description: Server error
  */
-router.get('/status', auth(['admin'], true), requireOtpVerification, getModelStatus);
+router.get('/status', auth(['admin', 'SuperAdmin'], true), requireOtpVerification, getModelStatus);
 
 /**
  * @swagger
@@ -141,9 +141,9 @@ router.get('/status', auth(['admin'], true), requireOtpVerification, getModelSta
  *       500:
  *         description: Server error
  */
-router.post('/toggle-status', auth(['admin'], true), requireOtpVerification, toggleModelStatus);
+router.post('/toggle-status', auth(['admin', 'SuperAdmin'], true), requireOtpVerification, toggleModelStatus);
 
 // Add route for model metrics
-router.get('/metrics', auth(['admin'], true), requireOtpVerification, mlController.getModelMetrics);
+router.get('/metrics', auth(['admin', 'SuperAdmin'], true), requireOtpVerification, mlController.getModelMetrics);
 
 module.exports = router;

@@ -51,6 +51,7 @@ const getSession = async (req, res) => {
             id: decoded.id || decoded.USUARIO_ID,
             nombre: decoded.nombre || decoded.NOMBRE,
             rol: decoded.rol || decoded.ROL,
+            rol_id: decoded.rol_id || decoded.ROL_ID,
             correo: decoded.correo || decoded.CORREO,
             username: decoded.username || decoded.USERNAME,
             locationId: decoded.locationId || decoded.LOCATION_ID,
@@ -178,12 +179,13 @@ const loginUser = (req, res) => {
       const payload = {
         id: usuario.USUARIO_ID,
         nombre: usuario.NOMBRE,
-        rol: usuario.ROLNOMBRE, // solo esta propiedad para rol
+        rol: usuario.ROLNOMBRE,
+        rol_id: usuario.ROL_ID,
         correo: usuario.CORREO,
         username: usuario.USERNAME,
         locationId: usuario.LOCATION_ID,
-        otpVerified: !(process.env.AUTH_OTP === 'true'), // Only set to true if OTP is not required
-        authTimestamp: Date.now() // Add authTimestamp to track login time
+        otpVerified: !(process.env.AUTH_OTP === 'true'), 
+        authTimestamp: Date.now() 
       };
 
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -206,6 +208,7 @@ const loginUser = (req, res) => {
         USUARIO_ID: usuario.USUARIO_ID,
         NOMBRE: usuario.NOMBRE,
         ROL: usuario.ROLNOMBRE,
+        ROL_ID: usuario.ROL_ID,
         CORREO: usuario.CORREO,
         USERNAME: usuario.USERNAME,
         LOCATION_ID: usuario.LOCATION_ID || null,
@@ -281,6 +284,7 @@ const loginUser = (req, res) => {
                   id: usuario.USUARIO_ID,
                   nombre: usuario.NOMBRE,
                   rol: usuario.ROLNOMBRE,
+                  rol_id: usuario.ROL_ID,
                   correo: usuario.CORREO,
                   username: usuario.USERNAME,
                   locationId: usuario.LOCATION_ID,
@@ -299,6 +303,7 @@ const loginUser = (req, res) => {
                 id: usuario.USUARIO_ID,
                 nombre: usuario.NOMBRE,
                 rol: usuario.ROLNOMBRE,
+                rol_id: usuario.ROL_ID,
                 correo: usuario.CORREO,
                 username: usuario.USERNAME,
                 locationId: usuario.LOCATION_ID
@@ -317,6 +322,7 @@ const loginUser = (req, res) => {
             id: usuario.USUARIO_ID,
             nombre: usuario.NOMBRE,
             rol: usuario.ROLNOMBRE,
+            rol_id: usuario.ROL_ID,
             correo: usuario.CORREO,
             username: usuario.USERNAME,
             locationId: usuario.LOCATION_ID
