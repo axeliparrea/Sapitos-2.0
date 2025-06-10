@@ -320,14 +320,17 @@ const SignInPage = () => {
 
               {/* FORMULARIO DE LOGIN */}
               <form onSubmit={handleLogin} className='sign-in-form needs-validation' noValidate>
+                <div className="text-center" style={{ marginTop: '-1rem', marginBottom: '2rem' }}>
+                  <img src="/assets/images/logo.png" alt="Logo" className="img-fluid" style={{ maxWidth: '220px' }} />
+                </div>
                 <div className="text-center mb-4">
-                  <h4 className='mb-12'>Iniciar sesión</h4>
-                  <p className='mb-32 text-secondary-light text-lg'>
+                  <h2 className='mb-3' style={{ fontSize: '2.2rem', fontWeight: '600' }}>Iniciar sesión</h2>
+                  <p className='mb-4 text-secondary-light' style={{ fontSize: '1.1rem' }}>
                     Por favor ingrese sus datos
                   </p>
                 </div>
 
-                <div className='icon-field mb-16'>
+                <div className='icon-field mb-4.5' style={{ maxWidth: '500px', margin: '0 auto', width: '90%', marginBottom: '2rem' }}>
                   <span className='icon top-50 translate-middle-y'>
                     <Icon icon='mdi:email-outline' className='text-muted' />
                   </span>
@@ -343,7 +346,7 @@ const SignInPage = () => {
                   />
                 </div>
 
-                <div className='position-relative mb-20'>
+                <div className='position-relative mb-4' style={{ maxWidth: '500px', margin: '0 auto', width: '90%' }}>
                   <div className='icon-field'>
                     <span className='icon top-50 translate-middle-y'>
                       <Icon icon='solar:lock-password-outline' className='text-muted' />
@@ -362,11 +365,11 @@ const SignInPage = () => {
                 </div>
 
                 {/* BOTÓN LOGIN CON MARGEN SUPERIOR */}
-                <div className='d-grid gap-3 mt-4'>
+                <div className='d-grid gap-3 mt-4.5' style={{ maxWidth: '500px', margin: '0 auto', width: '90%', marginTop: '2rem' }}>
                   <button
                     id='loginButton'
                     type='submit'
-                    className='btn btn-primary'
+                    className='btn btn-primary h-56-px'
                     disabled={isLoading}
                   >
                     {isLoading ? 'Procesando...' : 'Iniciar sesión'}
@@ -376,9 +379,12 @@ const SignInPage = () => {
 
               {/* FORMULARIO DE VERIFICACIÓN OTP */}
               <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(); }} className='sign-up-form'>
-                <div className="text-center mb-3 mt-4">
-                  <h4 className='mb-2'>Verificación de seguridad</h4>
-                  <p className='mb-4 text-secondary-light px-4'>
+                <div className="text-center" style={{ marginTop: '-2rem', marginBottom: '2.5rem' }}>
+                  <img src="/assets/images/logo.png" alt="Logo" className="img-fluid" style={{ maxWidth: '220px' }} />
+                </div>
+                <div className="text-center mb-4">
+                  <h2 className='mb-3' style={{ fontSize: '2.2rem', fontWeight: '600' }}>Verificación de seguridad</h2>
+                  <p className='mb-4 text-secondary-light' style={{ fontSize: '1.1rem' }}>
                     Hemos enviado un código de verificación a tu correo electrónico.
                     Por favor, ingresa el código para continuar.
                   </p>
