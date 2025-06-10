@@ -253,12 +253,12 @@ const InvoiceProveedor = () => {
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
-      case 'Pendiente': return 'bg-warning text-dark';
-      case 'Aprobado': return 'bg-info';
-      case 'En Reparto': return 'bg-primary';
-      case 'Completado': return 'bg-success';
-      case 'Rechazado': return 'bg-danger';
-      default: return 'bg-secondary';
+      case 'Pendiente': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-warning-focus text-warning-main';
+      case 'Aprobado': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-info-focus text-info-main';
+      case 'En Reparto': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-primary-focus text-primary-main';
+      case 'Completado': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-success-focus text-success-main';
+      case 'Rechazado': return 'px-12 py-1 rounded-pill fw-medium text-xs bg-danger-focus text-danger-main';
+      default: return 'px-12 py-1 rounded-pill fw-medium text-xs bg-secondary-focus text-secondary-main';
     }
   };
 
@@ -268,25 +268,28 @@ const InvoiceProveedor = () => {
         return (
           <div className="d-flex gap-2">
             <button 
-              className="btn btn-success btn-sm" 
               onClick={() => handleActualizarEstatus(pedido.id, "Aprobado")}
+              className='w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+              style={{ border: 'none' }}
+              title="Aceptar pedido"
             >
-              <Icon icon='mdi:check' className="me-1" />
-              Aceptar
+              <Icon icon='mdi:check-bold' width="20" height="20" />
             </button>
             <button 
-              className="btn btn-danger btn-sm" 
               onClick={() => handleActualizarEstatus(pedido.id, "Rechazado")}
+              className='w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
+              style={{ border: 'none' }}
+              title="Rechazar pedido"
             >
-              <Icon icon='mdi:close' className="me-1" />
-              Rechazar
+              <Icon icon='mingcute:close-circle-line' width="20" height="20" />
             </button>
             <button 
-              className="btn btn-outline-primary btn-sm" 
               onClick={() => handleVerDetalles(pedido.id)}
+              className='w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
+              style={{ border: 'none' }}
+              title="Ver detalles"
             >
-              <Icon icon='mdi:eye' className="me-1" />
-              Ver
+              <Icon icon='iconamoon:eye-light' width="20" height="20" />
             </button>
           </div>
         );
@@ -295,18 +298,20 @@ const InvoiceProveedor = () => {
         return (
           <div className="d-flex gap-2">
             <button 
-              className="btn btn-info btn-sm" 
               onClick={() => handleEnviarPedido(pedido.id)}
+              className='w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center'
+              style={{ border: 'none' }}
+              title="Enviar pedido"
             >
-              <Icon icon='mdi:truck' className="me-1" />
-              Enviar
+              <Icon icon='mdi:truck-delivery' width="20" height="20" />
             </button>
             <button 
-              className="btn btn-outline-primary btn-sm" 
               onClick={() => handleVerDetalles(pedido.id)}
+              className='w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
+              style={{ border: 'none' }}
+              title="Ver detalles"
             >
-              <Icon icon='mdi:eye' className="me-1" />
-              Ver
+              <Icon icon='iconamoon:eye-light' width="20" height="20" />
             </button>
           </div>
         );
@@ -314,17 +319,13 @@ const InvoiceProveedor = () => {
       default:
         return (
           <div className="d-flex gap-2">
-            <span className="text-muted small">
-              {pedido.estatus === 'Completado' ? 'Completado' : 
-               pedido.estatus === 'En Reparto' ? 'En Reparto' : 
-               pedido.estatus}
-            </span>
             <button 
-              className="btn btn-outline-primary btn-sm" 
               onClick={() => handleVerDetalles(pedido.id)}
+              className='w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
+              style={{ border: 'none' }}
+              title="Ver detalles"
             >
-              <Icon icon='mdi:eye' className="me-1" />
-              Ver
+              <Icon icon='iconamoon:eye-light' width="20" height="20" />
             </button>
           </div>
         );
