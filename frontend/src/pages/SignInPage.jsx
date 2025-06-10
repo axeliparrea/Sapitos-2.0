@@ -176,29 +176,12 @@ const SignInPage = () => {
   return (
     <section className='auth d-flex align-items-center justify-content-center min-vh-100' style={{
       background: '#f5f5f5',
-      padding: '2rem',
       position: 'relative'
     }}>
-      {/* LOGO ARRIBA IZQUIERDA */}
-      <img
-        src='assets/images/logo.png'
-        alt='Logo'
-        style={{
-          position: 'absolute',
-          top: '24px',
-          left: '32px',
-          width: '220px',
-          zIndex: 10
-        }}
-      />
-
       <div className='container-slider' style={{
-        width: '100%',
-        maxWidth: '900px',
-        minHeight: '550px',
+        width: '100vw',
+        height: '100vh',
         background: 'white',
-        borderRadius: '20px',
-        boxShadow: '0 15px 25px rgba(0,0,0,0.1)',
         overflow: 'hidden',
         position: 'relative'
       }}>
