@@ -30,22 +30,16 @@ const ROLE_COMPONENTS = {
   sucursal: { Navbar: SucursalNavbar, Sidebar: SucursalSidebar },
 };
 
-// Rol numérico a texto
-const ROLE_ID_MAP = {
-  1: "admin",
-  2: "dueno",
-  3: "empleado", // empleados deben usar tipoEmpleado para más precisión
-};
-
 const MasterLayout = ({ children, role, tipoEmpleado }) => {
   const [sidebarActive, setSidebarActive] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const location = useLocation();
 
-  let roleKey = ROLE_ID_MAP[role] || "admin";
+  // Determinar el rol como string (ya viene como string desde la cookie)
+  let roleKey = role?.toLowerCase() || "admin";
 
   if (roleKey === "empleado") {
-    roleKey = tipoEmpleado?.toLowerCase(); // ejemplo: "proveedor", "almacen", "sucursal"
+    roleKey = tipoEmpleado?.toLowerCase() || "admin";
   }
 
   const { Navbar, Sidebar } = ROLE_COMPONENTS[roleKey] || ROLE_COMPONENTS.admin;

@@ -120,15 +120,18 @@ const SignInPage = () => {
         throw new Error("Datos de sesión incompletos");
       }
 
-      if (data.requiresOtp) {
-        const otpData = await generateOTP();
-        if (otpData && otpData.secret) {
-          sessionStorage.setItem('otpSecret', otpData.secret);
-        }
-        navigate('/otp');
-      } else {
-        setIsLoginMode(false);
-      }
+      const forzarOtp = false; // HARD-CODE para omitir OTP
+
+if (data.requiresOtp && forzarOtp) {
+  const otpData = await generateOTP();
+  if (otpData && otpData.secret) {
+    sessionStorage.setItem('otpSecret', otpData.secret);
+  }
+  navigate('/otp');
+} else {
+  setIsLoginMode(false);
+}
+
 
     } catch (error) {
       setError(error.message || "Error en el inicio de sesión");

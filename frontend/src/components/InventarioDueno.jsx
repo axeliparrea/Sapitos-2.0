@@ -24,7 +24,7 @@ const Inventory = () => {
         if (!cookieData) throw new Error('No se encontró la cookie del usuario');
         const user = JSON.parse(decodeURIComponent(cookieData));
         const locationId = user.LOCATION_ID || user.locationId;
-        
+
         if (!locationId) throw new Error('No se encontró el ID de ubicación del usuario');
 
         // Obtener tipo de ubicación
@@ -122,15 +122,25 @@ const Inventory = () => {
   return (
     <div className='card h-100 p-3'>
       <div className='d-flex justify-content-between align-items-center mb-3'>
-        <h5 className='mb-0'>Inventario</h5>
-        <input
-          type='text'
-          placeholder='Buscar producto...'
-          className='form-control w-auto'
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+  <h5 className='mb-0'>Inventario</h5>
+  <div className="d-flex gap-2">
+    <input
+      type='text'
+      placeholder='Buscar producto...'
+      className='form-control w-auto'
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+    />
+    <Button
+      variant="success"
+      onClick={() => navigate('/nuevo-inventario')}
+    >
+      <Icon icon="mdi:plus" className="me-1" />
+      Nuevo Inventario
+    </Button>
+  </div>
+</div>
+
 
       <div className="table-responsive">
         <Table bordered hover size="sm">
@@ -184,17 +194,19 @@ const Inventory = () => {
                   {['Proveedor', 'Almacén', 'Sucursal'].includes(locationTipo) && (
   <td>
     <Button
-      size="sm"
-      variant="primary" // azul con texto blanco
-      onClick={() =>
-        navigate(
-          locationTipo === 'Proveedor' ? '/crear-producto' : '/pedir-producto',
-          { state: { inventario: item } }
-        )
-      }
-    >
-      {locationTipo === 'Proveedor' ? 'Crear producto' : 'Pedir producto'}
-    </Button>
+  size="sm"
+  variant="primary"
+  onClick={() =>
+    locationTipo === 'Proveedor'
+      ? navigate('/crear-producto', { state: { inventario: item } })
+      : navigate(`/pedir-producto-por-inventario/${item.INVENTARIO_ID}`, {
+      state: { inventario: item }
+    })
+  }
+>
+  {locationTipo === 'Proveedor' ? 'Crear producto' : 'Pedir producto'}
+</Button>
+
   </td>
 )}
 

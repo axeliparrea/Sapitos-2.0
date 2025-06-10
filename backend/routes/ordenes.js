@@ -86,7 +86,7 @@ router.get("/", auth(["admin", "dueno", "empleado"]), getOrden);
  * @swagger
  * /ordenes:
  *   post:
- *     summary: Insertar una nueva orden
+ *     summary: Crear una nueva orden con productos
  *     tags: [Ordenes]
  *     security:
  *       - bearerAuth: []
@@ -100,60 +100,59 @@ router.get("/", auth(["admin", "dueno", "empleado"]), getOrden);
  *               - creada_por
  *               - tipoOrden
  *               - organizacion
+ *               - metodoPago
  *             properties:
  *               creada_por:
- *                 type: string
+ *                 type: integer
+ *                 description: ID de la ubicación que crea la orden
+ *                 example: 4
  *               tipoOrden:
  *                 type: string
+ *                 description: Tipo de orden (por ejemplo, venta)
+ *                 example: venta
  *               organizacion:
- *                 type: string
- *               fechaCreacion:
- *                 type: string
- *                 format: date
- *               fechaEstimaAceptacion:
- *                 type: string
- *                 format: date
- *               fechaAceptacion:
- *                 type: string
- *                 format: date
- *               fechaEstimaPago:
- *                 type: string
- *                 format: date
- *               fechaPago:
- *                 type: string
- *                 format: date
- *               comprobantePago:
- *                 type: string
- *               fechaEstimaEntrega:
- *                 type: string
- *                 format: date
- *               fechaEntrega:
- *                 type: string
- *                 format: date
- *               entregaATiempo:
- *                 type: boolean
- *               calidad:
- *                 type: string
- *               estatus:
- *                 type: string
- *               total:
- *                 type: number
+ *                 type: integer
+ *                 description: ID de la ubicación a la que se hace el pedido
+ *                 example: 2
  *               metodoPago:
- *                 type: string
- *               descuentoAplicado:
- *                 type: number
- *               tiempoReposicion:
- *                 type: number
- *               tiempoEntrega:
- *                 type: number
+ *                 type: integer
+ *                 description: ID del método de pago (1=Transferencia, 2=Tarjeta Crédito, 3=Efectivo)
+ *                 example: 1
+ *               productos:
+ *                 type: array
+ *                 description: Lista de productos incluidos en la orden
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - inventario_id
+ *                     - cantidad
+ *                   properties:
+ *                     inventario_id:
+ *                       type: integer
+ *                       description: ID del producto en inventario
+ *                       example: 5
+ *                     cantidad:
+ *                       type: integer
+ *                       description: Cantidad deseada
+ *                       example: 10
  *     responses:
  *       201:
- *         description: Orden insertada correctamente
- *       400:
- *         description: Datos inválidos
+ *         description: Orden y productos creados exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Orden y productos creados exitosamente
+ *                 ordenId:
+ *                   type: integer
+ *                   example: 123
  *       500:
  *         description: Error del servidor
  */
+
 router.post("/", auth(["admin", "dueno"]), insertOrden);
 
 /**

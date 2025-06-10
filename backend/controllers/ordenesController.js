@@ -64,98 +64,121 @@ const getOrden = async (req, res) => {
       res.status(500).json({ error: "Error del servidor" });
     }
   };
-  
 
-  const insertOrden = async (req, res) => {
-    const {
-      creada_por,
+
+const insertOrden = async (req, res) => {
+  const {
+    creado_por_id,
+    modificado_por_id,
+    tipoOrden,
+    metodopago_id,
+    productos = []
+  } = req.body;
+
+  const fechaCreacion = new Date().toISOString().split("T")[0];
+  const estado = "Pendiente";
+
+  try {
+    const insertOrdenQuery = `
+      INSERT INTO DBADMIN.Ordenes2 (
+        CREADO_POR_ID,
+        MODIFICADO_POR_ID,
+        TIPOORDEN,
+        ORGANIZACION,
+        FECHACREACION,
+        ESTADO,
+        METODOPAGO_ID
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const ordenParams = [
+      creado_por_id,
+      modificado_por_id,
       tipoOrden,
-      organizacion,
+      modificado_por_id, // ORGANIZACION lo igualamos a MODIFICADO_POR_ID
       fechaCreacion,
-      fechaEstimaAceptacion,
-      fechaAceptacion,
-      fechaEstimaPago,
-      fechaPago,
-      comprobantePago,
-      fechaEstimaEntrega,
-      fechaEntrega,
-      entregaATiempo,
-      calidad,
-      estatus,
-      total,
-      metodoPago,
-      descuentoAplicado,
-      tiempoReposicion,
-      tiempoEntrega
-    } = req.body;
-  
-    try {
-      const insertQuery = `
-        INSERT INTO DBADMIN.Ordenes (
-          Creada_por,
-          TipoOrden,
-          Organizacion,
-          FechaCreacion,
-          FechaEstimaAceptacion,
-          FechaAceptacion,
-          FechaEstimaPago,
-          FechaPago,
-          ComprobantePago,
-          FechaEstimaEntrega,
-          FechaEntrega,
-          EntregaATiempo,
-          Calidad,
-          Estatus,
-          Total,
-          MetodoPago,
-          DescuentoAplicado,
-          TiempoReposicion,
-          TiempoEntrega
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-  
-      const params = [
-        creada_por,
-        tipoOrden,
-        organizacion,
-        fechaCreacion,
-        fechaEstimaAceptacion,
-        fechaAceptacion,
-        fechaEstimaPago,
-        fechaPago,
-        comprobantePago,
-        fechaEstimaEntrega,
-        fechaEntrega,
-        entregaATiempo,
-        calidad,
-        estatus,
-        total,
-        metodoPago,
-        descuentoAplicado,
-        tiempoReposicion,
-        tiempoEntrega
-      ];
-  
-      connection.prepare(insertQuery, (err, statement) => {
+      estado,
+      metodopago_id
+    ];
+
+    connection.prepare(insertOrdenQuery, (err, statement) => {
+      if (err) {
+        console.error("❌ Error al preparar la inserción de orden:", err);
+        return res.status(500).json({ error: "Error preparando la orden" });
+      }
+
+      statement.exec(ordenParams, (err) => {
         if (err) {
-          console.error("Error al preparar la consulta de inserción:", err);
-          return res.status(500).json({ error: "Error al preparar la consulta" });
+          console.error("❌ Error al insertar orden:", err);
+          return res.status(500).json({ error: "Error al insertar la orden" });
         }
-  
-        statement.exec(params, (err, result) => {
-          if (err) {
-            console.error("Error al ejecutar la consulta de inserción:", err);
-            return res.status(500).json({ error: "Error al insertar la orden" });
+
+        // Obtener el último ID insertado
+        const getLastIdQuery = `SELECT MAX(ORDEN_ID) AS LASTID FROM DBADMIN.Ordenes2`;
+        connection.exec(getLastIdQuery, [], (err, result) => {
+          if (err || !result || result.length === 0) {
+            console.error("❌ Error al obtener el ID de la orden:", err);
+            return res.status(500).json({ error: "No se pudo obtener el ID de la orden" });
           }
-  
-          res.status(201).json({ message: "Orden insertada correctamente" });
+
+          const ordenId = result[0].LASTID;
+
+          if (productos.length === 0) {
+            return res.status(201).json({ message: "Orden creada sin productos", ordenId });
+          }
+
+          let insertados = 0;
+          let errores = [];
+
+          productos.forEach(({ inventario_id, cantidad }) => {
+            const insertProductoQuery = `
+              INSERT INTO DBADMIN.OrdenesProductos2 (ORDEN_ID, INVENTARIO_ID, CANTIDAD, PRECIOUNITARIO)
+              VALUES (?, ?, ?, 0)
+            `;
+
+            connection.prepare(insertProductoQuery, (err, prodStatement) => {
+              if (err) {
+                errores.push(`Error preparando producto: ${err.message}`);
+                insertados++;
+                return;
+              }
+
+              prodStatement.exec([ordenId, inventario_id, cantidad], (err) => {
+                if (err) {
+                  errores.push(`Error insertando producto ${inventario_id}: ${err.message}`);
+                }
+                insertados++;
+
+                if (insertados === productos.length) {
+                  if (errores.length > 0) {
+                    return res.status(201).json({
+                      message: "Orden creada con errores en productos",
+                      ordenId,
+                      errores
+                    });
+                  } else {
+                    return res.status(201).json({
+                      message: "Orden y productos creados exitosamente",
+                      ordenId
+                    });
+                  }
+                }
+              });
+            });
+          });
         });
       });
-    } catch (error) {
-      console.error("Error general:", error);
-      res.status(500).json({ error: "Error del servidor" });
-    }
-  };
+    });
+  } catch (error) {
+    console.error("💥 Error general al insertar orden:", error);
+    res.status(500).json({ error: "Error del servidor al insertar la orden" });
+  }
+};
+
+
+
+
 
 const deleteOrden = async (req, res) => {
     const id = req.params.id;

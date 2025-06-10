@@ -610,6 +610,63 @@ const getInventoryByCategory = async (req, res) => {
   }
 };
 
+const insertNuevoInventario = async (req, res) => {
+  const {
+    articuloId,
+    locationId,
+    stockInicial,
+    stockMinimo
+  } = req.body;
+
+  try {
+    const stockRecomendado = stockMinimo * 2;
+    const today = new Date().toISOString().split("T")[0];
+
+    const query = `
+      INSERT INTO Inventario2 
+        (Articulo_ID, Location_ID, StockActual, Importacion, Exportacion, StockMinimo, StockRecomendado,
+         StockSeguridad, MargenGanancia, TiempoReposicion, DemandaPromedio, FechaUltimaImportacion)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+      articuloId,
+      locationId,
+      stockInicial,        // StockActual
+      stockInicial,        // Importacion inicial
+      0,                   // Exportacion
+      stockMinimo,
+      stockRecomendado,
+      0,                   // StockSeguridad
+      0,                   // MargenGanancia
+      0,                   // TiempoReposicion
+      0,                   // DemandaPromedio
+      today                // FechaUltimaImportacion
+    ];
+
+    const { connection } = require("../config/db");
+    connection.prepare(query, (err, statement) => {
+      if (err) {
+        console.error("Error al preparar la consulta:", err);
+        return res.status(500).json({ error: "Error al preparar la consulta" });
+      }
+
+      statement.execute(values, (err) => {
+        if (err) {
+          console.error("Error al ejecutar la consulta:", err);
+          return res.status(500).json({ error: "Error al insertar inventario" });
+        }
+
+        res.status(200).json({ message: "Inventario creado exitosamente" });
+      });
+    });
+  } catch (error) {
+    console.error("Error general:", error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+};
+
+
 module.exports = {
   getInventory,
   insertInventory,
@@ -619,5 +676,6 @@ module.exports = {
   getLocaciones,
   getInventoryByLocation,
   getArticulos,
-  getInventoryByCategory
+  getInventoryByCategory,
+  insertNuevoInventario
 };

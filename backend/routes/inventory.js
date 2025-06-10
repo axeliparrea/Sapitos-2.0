@@ -10,7 +10,8 @@ const {
   getArticulos,
   getInventoryByCategory,
   getProveedores,
-  getProductosPorProveedor
+  getProductosPorProveedor,
+  insertNuevoInventario
 } = require("../controllers/inventoryController");
 
 const router = express.Router();
@@ -239,6 +240,8 @@ router.get("/category/:categoria", getInventoryByCategory);
  *       500:
  *         description: Error del servidor
  */
+
+router.post("/NuevoInventario", auth(["admin", "dueno"], true), requireOtpVerification, insertNuevoInventario);
 
 
 module.exports = router;

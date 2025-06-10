@@ -17,7 +17,11 @@ import OrdenesClientesDueno from "./pages/dueno/OrdenesClientes";
 import RecomendacionesIADueno from "./pages/dueno/RecomendacionesIA";
 import CrearProducto from "./components/crearProducto";
 import OrdenesRecibidas from "./pages/dueno/OrdenesRecibidas";
+import OrdenesRecibidasCompletas from "./pages/dueno/OrdenesRecibidasCompletas";
+import OrdenesRecibidasProceso from "./components/OrdenesRecibidasProceso";
 import Pedir from "./pages/dueno/Pedir";
+import NuevoInventario from "./components/NuevoInventario";
+import PedirProductoPorInventario from "./components/PedirProductoPorInventario";
 
 
 import HomeCliente from "./pages/cliente/Home";
@@ -53,7 +57,7 @@ const App = () => {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await fetch("http://localhost:5000/usuario2/getSession", {
+        const cookieResponse = await fetch("http://localhost:5000/users/getSession", {
           credentials: "include",
         });
 
@@ -117,7 +121,14 @@ const App = () => {
     </ProtectedRoute>
   } 
 />
-
+<Route
+  path="/nuevo-inventario"
+  element={
+    <ProtectedRoute requireOtp={true} allowedRoles={["dueno"]}>
+      <NuevoInventario />
+    </ProtectedRoute>
+  }
+/>
 <Route
   path="/ordenes-Recibidas"
   element={
@@ -129,10 +140,39 @@ const App = () => {
   }
 />
 <Route
+  path="/ordenes-recibidas/completadas"
+  element={
+    <ProtectedRoute requireOtp={true} allowedRoles={["dueno"]}>
+      {
+       role === "dueno" ? <OrdenesRecibidasCompletas /> :
+       <Navigate to="/dashboard" />}
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/ordenes-recibidas/proceso"
+  element={
+    <ProtectedRoute requireOtp={true} allowedRoles={["dueno"]}>
+      {
+       role === "dueno" ? <OrdenesRecibidasProceso /> :
+       <Navigate to="/dashboard" />}
+    </ProtectedRoute>
+  }
+/>
+<Route
   path="/pedir-producto"
   element={ 
     <ProtectedRoute requireOtp={true} allowedRoles={["dueno"]}>
       {role === "dueno" ? <Pedir /> :
+        <Navigate to="/dashboard" />}
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/pedir-producto-por-inventario/:id"
+  element={
+    <ProtectedRoute requireOtp={true} allowedRoles={["dueno"]}>
+      {role === "dueno" ? <PedirProductoPorInventario /> :
         <Navigate to="/dashboard" />}
     </ProtectedRoute>
   }
