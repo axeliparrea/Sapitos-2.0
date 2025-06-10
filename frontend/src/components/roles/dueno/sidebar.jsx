@@ -103,7 +103,7 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
                 </button>
                 {openSubMenu === 'pedir' && (
                   <ul className='submenu'>
-                    <li><NavLink to='/pedir-producto/nuevas' className='submenu-link'>Órdenes Nuevas</NavLink></li>
+                    <li><NavLink to='/pedir-producto' className='submenu-link'>Órdenes Nuevas</NavLink></li>
                     <li><NavLink to='/pedir-producto/proceso' className='submenu-link'>En Proceso</NavLink></li>
                     <li><NavLink to='/pedir-producto/completadas' className='submenu-link'>Completadas</NavLink></li>
                   </ul>
