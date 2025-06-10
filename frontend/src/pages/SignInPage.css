@@ -176,6 +176,11 @@ form.sign-up-form {
   transform: translateX(-800px);
 }
 
+.slider-content.right-panel-active .left-image {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .panels-container::before {
   content: "";
   position: absolute;

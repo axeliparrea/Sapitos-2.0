@@ -127,9 +127,7 @@ const SignInPage = () => {
         }
         navigate('/otp');
       } else {
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 100);
+        setIsLoginMode(false);
       }
 
     } catch (error) {
@@ -267,20 +265,55 @@ const SignInPage = () => {
 
               {/* FORMULARIO DE REGISTRO */}
               <form className='sign-up-form'>
-                <h2 className='title'>Sign Up</h2>
-                <div className='input-field'>
-                  <Icon icon='mdi:user-outline' className='input-icon' />
-                  <input type='text' placeholder='Username' />
+                <div className="text-center mb-3 mt-4">
+                  <h4 className='mb-2'>Verificación de seguridad</h4>
+                  <p className='mb-4 text-secondary-light px-4'>
+                    Hemos enviado un código de verificación a tu correo electrónico.
+                    Por favor, ingresa el código para continuar.
+                  </p>
                 </div>
-                <div className='input-field'>
-                  <Icon icon='mdi:email-outline' className='input-icon' />
-                  <input type='email' placeholder='Email' />
+
+                <div className='mb-4 mt-2'>
+                  <label className='form-label mb-3'>Código de verificación</label>
+                  <div className="d-flex justify-content-center gap-2 mb-3">
+                    {[0,1,2,3,4,5].map((index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        className="form-control text-center h-56-px bg-neutral-50 radius-12"
+                        style={{ 
+                          width: '50px', 
+                          fontSize: '2rem', 
+                          fontWeight: 'bold',
+                          padding: '0.25rem 0'
+                        }}
+                        maxLength={1}
+                        inputMode="numeric"
+                        autoComplete={index === 0 ? "one-time-code" : "off"}
+                        autoFocus={index === 0}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className='input-field'>
-                  <Icon icon='solar:lock-password-outline' className='input-icon' />
-                  <input type='password' placeholder='Password' />
+                
+                <div className='d-grid gap-3 mt-3'>
+                  <button 
+                    type='submit'
+                    className='btn btn-primary h-48-px d-flex align-items-center justify-content-center radius-12'
+                  >
+                    <Icon icon="solar:shield-check-bold" className="me-2" />
+                    <span>Verificar código</span>
+                  </button>
+                  
+                  <div className="text-center mt-3">
+                    <button 
+                      type="button" 
+                      className="btn btn-link text-decoration-none"
+                    >
+                      Reenviar código
+                    </button>
+                  </div>
                 </div>
-                <button type='button' className='btn solid'>Sign Up</button>
               </form>
             </div>
           </div>
@@ -290,22 +323,19 @@ const SignInPage = () => {
             <div className='panel left-panel d-flex align-items-center justify-content-center'>
               <img
                 src='assets/images/auth/auth-img.png'
-                className='image'
+                className='image left-image'
                 alt='Imagen'
                 style={{
                   width: '120%',
                   height: 'auto',
                   transform: 'scale(1.2)',
-                  objectFit: 'contain'
+                  objectFit: 'contain',
+                  transition: 'opacity 0.5s ease-in-out'
                 }}
               />
             </div>
             <div className='panel right-panel'>
-              <div className='content'>
-                <h3>One of us?</h3>
-                <p>Sign in and continue your journey with us!</p>
-                <button className='btn transparent' onClick={toggleMode}>Sign In</button>
-              </div>
+
               <img src='assets/images/auth/auth-img.png' className='image' alt='' />
             </div>
           </div>
