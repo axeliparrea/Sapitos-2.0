@@ -41,6 +41,8 @@ import AddLocationLayer from "./components/AddLocationLayer";
 import EditArticuloLayer from "./components/EditArticuloLayer";
 import EditLocationLayer from "./components/EditarLocation";
 import CrearPedidoWarehouse from "./pages/dueno/CrearPedidoWarehouse";
+import OrdenesProveedores from "./pages/dueno/OrdenesProveedores";
+import OrdenesClientes from "./pages/dueno/OrdenesClientes";
 
 
 const App = () => {
@@ -101,16 +103,16 @@ const App = () => {
         <Route
           path="/ordenes-proveedores"
           element={
-            <ProtectedRoute allowedRoles={["dueno"]} requireOtp={true}>
-              <Navigate to="/dashboard" />
+            <ProtectedRoute allowedRoles={["dueno"]}>
+              <OrdenesProveedores />
             </ProtectedRoute>
           }
         />
         <Route
           path="/ordenes-clientes"
           element={
-            <ProtectedRoute allowedRoles={["dueno"]} requireOtp={true}>
-              <Navigate to="/dashboard" />
+            <ProtectedRoute allowedRoles={["dueno"]}>
+              <OrdenesClientes />
             </ProtectedRoute>
           }
         />
