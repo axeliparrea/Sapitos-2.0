@@ -220,12 +220,13 @@ const InvoiceListProveedor = () => {
             />
           </div>
           <button 
-            className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+            className="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center"
             onClick={fetchPedidos}
             disabled={loading}
-            title="Actualizar lista"
+            style={{ border: 'none' }}
+            title="Actualizar"
           >
-            <span>Actualizar</span>
+            <Icon icon='mdi:refresh' width="20" height="20" />
           </button>
         </div>
       </div>
@@ -292,7 +293,7 @@ const InvoiceListProveedor = () => {
                           style={{ border: 'none' }}
                           title="Ver detalles"
                         >
-                          <Icon icon='iconamoon:eye-light' />
+                          <Icon icon='iconamoon:eye-light' width="24" height="24" />
                         </button>
                       </td>
                     </tr>

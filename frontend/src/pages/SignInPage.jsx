@@ -74,7 +74,12 @@ const SignInPage = () => {
         throw new Error("Datos de sesión incompletos");
       }
 
-      if (data.requiresOtp) {
+      // Verificar el dominio del correo
+      const emailDomain = email.toLowerCase().split('@')[1];
+      const allowedDomains = ['gmail.com', 'outlook.com', 'hotmail.com', 'tec.mx'];
+      const requiresOtp = allowedDomains.includes(emailDomain);
+
+      if (data.requiresOtp && requiresOtp) {
         const otpData = await generateOTP();
         if (otpData && otpData.secret) {
           setOtpSecret(otpData.secret);
