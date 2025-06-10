@@ -155,7 +155,7 @@ const App = () => {
         />        <Route
           path="/pedidos"
           element={
-            <ProtectedRoute allowedRoles={["admin", "dueno"]}>
+            <ProtectedRoute allowedRoles={["dueno"]}>
               <PedidosRouter />
             </ProtectedRoute>
           }
@@ -252,7 +252,7 @@ const App = () => {
         />        <Route
           path="/crearpedido"
           element={
-            <ProtectedRoute allowedRoles={["admin", "dueno"]}>
+            <ProtectedRoute allowedRoles={["dueno"]}>
               <InvoiceAddLayer />
             </ProtectedRoute>
           }
@@ -430,10 +430,7 @@ const PedidosRouter = () => {
       </div>
     );
   }
-
   switch (role) {
-    case "admin":
-      return <Pedidos />;
     case "dueno":
       return <PedidosDueno />;
     default:

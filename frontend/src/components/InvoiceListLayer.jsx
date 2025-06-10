@@ -349,8 +349,7 @@ const InvoiceListLayer = () => {
                   ))}
                 </Form.Select>
               </Form.Group>
-            </div>
-            <div className="col-md-2">
+            </div>            <div className="col-md-2">
               <Form.Group>
                 <Form.Label className="small text-muted mb-1">Estatus</Form.Label>
                 <Form.Select 
@@ -360,10 +359,26 @@ const InvoiceListLayer = () => {
                 >
                   <option value="">Todos los estatus</option>
                   <option value="Pendiente">Pendiente</option>
-                  <option value="Aprobado">Aprobado</option>
+                  {(() => {
+                    const cookieData = getCookie("UserData");
+                    if (cookieData) {
+                      const userData = typeof cookieData === 'string' ? JSON.parse(cookieData) : cookieData;
+                      const userRole = userData?.ROL;
+                      
+                      // Si el usuario es dueno, no mostrar "Aprobado" y "Rechazado"
+                      if (userRole !== 'dueno') {
+                        return (
+                          <>
+                            <option value="Aprobado">Aprobado</option>
+                            <option value="Rechazado">Rechazado</option>
+                          </>
+                        );
+                      }
+                    }
+                    return null;
+                  })()}
                   <option value="En Reparto">En Reparto</option>
                   <option value="Completado">Completado</option>
-                  <option value="Rechazado">Rechazado</option>
                 </Form.Select>
               </Form.Group>
             </div>
