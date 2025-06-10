@@ -91,6 +91,8 @@ const OrdenesPymes = () => {
         withCredentials: true
       });
 
+      console.log("Respuesta de actualización:", response.data);
+
       Swal.fire({
         icon: "success",
         title: "Pedido Aceptado",
