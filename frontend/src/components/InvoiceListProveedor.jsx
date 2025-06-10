@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { jwtDecode } from "jwt-decode"; 
+import jwtDecode from "jwt-decode";
+
 
 const InvoiceListProveedor = () => {
   const [pedidos, setPedidos] = useState([]);

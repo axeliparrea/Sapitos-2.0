@@ -87,7 +87,7 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
                 </button>
                 {openSubMenu === 'ordenes' && (
                   <ul className='submenu'>
-                    <li><NavLink to='/ordenes-recibidas' className='submenu-link'>Órdenes Nuevas</NavLink></li>
+                    <li><NavLink to='/ordenes-recibidas/pendiente' className='submenu-link'>Órdenes Nuevas</NavLink></li>
                     <li><NavLink to='/ordenes-recibidas/proceso' className='submenu-link'>En Proceso</NavLink></li>
                     <li><NavLink to='/ordenes-recibidas/completadas' className='submenu-link'>Completadas</NavLink></li>
                   </ul>

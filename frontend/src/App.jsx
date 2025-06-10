@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import jwtDecode from "jwt-decode";
+
 import { ToastContainer } from "react-toastify";
 
 // Páginas públicas
@@ -18,7 +19,8 @@ import RecomendacionesIADueno from "./pages/dueno/RecomendacionesIA";
 import CrearProducto from "./components/crearProducto";
 import OrdenesRecibidas from "./pages/dueno/OrdenesRecibidas";
 import OrdenesRecibidasCompletas from "./pages/dueno/OrdenesRecibidasCompletas";
-import OrdenesRecibidasProceso from "./components/OrdenesRecibidasProceso";
+import OrdenesRecibidasProceso from "./pages/dueno/OrdenesRecibidasProceso";
+import OrdenesRecibidasPendiente from "./pages/dueno/OrdenesRecibidasPendiente";
 import Pedir from "./pages/dueno/Pedir";
 import NuevoInventario from "./components/NuevoInventario";
 import PedirProductoPorInventario from "./components/PedirProductoPorInventario";
@@ -155,6 +157,16 @@ const App = () => {
     <ProtectedRoute requireOtp={true} allowedRoles={["dueno"]}>
       {
        role === "dueno" ? <OrdenesRecibidasProceso /> :
+       <Navigate to="/dashboard" />}
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/ordenes-recibidas/pendiente"
+  element={
+    <ProtectedRoute requireOtp={true} allowedRoles={["dueno"]}>
+      {
+       role === "dueno" ? <OrdenesRecibidasPendiente /> :
        <Navigate to="/dashboard" />}
     </ProtectedRoute>
   }
