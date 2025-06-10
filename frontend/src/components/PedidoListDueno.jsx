@@ -7,10 +7,11 @@ import { Button, Form, Badge } from 'react-bootstrap';
 import { notify, NotificationType } from "./NotificationService";
 import getCookie from '../utils/cookies';
 
-const InvoiceListLayer = () => {
+const PedidoListDueno = () => {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");  const [filters, setFilters] = useState({
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
     proveedor: '',
     estatus: '',
     fechaInicio: '',
@@ -18,7 +19,8 @@ const InvoiceListLayer = () => {
     cantidadMin: '',
     cantidadMax: ''
   });
-  const [showFilters, setShowFilters] = useState(false);  const [filterOptions, setFilterOptions] = useState({
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterOptions, setFilterOptions] = useState({
     proveedores: [],
     estatuses: ["Completado", "Pendiente", "En Reparto"]
   });
@@ -326,7 +328,7 @@ const InvoiceListLayer = () => {
             </Button>
           </div>
         </div>
-        <Link to="/crearpedido" id="crearPedidoBtn" className="btn btn-primary btn-sm">
+        <Link to="/pedidowarehouse" id="crearPedidoBtn" className="btn btn-primary btn-sm">
           <Icon icon="ic:baseline-plus" className="icon text-xl" /> Crear Pedido
         </Link>
       </div>{/* Pestaña de filtros colapsible */}
@@ -577,4 +579,4 @@ const InvoiceListLayer = () => {
   );
 };
 
-export default InvoiceListLayer;
+export default PedidoListDueno;

@@ -41,14 +41,13 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
           />
         </Link>
       </div>      <div className='sidebar-menu-area'>
-        <ul className='sidebar-menu' id='sidebar-menu'>
-            <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Estadisticas' />
+        <ul className='sidebar-menu' id='sidebar-menu'>            <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Estadisticas' />
             <SidebarButton to='/inventario' icon='fluent:box-20-filled' label='Inventario' />
+            <SidebarButton to='/pedidos' icon='mdi:clipboard-list-outline' label='Pedidos' />
             <SidebarButton to='/usuarios' icon='solar:user-linear' label='Usuarios' />
             <SidebarButton to="/articulos" icon="mdi:package-variant-closed" label="Artículos" />
             <SidebarButton to='/location' icon='material-symbols:location-on' label='Ubicaciones' />
 
-            <SidebarButton to='/pedidos' icon='hugeicons:invoice-03' label='Pedidos' />
             <SidebarButton to='/modelo-prediccion' icon='carbon:machine-learning-model' label='Modelo IA' />
             <SidebarButton to='/notificaciones' icon='mdi:bell-outline' label='Notificaciones' />
             <SidebarButton to='/ai-assistant' icon='simple-icons:openai' label='Asistente IA' />

@@ -33,11 +33,11 @@ const NavbarHeader = ({ sidebarActive, sidebarControl, mobileMenuControl }) => {
             token: data.token
           };
           
-          setUserData(formattedUserData);
-
-          // Fetch location details if user has a location ID
+          setUserData(formattedUserData);          // Fetch location details if user has a location ID
           if (formattedUserData.LOCATION_ID) {
-            const locationResponse = await fetch(`http://localhost:5000/location2/${formattedUserData.LOCATION_ID}`);
+            const locationResponse = await fetch(`http://localhost:5000/helpers/locations/${formattedUserData.LOCATION_ID}`, {
+              credentials: 'include'
+            });
             if (locationResponse.ok) {
               const locationData = await locationResponse.json();
               setUserLocation(locationData);

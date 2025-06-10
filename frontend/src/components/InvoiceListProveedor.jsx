@@ -164,7 +164,6 @@ const InvoiceListProveedor = () => {
     const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
     return `${day} ${months[month]} ${year}`;
   };
-
   const getEstadoClass = (estado) => {
     const estadoLower = estado?.toLowerCase() || '';
     switch (estadoLower) {
@@ -174,10 +173,6 @@ const InvoiceListProveedor = () => {
         return 'px-12 py-1 rounded-pill fw-medium text-xs bg-warning-focus text-warning-main';
       case 'en reparto':
         return 'px-12 py-1 rounded-pill fw-medium text-xs bg-primary-focus text-primary-main';
-      case 'rechazado':
-        return 'px-12 py-1 rounded-pill fw-medium text-xs bg-danger-focus text-danger-main';
-      case 'aprobado':
-        return 'px-12 py-1 rounded-pill fw-medium text-xs bg-info-focus text-info-main';
       default:
         return 'px-12 py-1 rounded-pill fw-medium text-xs bg-secondary-focus text-secondary-main';
     }

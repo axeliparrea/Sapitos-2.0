@@ -40,6 +40,8 @@ import Location from "./pages/admin/Location";
 import AddLocationLayer from "./components/AddLocationLayer";
 import EditArticuloLayer from "./components/EditArticuloLayer";
 import EditLocationLayer from "./components/EditarLocation";
+import CrearPedidoWarehouse from "./pages/dueno/CrearPedidoWarehouse";
+
 
 const App = () => {
   const { user, isAuthenticated } = useAuth();
@@ -252,7 +254,7 @@ const App = () => {
         />        <Route
           path="/crearpedido"
           element={
-            <ProtectedRoute allowedRoles={["admin", "dueno"]}>
+            <ProtectedRoute allowedRoles={["dueno"]}>
               <InvoiceAddLayer />
             </ProtectedRoute>
           }
@@ -266,6 +268,17 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/pedidowarehouse"
+          element={
+            <ProtectedRoute allowedRoles={["dueno"]}>
+              <CrearPedidoWarehouse />
+            </ProtectedRoute>
+          }
+        />
+
+
 
         {/* Ruta de fallback para rutas no encontradas */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -429,9 +442,7 @@ const PedidosRouter = () => {
         </div>
       </div>
     );
-  }
-
-  switch (role) {
+  }  switch (role) {
     case "admin":
       return <Pedidos />;
     case "dueno":
