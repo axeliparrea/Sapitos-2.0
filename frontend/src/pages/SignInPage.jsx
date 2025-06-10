@@ -378,9 +378,26 @@ const SignInPage = () => {
               </form>
 
               {/* FORMULARIO DE VERIFICACIÓN OTP */}
-              <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(); }} className='sign-up-form'>
-                <div className="text-center" style={{ marginTop: '-2rem', marginBottom: '2.5rem' }}>
-                  <img src="/assets/images/logo.png" alt="Logo" className="img-fluid" style={{ maxWidth: '220px' }} />
+              <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(); }} className='sign-up-form' style={{ position: 'relative' }}>
+                <div className="text-center" style={{ 
+                  marginTop: '2rem', 
+                  marginBottom: '2rem', 
+                  position: 'relative',
+                  zIndex: '9999',
+                  backgroundColor: 'white'
+                }}>
+                  <img 
+                    src="/assets/images/logo.png" 
+                    alt="Logo" 
+                    className="img-fluid" 
+                    style={{ 
+                      maxWidth: '220px', 
+                      position: 'relative', 
+                      zIndex: '9999',
+                      display: 'block',
+                      margin: '0 auto'
+                    }} 
+                  />
                 </div>
                 <div className="text-center mb-4">
                   <h2 className='mb-3' style={{ fontSize: '2.2rem', fontWeight: '600' }}>Verificación de seguridad</h2>
@@ -476,7 +493,7 @@ const SignInPage = () => {
               />
             </div>
             <div className='panel right-panel'>
-              <img src='assets/images/auth/auth-img.png' className='image' alt='' />
+              <img src='assets/images/auth/auth-img2.png' className='image' alt='' />
             </div>
           </div>
         </div>
