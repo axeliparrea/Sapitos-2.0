@@ -1,6 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
+
+export const AuthContext = createContext(null);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 /**
  * AuthHandler component that intercepts API responses and handles authentication
@@ -9,8 +19,9 @@ const AuthHandler = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check if user needs authentication on initial load
   useEffect(() => {
     // Skip check on login and register pages
     const noCheckPaths = ['/', '/register'];
@@ -19,57 +30,96 @@ const AuthHandler = ({ children }) => {
       return;
     }
 
-    // Check if user has a valid session
     const checkSession = async () => {
       try {
-        await fetch("http://localhost:5000/users/getSession", {
+        const response = await fetch("http://localhost:5000/users/getSession", {
           credentials: "include",
         });
+
+        if (!response.ok) {
+          await clearSession();
+          return;
+        }
+
+        const data = await response.json();
         
-        // Session exists, continue
-        setIsChecking(false);
+        if (!data.token) {
+          await clearSession();
+          return;
+        }
+
+        let userInfo;
+        if (data.usuario && data.usuario.rol) {
+          userInfo = data.usuario;
+        } else if (data.token) {
+          try {
+            userInfo = jwtDecode(data.token);
+          } catch {
+            await clearSession();
+            return;
+          }
+        }
+
+        if (userInfo) {
+          setUser(userInfo);
+          setIsAuthenticated(true);
+          
+          // If user is on login page but already authenticated, redirect to dashboard
+          if (location.pathname === '/') {
+            navigate('/dashboard');
+          }
+        } else {
+          await clearSession();
+        }
       } catch (error) {
-        // No valid session, redirect to login
-        console.error("No valid session found:", error);
-        navigate('/');
+        console.error('Error checking session:', error);
+        await clearSession();
+      } finally {
+        setIsChecking(false);
       }
     };
 
     checkSession();
   }, [location.pathname, navigate]);
 
-  useEffect(() => {
-    // Set up axios interceptor for API responses
-    const interceptor = axios.interceptors.response.use(
-      response => {
-        // If the response is successful, just return it
-        return response;
-      },
-      error => {
-        // Check if error response indicates authentication is required
-        if (error.response && error.response.status === 401) {
-          const { requiresAuth } = error.response.data;
-          
-          if (requiresAuth) {
-            console.log('Authentication required, redirecting to login');
-            navigate('/');
-          }
-        }
-        return Promise.reject(error);
+  const clearSession = async () => {
+    try {
+      await fetch("http://localhost:5000/users/logoutUser", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Error clearing session:", error);
+    } finally {
+      setUser(null);
+      setIsAuthenticated(false);
+      if (location.pathname !== '/') {
+        navigate('/', { replace: true });
       }
-    );
-
-    // Clean up interceptor on unmount
-    return () => {
-      axios.interceptors.response.eject(interceptor);
-    };
-  }, [navigate]);
+    }
+  };
 
   if (isChecking) {
-    return null;
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Verificando autenticación...</span>
+        </div>
+      </div>
+    );
   }
 
-  return children;
+  const authContextValue = {
+    user,
+    isAuthenticated,
+    clearSession,
+  };
+
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export default AuthHandler;

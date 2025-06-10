@@ -4,16 +4,16 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import ErrorDialog from "../components/ErrorDialog";
+import { useAuth } from '../components/AuthHandler';
 import './SignInPage.css';
 
 const SignInPage = () => {
+  const { isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const hasCheckedSession = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [checkingSession, setCheckingSession] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -35,72 +35,10 @@ const SignInPage = () => {
   }, [countdown, resendDisabled]);
 
   useEffect(() => {
-    if (hasCheckedSession.current) return;
-    hasCheckedSession.current = true;
-
-    const checkSession = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/users/getSession", {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          await clearInvalidSession();
-          setCheckingSession(false);
-          return;
-        }
-
-        const data = await response.json();
-
-        if (data.requiresOtp) {
-          await generateOTP();
-          setCheckingSession(false);
-          return;
-        }
-
-        let userRole;
-        if (data.usuario && data.usuario.rol) {
-          userRole = data.usuario.rol;
-        } else if (data.token) {
-          try {
-            const decoded = jwtDecode(data.token);
-            userRole = decoded.rol;
-          } catch {
-            await clearInvalidSession();
-            setCheckingSession(false);
-            return;
-          }
-        } else {
-          setCheckingSession(false);
-          return;
-        }
-
-        if (
-          (userRole === "admin" || userRole === "dueno" || userRole === "cliente" || userRole === "proveedor") &&
-          window.location.pathname !== "/dashboard"
-        ) {
-          navigate("/dashboard");
-        }
-      } catch {
-        await clearInvalidSession();
-      } finally {
-        setCheckingSession(false);
-      }
-    };
-
-    const clearInvalidSession = async () => {
-      try {
-        await fetch("http://localhost:5000/users/logoutUser", {
-          method: "POST",
-          credentials: "include",
-        });
-      } catch (error) {
-        console.error("Error limpiando sesión:", error);
-      }
-    };
-
-    checkSession();
-  }, [navigate]);
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -143,7 +81,7 @@ const SignInPage = () => {
         }
         setIsLoginMode(false);
       } else {
-        navigate('/dashboard');
+        window.location.href = '/dashboard';
       }
 
     } catch (error) {
@@ -266,9 +204,7 @@ const SignInPage = () => {
       }
 
       if (data.verified) {
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 500);
+        window.location.href = '/dashboard';
       } else {
         throw new Error("Código de verificación inválido");
       }
@@ -314,7 +250,7 @@ const SignInPage = () => {
     setDialogOpen(false);
   };
 
-  if (checkingSession) {
+  if (isAuthenticated) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
         <span>Cargando...</span>
