@@ -36,14 +36,15 @@ const CrearProducto = () => {
 
     try {
       const updatedData = {
-        stockActual: inventario.STOCKACTUAL + nuevaCantidad,
-        importacion: (inventario.IMPORTACION || 0) + nuevaCantidad,
+        stockActual: inventario.stockActual + nuevaCantidad,
+        importacion: (inventario.importacion || 0) + nuevaCantidad,
       };
 
-      const inventoryId = inventario.INVENTARIO_ID || inventario.inventarioId;
+      const inventoryId = inventario.inventarioId;
 
       await axios.put(
-        `http://localhost:5000/api/inventory/${inventoryId}`,
+  `http://localhost:5000/inventory/${inventoryId}`,      // ✅
+
         updatedData,
         { withCredentials: true }
       );
@@ -69,9 +70,9 @@ const CrearProducto = () => {
           <Card className="p-4 shadow">
             <h4 className="text-center mb-4">Crear producto</h4>
 
-            <p className="text-center"><strong>Producto:</strong> {inventario.NOMBRE}</p>
-            <p className="text-center">Stock actual: <strong>{inventario.STOCKACTUAL}</strong></p>
-            <p className="text-center">Importación acumulada: <strong>{inventario.IMPORTACION || 0}</strong></p>
+            <p className="text-center"><strong>Producto:</strong> {inventario.nombre}</p>
+            <p className="text-center">Stock actual: <strong>{inventario.stockActual}</strong></p>
+            <p className="text-center">Importación acumulada: <strong>{inventario.importacion || 0}</strong></p>
 
             <Form onSubmit={handleSubmit}>
               <Form.Group>
@@ -86,7 +87,7 @@ const CrearProducto = () => {
                 />
               </Form.Group>
 
-              <Button type="submit" className="mt-3 w-100" disabled={loading}>
+              <Button type="submit" className="mt-3 w-100 btn-primary text-white" disabled={loading}>
                 {loading ? 'Procesando...' : 'Actualizar Inventario'}
               </Button>
             </Form>

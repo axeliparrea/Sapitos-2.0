@@ -9,124 +9,56 @@ const {
   getInventoryByLocation,
   getArticulos,
   getInventoryByCategory,
-  getProductosEnRiesgo
+  getProveedores,
+  getProductosPorProveedor
 } = require("../controllers/inventoryController");
 
 const router = express.Router();
-const { auth } = require("../middleware/auth");
 
-// Previene error si no existe el archivo requireOtp.js
-let requireOtpVerification = (req, res, next) => next();
-try {
-  requireOtpVerification = require("../middleware/requireOtp").requireOtpVerification;
-} catch (error) {
-  console.warn("⚠️ No se encontró requireOtp.js. Se usa función vacía.");
-}
+const { auth } = require('../middleware/auth');
+const { requireOtpVerification } = require('../middleware/requireOtp');
 
-/**
- * @swagger
- * tags:
- *   name: Inventory
- *   description: Gestión de inventario
- */
-
+// Rutas principales de inventario
 /**
  * @swagger
  * /api/inventory:
  *   get:
- *     summary: Get all inventory items
+ *     summary: Obtener todos los items del inventario
  *     tags: [Inventory]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of inventory items
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   proveedor:
- *                     type: string
- *                   nombre:
- *                     type: string
- *                   categoria:
- *                     type: string
- *                   stockActual:
- *                     type: integer
- *                   stockMinimo:
- *                     type: integer
- *                   fechaUltimaCompra:
- *                     type: string
- *                     format: date
- *                   fechaUltimaVenta:
- *                     type: string
- *                     format: date
- *                   precioCompra:
- *                     type: number
- *                   precioVenta:
- *                     type: number
- *                   temporada:
- *                     type: string
- *                   margenGanancia:
- *                     type: number
- *                   tiempoReposicionProm:
- *                     type: number
- *                   demandaProm:
- *                     type: number
- *                   stockSeguridad:
- *                     type: number
+ *         description: Lista de items de inventario
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
 router.get("/", getInventory);
 
 /**
  * @swagger
- * /api/inventory/risk-products:
- *   get:
- *     summary: Obtener productos en riesgo (stock crítico o bajo)
- *     tags: [Inventory]
- *     responses:
- *       200:
- *         description: Lista de productos en riesgo
- *       500:
- *         description: Error del servidor
- */
-router.get("/risk-products", auth(["admin", "dueno", "empleado"]), getProductosEnRiesgo);
-
-/**
- * @swagger
  * /api/inventory/{id}:
  *   get:
- *     summary: Get inventory item by ID
+ *     summary: Obtener un item de inventario por ID
  *     tags: [Inventory]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         description: ID del item de inventario
- *         schema:
- *           type: integer
  *     responses:
  *       200:
- *         description: Inventory item details
+ *         description: Detalles del item de inventario
  *       404:
- *         description: Inventory item not found
+ *         description: Item no encontrado
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
-router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
+router.get("/:id", auth(["admin", "dueno", "empleado"], true), requireOtpVerification, getInventoryById);
 
 /**
  * @swagger
  * /api/inventory:
  *   post:
- *     summary: Add a new inventory item
+ *     summary: Agregar un nuevo item al inventario
  *     tags: [Inventory]
  *     requestBody:
  *       required: true
@@ -134,54 +66,34 @@ router.get("/:id", auth(["admin", "dueno", "empleado"]), getInventoryById);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - articuloId
- *               - locationId
- *               - stockActual
  *             properties:
- *               id:
+ *               articuloId:
  *                 type: integer
- *               nombre:
- *                 type: string
- *               descripcion:
- *                 type: string
- *               categoria:
- *                 type: string
- *               stock:
+ *               locationId:
  *                 type: integer
- *               stockMinimo:
+ *               stockActual:
  *                 type: integer
- *               precioCompra:
- *                 type: number
- *               precioVenta:
- *                 type: number
- *               temporada:
- *                 type: string
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Inventory item added successfully
+ *         description: Item agregado exitosamente
  *       400:
- *         description: Invalid request
+ *         description: Solicitud inválida
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
-router.post("/", auth(["admin", "dueno"]), insertInventory);
+router.post("/", auth(["admin", "dueno"], true), requireOtpVerification, insertInventory);
 
 /**
  * @swagger
  * /api/inventory/{id}:
  *   put:
- *     summary: Actualizar stock actual, importación o exportación de un item de inventario
+ *     summary: Actualizar un item de inventario
  *     tags: [Inventory]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         description: ID del item de inventario
- *         schema:
- *           type: integer
  *     requestBody:
  *       required: true
  *       content:
@@ -189,32 +101,15 @@ router.post("/", auth(["admin", "dueno"]), insertInventory);
  *           schema:
  *             type: object
  *             properties:
- *               nombre:
- *                 type: string
- *               categoria:
- *                 type: string
  *               stockActual:
  *                 type: integer
- *                 description: Nuevo valor del stock actual
- *               importacion:
- *                 type: integer
- *                 description: Cantidad total importada (se actualiza FechaUltimaImportacion)
- *               exportacion:
- *                 type: integer
- *                 description: Cantidad total exportada (se actualiza FechaUltimaExportacion)
- *             example:
- *               stockActual: 150
- *               importacion: 30
- *               exportacion: 10
  *     responses:
  *       200:
  *         description: Item actualizado exitosamente
- *       400:
- *         description: No se proporcionaron campos válidos para actualizar
  *       404:
- *         description: Inventory item not found
+ *         description: Item no encontrado
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
 router.put("/:id", auth(["admin", "dueno"], true), requireOtpVerification, updateInventory);
 
@@ -222,28 +117,27 @@ router.put("/:id", auth(["admin", "dueno"], true), requireOtpVerification, updat
  * @swagger
  * /api/inventory/{id}:
  *   delete:
- *     summary: Delete an inventory item
+ *     summary: Eliminar un item de inventario
  *     tags: [Inventory]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         description: ID del item de inventario
- *         schema:
- *           type: integer
  *     responses:
  *       200:
- *         description: Inventory item deleted successfully
+ *         description: Item eliminado exitosamente
  *       404:
- *         description: Inventory item not found
+ *         description: Item no encontrado
  *       500:
- *         description: Server error
+ *         description: Error del servidor
  */
 router.delete("/:id", auth(["admin", "dueno"], true), requireOtpVerification, deleteInventory);
 
+// Rutas adicionales de inventario
 /**
  * @swagger
- * /api/inventory/locations/all:
+ * /inventory/locations/all:
  *   get:
  *     summary: Obtener todas las ubicaciones
  *     tags: [Inventory]
@@ -257,7 +151,7 @@ router.get("/locations/all", getLocaciones);
 
 /**
  * @swagger
- * /api/inventory/location/{locationId}:
+ * /inventory/location/{locationId}:
  *   get:
  *     summary: Obtener inventario por ubicación
  *     tags: [Inventory]
@@ -266,8 +160,6 @@ router.get("/locations/all", getLocaciones);
  *         name: locationId
  *         required: true
  *         description: ID de la ubicación
- *         schema:
- *           type: integer
  *     responses:
  *       200:
  *         description: Lista de items en la ubicación
@@ -280,7 +172,7 @@ router.get("/location/:locationId", getInventoryByLocation);
 
 /**
  * @swagger
- * /api/inventory/articles/all:
+ * /inventory/articles/all:
  *   get:
  *     summary: Obtener todos los artículos
  *     tags: [Inventory]
@@ -294,7 +186,7 @@ router.get("/articles/all", getArticulos);
 
 /**
  * @swagger
- * /api/inventory/category/{categoria}:
+ * /inventory/category/{categoria}:
  *   get:
  *     summary: Obtener inventario por categoría
  *     tags: [Inventory]
@@ -303,8 +195,6 @@ router.get("/articles/all", getArticulos);
  *         name: categoria
  *         required: true
  *         description: Nombre de la categoría
- *         schema:
- *           type: string
  *     responses:
  *       200:
  *         description: Lista de items por categoría
@@ -314,5 +204,41 @@ router.get("/articles/all", getArticulos);
  *         description: Error del servidor
  */
 router.get("/category/:categoria", getInventoryByCategory);
+
+
+/**
+ * @swagger
+ * /inventory/proveedores:
+ *   get:
+ *     summary: Obtener todos los proveedores
+ *     tags: [Inventory]
+ *     responses:
+ *       200:
+ *         description: Lista de proveedores
+ *       500:
+ *         description: Error del servidor
+ */
+
+
+/**
+ * @swagger
+ * /inventory/proveedores/{proveedor}:
+ *   get:
+ *     summary: Obtener productos por proveedor
+ *     tags: [Inventory]
+ *     parameters:
+ *       - in: path
+ *         name: proveedor
+ *         required: true
+ *         description: Nombre del proveedor
+ *     responses:
+ *       200:
+ *         description: Lista de productos del proveedor
+ *       404:
+ *         description: No se encontraron productos
+ *       500:
+ *         description: Error del servidor
+ */
+
 
 module.exports = router;

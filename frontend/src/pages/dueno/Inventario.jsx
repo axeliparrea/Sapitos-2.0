@@ -1,14 +1,11 @@
 import MasterLayout from "../../components/masterLayout";
-import Inventory from "../../components/InventarioDueno";
+import InventarioDueno from "../../components/InventarioDueno"; // Renombra aquí
 
 const Inventario = () => {
   return (
-    <>
-      <MasterLayout role="dueno">
-        <h1>Inventario</h1>
-        <Inventory />
-      </MasterLayout>
-    </>
+    <MasterLayout role="dueno">
+      <InventarioDueno />
+    </MasterLayout>
   );
 };
 

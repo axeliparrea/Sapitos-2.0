@@ -3,10 +3,10 @@ import Inventory from "../../components/Inventory";
 
 const Inventario = () => {
   return (
-    <>
-      <MasterLayout role="admin">
-        <h1>Inventario</h1>
-        <Inventory />
+    <>      <MasterLayout role="admin">
+        <div id="inventarioAdmin"> {/* ID agregado para pruebas */}
+          <Inventory />
+        </div>
       </MasterLayout>
     </>
   );

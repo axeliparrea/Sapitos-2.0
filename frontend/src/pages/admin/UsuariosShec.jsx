@@ -3,10 +3,13 @@ import Usuarios from "../../components/roles/admin/Usuarios";
 
 const UsuariosShec = () => {
   return (
-    <MasterLayout role={1} tipoEmpleado={null}>
-      <Usuarios />
-    </MasterLayout>
+    <>
+      <MasterLayout role="admin">
+        <div id="usuariosAdmin"> {/* ID agregado aquí */}
+          <UsersListLayer />
+        </div>
+      </MasterLayout>
+    </>
   );
 };
-
 export default UsuariosShec;

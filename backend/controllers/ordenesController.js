@@ -189,11 +189,73 @@ const deleteOrden = async (req, res) => {
       res.status(500).json({ error: "Error del servidor" });
     }
   };
-  
 
-  module.exports = {
-    getOrden,
-    insertOrden,
-    deleteOrden
-  };
-  
+const getOrdenesPorLocation = async (req, res) => {
+  const { locationId } = req.params;
+
+  try {
+    const query = `
+      SELECT 
+        Orden_ID AS ORDEN_ID,
+        TipoOrden AS TIPOORDEN,
+        Organizacion AS ORGANIZACION,
+        FechaCreacion AS FECHACREACION,
+        Estado AS ESTADO,
+        Total AS TOTAL
+      FROM DBADMIN.Ordenes2
+      WHERE Modificado_por_ID = ?
+    `;
+
+    connection.exec(query, [locationId], (err, result) => {
+      if (err) {
+        console.error("🔥 Error al obtener órdenes por Modificado_por_ID:", err);
+        return res.status(500).json({ error: "Error al obtener órdenes" });
+      }
+
+      res.status(200).json(result);
+    });
+  } catch (error) {
+    console.error("💥 Error general:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+const getOrdenesPorCreador = async (req, res) => {
+  const { creadorId } = req.params;
+
+  try {
+    const query = `
+      SELECT 
+        Orden_ID AS ORDEN_ID,
+        TipoOrden AS TIPOORDEN,
+        Organizacion AS ORGANIZACION,
+        FechaCreacion AS FECHACREACION,
+        Estado AS ESTADO,
+        Total AS TOTAL
+      FROM DBADMIN.Ordenes2
+      WHERE Creado_por_ID = ?
+    `;
+
+    connection.exec(query, [creadorId], (err, result) => {
+      if (err) {
+        console.error("🔥 Error al obtener órdenes por Creado_por_ID:", err);
+        return res.status(500).json({ error: "Error al obtener órdenes" });
+      }
+
+      res.status(200).json(result);
+    });
+  } catch (error) {
+    console.error("💥 Error general:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+
+
+module.exports = {
+  getOrden,
+  insertOrden,
+  deleteOrden,
+  getOrdenesPorLocation,
+  getOrdenesPorCreador
+};

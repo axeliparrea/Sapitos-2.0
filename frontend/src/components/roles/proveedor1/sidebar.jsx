@@ -44,7 +44,9 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
       <div className='sidebar-menu-area'>
         <ul className='sidebar-menu' id='sidebar-menu'>
             <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Estadisticas' />
-            <SidebarButton to='/ordenes' label='Ordenes'/>
+            <SidebarButton to='/ordenes' icon='mdi:file-document-outline' label='Ordenes Pendientes'/>
+            <SidebarButton to='/ordenes-aceptadas' icon='mdi:file-document-check-outline' label='Ordenes Aceptadas'/>
+            <SidebarButton to='/asistente-ia' icon='simple-icons:openai' label='Asistente IA' />
         </ul>
       </div>
     </aside>

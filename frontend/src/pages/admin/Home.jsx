@@ -3,9 +3,13 @@ import DashBoardLayerOne from "../../components/DashBoardLayerOne";
 
 const HomeAdmin = () => {
   return (
-    <MasterLayout role={1} tipoEmpleado={null}>
-      <DashBoardLayerOne />
-    </MasterLayout>
+    <>
+      <MasterLayout role="admin">
+        <div id="homeAdminPage"> {/* ID agregado aquí */}
+          <DashBoardLayerOne />
+        </div>
+      </MasterLayout>
+    </>
   );
 };
 

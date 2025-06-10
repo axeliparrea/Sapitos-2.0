@@ -25,35 +25,33 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
       <div>
         <Link to='/dashboard' className='sidebar-logo'>
           <img
-            src='assets/images/logo.png'
+            src='/assets/images/logo.png'
             alt='site logo'
             className='light-logo'
           />
           <img
-            src='assets/images/logo-light.png'
+            src='/assets/images/logo-light.png'
             alt='site logo'
             className='dark-logo'
           />
           <img
-            src='assets/images/logo-icon.png'
+            src='/assets/images/logo-icon.png'
             alt='site logo'
             className='logo-icon'
           />
         </Link>
-      </div>
-      <div className='sidebar-menu-area'>
+      </div>      <div className='sidebar-menu-area'>
         <ul className='sidebar-menu' id='sidebar-menu'>
-            <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Dashboard' />
-            <SidebarButton to='/inventario' icon='hugeicons:invoice-03' label='Inventario' />
+            <SidebarButton to='/dashboard' icon='solar:home-smile-angle-outline' label='Estadisticas' />
+            <SidebarButton to='/inventario' icon='fluent:box-20-filled' label='Inventario' />
             <SidebarButton to='/usuarios' icon='solar:user-linear' label='Usuarios' />
-            <SidebarButton to='/pedidos' icon='solar:user-linear' label='Pedidos' />
-            {/* 
-            <SidebarButton to='/roles' icon='mdi:shield-account-outline' label='Roles' />
-            */}
-            <SidebarButton to='/location' icon='mdi:location' label='Location' />
-            <SidebarButton to='/articulos' icon='mdi:package-variant' label='Artículos' />
+            <SidebarButton to="/articulos" icon="mdi:package-variant-closed" label="Artículos" />
+            <SidebarButton to='/location' icon='material-symbols:location-on' label='Ubicaciones' />
 
-
+            <SidebarButton to='/pedidos' icon='hugeicons:invoice-03' label='Pedidos' />
+            <SidebarButton to='/modelo-prediccion' icon='carbon:machine-learning-model' label='Modelo IA' />
+            <SidebarButton to='/notificaciones' icon='mdi:bell-outline' label='Notificaciones' />
+            <SidebarButton to='/asistente-ia' icon='simple-icons:openai' label='Asistente IA' />
         </ul>
       </div>
     </aside>

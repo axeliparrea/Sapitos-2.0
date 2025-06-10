@@ -3,6 +3,8 @@ const {
   getOrden,
   insertOrden,
   deleteOrden,
+  getOrdenesPorLocation,
+  getOrdenesPorCreador
 } = require("../controllers/ordenesController");
 
 const router = express.Router();
@@ -178,5 +180,9 @@ router.post("/", auth(["admin", "dueno"]), insertOrden);
  *         description: Error del servidor
  */
 router.delete("/:id", auth(["admin", "dueno"]), deleteOrden);
+
+router.get("/recibidas/:locationId", auth(["admin", "dueno", "empleado"]), getOrdenesPorLocation);
+
+router.get("/creadas/:creadorId", auth(["admin", "dueno", "empleado"]), getOrdenesPorCreador);
 
 module.exports = router;

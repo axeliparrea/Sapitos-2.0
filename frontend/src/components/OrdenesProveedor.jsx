@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@iconify/react";
 
 const OrdenesProveedor = () => {
   // Datos hardcodeados de los productos relacionados con los pedidos
@@ -104,13 +105,14 @@ const OrdenesProveedor = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <div className="card">
-        <div className="card-header bg-primary text-white">
-          <h4 className="mb-0">Pedidos Pendientes</h4>
+    <>
+      {/* Sección de Pedidos Pendientes */}
+      <div className="card h-100 p-0 radius-12 mt-4">
+        <div className="card-header d-flex justify-content-between align-items-center py-16 px-24">
+          <span className="text-md fw-medium mb-0">Pedidos Pendientes</span>
         </div>
         
-        <div className="card-body">
+        <div className="card-body p-24">
           {loading ? (
             <div className="text-center py-4">
               <div className="spinner-border text-primary" role="status">
@@ -118,105 +120,100 @@ const OrdenesProveedor = () => {
               </div>
             </div>
           ) : pedidos.length > 0 ? (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
-                  <tr>
-                    <th>ID Pedido</th>
-                    <th>Cliente</th>
-                    <th>Producto</th>
-                    <th>Fecha</th>
-                    <th>Cantidad</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pedidos.map((pedido) => (
-                    <tr key={pedido.idOriginal}>
-                      <td>{pedido.id}</td>
-                      <td>{pedido.cliente}</td>
-                      <td>{pedido.producto}</td>
-                      <td>{pedido.fecha}</td>
-                      <td>{pedido.cantidad} unidades</td>
-                      <td>
-                        <div className="btn-group" role="group">
+            <div className="table-responsive scroll-sm">
+              <table className="table bordered-table sm-table mb-0">
+                  <thead>
+                    <tr>
+                      <th>ID Pedido</th>
+                      <th>Cliente</th>
+                      <th>Producto</th>
+                      <th>Fecha</th>
+                      <th>Cantidad</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pedidos.map((pedido) => (
+                       <tr key={pedido.idOriginal}>
+                         <td className="align-middle">{pedido.id}</td>
+                         <td className="align-middle"><h6 className="text-md mb-0 fw-medium">{pedido.cliente}</h6></td>
+                         <td className="align-middle">{pedido.producto}</td>
+                         <td className="align-middle">{pedido.fecha}</td>
+                         <td className="align-middle">{pedido.cantidad} unidades</td>
+                         <td className="align-middle d-flex align-items-center">
                           <button
+                            type="button"
                             onClick={() => aceptarPedido(pedido.idOriginal)}
-                            className="btn btn-sm btn-success"
+                            className="w-24-px h-24-px me-4 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                            style={{ border: 'none' }}
                             title="Marcar como En Reparto"
                           >
-                            <i className="bi bi-truck me-1"></i>
-                            Aceptar
+                            <Icon icon="mdi:truck-delivery" width="20" height="20" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => rechazarPedido(pedido.idOriginal)}
-                            className="btn btn-sm btn-danger ms-2"
+                            className="w-24-px h-24-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                            style={{ border: 'none' }}
                             title="Rechazar Pedido"
                           >
-                            <i className="bi bi-x-circle me-1"></i>
-                            Rechazar
+                            <Icon icon="mdi:close-circle-outline" width="20" height="20" />
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                         </td>
+                       </tr>
+                    ))}
+                   </tbody>
               </table>
             </div>
           ) : (
-            <div className="alert alert-info mb-0">
+            <div className="alert alert-info mb-0 text-center py-3">
               No tienes pedidos pendientes por aceptar
             </div>
           )}
         </div>
       </div>
-
+      
       {/* Sección de Inventario */}
-      <div className="card mt-4">
-        <div className="card-header bg-success text-white">
-          <h4 className="mb-0">Inventario de Productos</h4>
-        </div>
-        
-        <div className="card-body">
-          <div className="table-responsive">
-            <table className="table table-striped table-hover">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Categoría</th>
-                  <th>Stock Actual</th>
-                  <th>Stock Mínimo</th>
-                  <th>Precio Compra</th>
-                  <th>Precio Venta</th>
-                  <th>Última Compra</th>
-                </tr>
-              </thead>
-              <tbody>
-                {datosProductos.map((producto) => (
-                  <tr key={producto.id}>
-                    <td>{producto.id}</td>
-                    <td>{producto.nombre}</td>
-                    <td>{producto.categoria}</td>
-                    <td className={
-                      producto.stockActual <= producto.stockMinimo 
-                        ? "text-danger fw-bold" 
-                        : "text-success"
-                    }>
-                      {producto.stockActual}
-                    </td>
-                    <td>{producto.stockMinimo}</td>
-                    <td>{producto.precioCompra ? `$${producto.precioCompra}` : '-'}</td>
-                    <td>{producto.precioVenta ? `$${producto.precioVenta}` : '-'}</td>
-                    <td>{producto.fechaUltimaCompra || '-'}</td>
+      <div className="card h-100 p-0 radius-12 mt-4">
+         <div className="card-header bg-success text-white">
+           <span className="text-md fw-medium mb-0">Inventario de Productos</span>
+         </div>
+        <div className="card-body p-24">
+           <div className="table-responsive">
+             <table className="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Proveedor</th>
+                    <th>Stock Actual</th>
+                    <th>Stock Mínimo</th>
+                    <th>Última Compra</th>
+                    <th>Última Venta</th>
+                    <th>Precio Compra</th>
+                    <th>Precio Venta</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
+                </thead>
+                <tbody>
+                  {datosProductos.map((producto) => (
+                    <tr key={producto.id}>
+                      <td className="align-middle">{producto.nombre}</td>
+                      <td className="align-middle">{producto.categoria}</td>
+                      <td className="align-middle">{producto.proveedor}</td>
+                      <td className="align-middle">{producto.stockActual}</td>
+                      <td className="align-middle">{producto.stockMinimo}</td>
+                      <td className="align-middle">{producto.fechaUltimaCompra}</td>
+                      <td className="align-middle">{producto.fechaUltimaVenta || 'N/A'}</td>
+                      <td className="align-middle">{producto.precioCompra !== null ? `$${producto.precioCompra}` : 'N/A'}</td>
+                      <td className="align-middle">{producto.precioVenta !== null ? `$${producto.precioVenta}` : 'N/A'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+             </table>
+           </div>
+         </div>
+       </div>
+    </>
   );
 };
 

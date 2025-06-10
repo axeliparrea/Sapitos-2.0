@@ -3,9 +3,11 @@ import OrdenesRecibidas from "../../components/OrdenesRecibidas";
 
 const OrdenesRecibidasPage = () => {
   return (
-    <MasterLayout role="dueno">
-      <OrdenesRecibidas />
-    </MasterLayout>
+    <>
+      <MasterLayout role="dueno">
+        <OrdenesRecibidas />
+      </MasterLayout>
+    </>
   );
 };
 

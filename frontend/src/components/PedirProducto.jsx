@@ -14,28 +14,29 @@ const PedirProducto = () => {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const cookieData = Cookies.get('UserData');
-        if (!cookieData) throw new Error('No se encontró la cookie del usuario');
-        const user = JSON.parse(decodeURIComponent(cookieData));
-        const locationId = user.LOCATION_ID || user.location_id;
+  const fetchData = async () => {
+    try {
+      const cookieData = Cookies.get('UserData');
+      if (!cookieData) throw new Error('No se encontró la cookie del usuario');
+      const user = JSON.parse(decodeURIComponent(cookieData));
+      const locationId = user.LOCATION_ID || user.location_id;
 
-        const res = await axios.get(`http://localhost:5000/ordenes/creado/${locationId}`, {
-          withCredentials: true
-        });
+      const res = await axios.get(`http://localhost:5000/ordenes/creadas/${locationId}`, {
+        withCredentials: true
+      });
 
-        setOrdenes(res.data);
-        setFiltered(res.data);
-      } catch (err) {
-        console.error("Error al obtener órdenes:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setOrdenes(res.data);
+      setFiltered(res.data);
+    } catch (err) {
+      console.error("Error al obtener órdenes:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, []);
+  fetchData();
+}, []);
+
 
   const fetchDetalle = async (ordenId) => {
     if (detalles[ordenId]) {

@@ -86,14 +86,9 @@ const Sidebar = ({ sidebarActive, mobileMenu, mobileMenuControl }) => {
           <SidebarButton to='/inventario' icon='hugeicons:invoice-03' label='Inventario' />
 
           {/* Órdenes recibidas */}
-{["Almacén", "Proveedor"].includes(tipoLocation) && (
-  <SidebarButton
-    to='/ordenes-recibidas'
-    icon='mdi:truck-delivery-outline'
-    label='Órdenes recibidas'
-  />
-)}
-
+          {(tipoLocation === "Almacén" || tipoLocation === "Proveedor") && (
+            <SidebarButton to='/ordenes-Recibidas' label='Órdenes recibidas' />
+          )}
 
           {/* Pedir producto */}
           {(tipoLocation === "Sucursal" || tipoLocation === "Almacén") && (
