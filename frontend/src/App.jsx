@@ -41,6 +41,7 @@ import AddLocationLayer from "./components/AddLocationLayer";
 import EditArticuloLayer from "./components/EditArticuloLayer";
 import EditLocationLayer from "./components/EditarLocation";
 import CrearPedidoWarehouse from "./pages/dueno/CrearPedidoWarehouse";
+import OrdenesPymesPage from './pages/admin/OrdenesPymesPage';
 
 
 const App = () => {
@@ -159,6 +160,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["admin", "dueno"]}>
               <PedidosRouter />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ordenes-pymes"
+          element={
+            <ProtectedRoute>
+              <OrdenesPymesPage />
             </ProtectedRoute>
           }
         />
