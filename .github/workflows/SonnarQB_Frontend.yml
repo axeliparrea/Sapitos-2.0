@@ -26,7 +26,7 @@ jobs:
             -Dsonar.projectKey=SAPitos_front
             -Dsonar.sources=.
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SAPitos_front }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       # Descomenta esto si quieres forzar que falle si la Quality Gate no pasa
