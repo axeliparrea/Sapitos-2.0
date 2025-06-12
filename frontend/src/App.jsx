@@ -40,6 +40,9 @@ import Location from "./pages/admin/Location";
 import AddLocationLayer from "./components/AddLocationLayer";
 import EditArticuloLayer from "./components/EditArticuloLayer";
 import EditLocationLayer from "./components/EditarLocation";
+import CrearPedidoWarehouse from "./pages/dueno/CrearPedidoWarehouse";
+import OrdenesPymesPage from './pages/admin/OrdenesPymesPage';
+
 
 const App = () => {
   const { user, isAuthenticated } = useAuth();
@@ -89,7 +92,7 @@ const App = () => {
         <Route
           path="/preview"
           element={
-            <ProtectedRoute allowedRoles={["admin", "cliente"]} requireOtp={true}>
+            <ProtectedRoute allowedRoles={["admin", "cliente"]} requireOtp={false}>
               {role === "admin" ? <InvoicePreviewPage /> :
               role === "cliente" ? <InvoicePreviewPage/> :
               <Navigate to="/dashboard" />}
@@ -139,7 +142,7 @@ const App = () => {
         <Route
           path="/notificaciones"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <Notificaciones />
             </ProtectedRoute>
           }
@@ -155,15 +158,23 @@ const App = () => {
         />        <Route
           path="/pedidos"
           element={
-            <ProtectedRoute allowedRoles={["admin", "dueno"]}>
+            <ProtectedRoute allowedRoles={["admin", "dueno"]} requireOtp={false}>
               <PedidosRouter />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ordenes-pymes"
+          element={
+            <ProtectedRoute>
+              <OrdenesPymesPage />
             </ProtectedRoute>
           }
         />
         <Route
           path="/usuarios"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <UsuariosShec />
             </ProtectedRoute>
           }
@@ -171,7 +182,7 @@ const App = () => {
         <Route
           path="/articulos"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <Articulos />
             </ProtectedRoute>
           }
@@ -179,7 +190,7 @@ const App = () => {
         <Route
           path="/location"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <Location />
             </ProtectedRoute>
           }
@@ -196,7 +207,7 @@ const App = () => {
         <Route
           path="/agregar-usuario"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <AddUserLayer />
             </ProtectedRoute>
           }
@@ -204,7 +215,7 @@ const App = () => {
         <Route
           path="/agregar-articulo"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <AddArticuloLayer />
             </ProtectedRoute>
           }
@@ -212,7 +223,7 @@ const App = () => {
         <Route
           path="/agregar-Location"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <AddLocationLayer />
             </ProtectedRoute>
           }
@@ -220,7 +231,7 @@ const App = () => {
         <Route
           path="/editar-usuario/:userId"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <EditUserLayer />
             </ProtectedRoute>
           }
@@ -228,7 +239,7 @@ const App = () => {
         <Route
           path="/editar-articulo/:id"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <EditArticuloLayer />
             </ProtectedRoute>
           }
@@ -236,7 +247,7 @@ const App = () => {
         <Route
           path="/editar-Location/:id"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <EditLocationLayer />
             </ProtectedRoute>
           }
@@ -245,14 +256,14 @@ const App = () => {
         <Route
           path="/modelo-prediccion"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin"]} requireOtp={false}>
               <ModelManagement />
             </ProtectedRoute>
           }
         />        <Route
           path="/crearpedido"
           element={
-            <ProtectedRoute allowedRoles={["admin", "dueno"]}>
+            <ProtectedRoute allowedRoles={["admin", "dueno"]} requireOtp={false}>
               <InvoiceAddLayer />
             </ProtectedRoute>
           }
@@ -261,11 +272,22 @@ const App = () => {
         <Route
           path="/detalle-pedido/:id"
           element={
-            <ProtectedRoute allowedRoles={["admin", "cliente"]}>
+            <ProtectedRoute allowedRoles={["admin", "cliente"]} requireOtp={false}>
               <InvoicePreviewPage />
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/pedidowarehouse"
+          element={
+            <ProtectedRoute allowedRoles={["admin", "dueno"]} requireOtp={false}>
+              <CrearPedidoWarehouse />
+            </ProtectedRoute>
+          }
+        />
+
+
 
         {/* Ruta de fallback para rutas no encontradas */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -429,9 +451,7 @@ const PedidosRouter = () => {
         </div>
       </div>
     );
-  }
-
-  switch (role) {
+  }  switch (role) {
     case "admin":
       return <Pedidos />;
     case "dueno":

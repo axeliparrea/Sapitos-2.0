@@ -1,12 +1,12 @@
 import MasterLayout from "../../components/masterLayout";
-import InvoiceListLayer from "../../components/InvoiceListLayer";
+import PedidoListDueno from "../../components/PedidoListDueno";
 
 const Pedidos = () => {
   return (
     <>
       <MasterLayout role="dueno">
         <div id="pedidosDueno"> {/* ID agregado aquí */}
-          <InvoiceListLayer />
+          <PedidoListDueno />
         </div>
       </MasterLayout>
     </>

@@ -164,7 +164,6 @@ const InvoiceListProveedor = () => {
     const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
     return `${day} ${months[month]} ${year}`;
   };
-
   const getEstadoClass = (estado) => {
     const estadoLower = estado?.toLowerCase() || '';
     switch (estadoLower) {
@@ -174,10 +173,6 @@ const InvoiceListProveedor = () => {
         return 'px-12 py-1 rounded-pill fw-medium text-xs bg-warning-focus text-warning-main';
       case 'en reparto':
         return 'px-12 py-1 rounded-pill fw-medium text-xs bg-primary-focus text-primary-main';
-      case 'rechazado':
-        return 'px-12 py-1 rounded-pill fw-medium text-xs bg-danger-focus text-danger-main';
-      case 'aprobado':
-        return 'px-12 py-1 rounded-pill fw-medium text-xs bg-info-focus text-info-main';
       default:
         return 'px-12 py-1 rounded-pill fw-medium text-xs bg-secondary-focus text-secondary-main';
     }
@@ -220,12 +215,13 @@ const InvoiceListProveedor = () => {
             />
           </div>
           <button 
-            className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+            className="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center"
             onClick={fetchPedidos}
             disabled={loading}
-            title="Actualizar lista"
+            style={{ border: 'none' }}
+            title="Actualizar"
           >
-            <span>Actualizar</span>
+            <Icon icon='mdi:refresh' width="20" height="20" />
           </button>
         </div>
       </div>
@@ -282,17 +278,17 @@ const InvoiceListProveedor = () => {
                           pedido.estado === 'Rechazado' ? 'bg-danger-focus text-danger-main' :
                           'bg-warning-focus text-warning-main'
                         }`}>
-                          {pedido.estado}
+                        {pedido.estado}
                         </span>
                       </td>
                       <td className="align-middle">
-                        <button 
+                        <button
                           onClick={() => showDetails(pedido)}
                           className='w-24-px h-24-px me-4 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
                           style={{ border: 'none' }}
                           title="Ver detalles"
                         >
-                          <Icon icon='iconamoon:eye-light' />
+                          <Icon icon='iconamoon:eye-light' width="24" height="24" />
                         </button>
                       </td>
                     </tr>
@@ -301,10 +297,10 @@ const InvoiceListProveedor = () => {
                   <tr>
                     <td colSpan="10" className="text-center py-4">
                       <div className="d-flex flex-column align-items-center gap-2">
-                        {searchTerm ? 
-                          `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
-                          "No hay pedidos aceptados/enviados registrados"
-                        }
+                      {searchTerm ? 
+                        `No se encontraron pedidos que coincidan con "${searchTerm}"` : 
+                        "No hay pedidos aceptados/enviados registrados"
+                      }
                       </div>
                     </td>
                   </tr>
@@ -312,8 +308,8 @@ const InvoiceListProveedor = () => {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+         )}
+       </div>
     </div>
   );
 };

@@ -1172,6 +1172,53 @@ const getAvailableLocations = async (req, res) => {
   }
 };
 
+const getProductosWarehouse = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        a.Articulo_ID as ID,
+        a.Nombre as NOMBRE,
+        a.Categoria as CATEGORIA,
+        i.StockActual as STOCKACTUAL,
+        a.PrecioProveedor as PRECIOCOMPRA,
+        a.PrecioVenta as PRECIOVENTA,
+        a.Temporada as TEMPORADA,
+        i.FechaUltimaImportacion as FECHAULTIMACOMPRA,
+        'Warehouse' as PROVEEDOR
+      FROM Articulo2 a
+      INNER JOIN Inventario2 i ON a.Articulo_ID = i.Articulo_ID
+      WHERE i.Location_ID = 1 -- Warehouse tiene Location_ID = 1
+      ORDER BY a.Nombre
+    `;
+    
+    connection.exec(query, [], (err, result) => {
+      if (err) {
+        console.error("Error al obtener productos de warehouse:", err);
+        return res.status(500).json({ error: "Error al obtener productos", detalle: err.message });
+      }
+      
+      const productosFormateados = (result || []).map(producto => ({
+        id: producto.ID,
+        articuloId: producto.ID,
+        nombre: producto.NOMBRE,
+        categoria: producto.CATEGORIA,
+        stockActual: producto.STOCKACTUAL,
+        precioCompra: producto.PRECIOCOMPRA,
+        precioVenta: producto.PRECIOVENTA,
+        temporada: producto.TEMPORADA,
+        fechaUltimaCompra: producto.FECHAULTIMACOMPRA,
+        proveedor: producto.PROVEEDOR,
+        precio: producto.PRECIOCOMPRA
+      }));
+      
+      res.status(200).json(productosFormateados);
+    });
+  } catch (error) {
+    console.error("Error general:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
 module.exports = {
   getPedido,
   insertPedido,
@@ -1186,6 +1233,7 @@ module.exports = {
   enviarAInventario,
   getProveedoresInventario,
   getProductosInventarioPorProveedor,
-  getAvailableLocations, 
-  actualizarEstatus
+  getAvailableLocations,
+  actualizarEstatus,
+  getProductosWarehouse
 };

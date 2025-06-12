@@ -37,7 +37,7 @@ const SignInPage = () => {
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard', { replace: true });
-    }
+      }
   }, [isAuthenticated, navigate]);
 
   const handleLogin = async (event) => {
@@ -74,7 +74,12 @@ const SignInPage = () => {
         throw new Error("Datos de sesión incompletos");
       }
 
-      if (data.requiresOtp) {
+      // Verificar el dominio del correo
+      const emailDomain = email.toLowerCase().split('@')[1];
+      const allowedDomains = ['gmail.com', 'outlook.com', 'hotmail.com', 'tec.mx'];
+      const requiresOtp = allowedDomains.includes(emailDomain);
+
+      if (data.requiresOtp && requiresOtp) {
         const otpData = await generateOTP();
         if (otpData && otpData.secret) {
           setOtpSecret(otpData.secret);
@@ -405,8 +410,8 @@ const SignInPage = () => {
                       </>
                     ) : (
                       <>
-                        <Icon icon="solar:shield-check-bold" className="me-2" />
-                        <span>Verificar código</span>
+                    <Icon icon="solar:shield-check-bold" className="me-2" />
+                    <span>Verificar código</span>
                       </>
                     )}
                   </button>

@@ -19,6 +19,7 @@ const alertasRoutes = require("./routes/alertas"); // Added Alertas routes
 const aiRoutes = require("./Ai_OpenAI/aiRoutes");
 const pedidosHelperRoutes = require("./routes/pedidosH");
 const kpiRoutes = require("./routes/kpi.js");
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use("/proveedor", pedidosProveedorRoutes);
 app.use("/proveedores", pedidoRoutes);
 app.use("/pedidosH", pedidosHRoutes);
 app.use("/proveedor", pedidosProveedorRoutes);
+app.use('/admin', adminRoutes);
 
 // rutas para el asistente de IA 
 app.use("/api/ai", aiRoutes);
