@@ -320,7 +320,7 @@ const NotificationsLayer = () => {
           ) : (
             notifications.map(notification => (
               <Alert
-                key={notification.id || Math.random()}
+                key={notification.id || `${Date.now()}-${notification.tipo}-${Math.floor(Math.random() * 1000000)}`}
                 type={notification.tipo}
                 title={notification.titulo}
                 description={notification.descripcion}
