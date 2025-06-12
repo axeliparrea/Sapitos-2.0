@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true, // Para usar describe, test, expect sin importar
-    setupFiles: './src/setupTests.js',},
+    },
   server: {  
     proxy: {
       "/inventory": {
