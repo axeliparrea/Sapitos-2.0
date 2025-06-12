@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Icon } from "@iconify/react";
 
 const UserPerfil = () => {
   const [user, setUser] = useState(null);
@@ -242,7 +243,7 @@ const UserPerfil = () => {
                   title="Cambiar imagen"
                 />
                 <div style={{ position: 'absolute', top: 0, left: 0, width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                  <i className="ri-edit-2-fill" style={{ fontSize: 32, color: '#fff', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', padding: 8 }}></i>
+                  <Icon icon="lucide:edit" style={{ fontSize: 32, color: '#fff', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', padding: 8 }} />
                 </div>
               </>
             )}
