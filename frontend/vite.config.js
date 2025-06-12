@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true, // Para usar describe, test, expect sin importar
+    setupFiles: './src/setupTests.js',},
   server: {  
     proxy: {
       "/inventory": {
@@ -31,5 +35,8 @@ export default defineConfig({
         secure: false,
       }
     },
+    test: {
+    globals: true,         // ✅ Habilita test, expect, describe, etc.
+    environment: 'jsdom', }
   },
 });
