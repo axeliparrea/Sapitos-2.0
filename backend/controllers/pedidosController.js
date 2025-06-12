@@ -92,12 +92,12 @@ const insertPedido = async (req, res) => {
     const userCheckQuery = `SELECT 1 FROM Usuario2 WHERE Usuario_ID = ?`;
     const userResult = await new Promise((resolve, reject) => {
       connection.exec(userCheckQuery, [creadoPorId], (err, result) => {
-        if (err) {
-          console.error("Error al verificar usuario:", err);
-          reject(err);
-        } else {
-          resolve(result);
-        }
+                  if (err) {
+            console.error("Error al verificar usuario:", err);
+            reject(new Error(err.message || "Error al verificar usuario"));
+          } else {
+            resolve(result);
+          }
       });
     });
 
@@ -112,12 +112,12 @@ const insertPedido = async (req, res) => {
     const pagoCheckQuery = `SELECT 1 FROM MetodoPago2 WHERE MetodoPago_ID = ?`;
     const pagoResult = await new Promise((resolve, reject) => {
       connection.exec(pagoCheckQuery, [metodoPagoId], (err, result) => {
-        if (err) {
-          console.error("Error al verificar método de pago:", err);
-          reject(err);
-        } else {
-          resolve(result);
-        }
+                  if (err) {
+            console.error("Error al verificar método de pago:", err);
+            reject(new Error(err.message || "Error al verificar método de pago"));
+          } else {
+            resolve(result);
+          }
       });
     });
 
@@ -146,13 +146,14 @@ const insertPedido = async (req, res) => {
       conn.exec(insertOrdenQuery, 
         [creadoPorId, tipoOrden, organizacion, total, metodoPagoId, descuentoAplicado], 
         (err, result) => {
-          if (err) {
-            console.error("Error al insertar orden:", err);
-            reject(err);
-          } else {            conn.exec("SELECT TOP 1 Orden_ID FROM Ordenes2 ORDER BY Orden_ID DESC", [], (err2, result2) => {
-              if (err2) {
-                console.error("Error al obtener ID de orden:", err2);
-                reject(err2);              } else {
+                      if (err) {
+                console.error("Error al insertar orden:", err);
+                reject(new Error(err.message || "Error al insertar orden"));
+              } else {            conn.exec("SELECT TOP 1 Orden_ID FROM Ordenes2 ORDER BY Orden_ID DESC", [], (err2, result2) => {
+                              if (err2) {
+                  console.error("Error al obtener ID de orden:", err2);
+                  reject(new Error(err2.message || "Error al obtener ID de orden"));
+                } else {
                 const ordenId = result2[0]?.ORDEN_ID;
                 resolve(ordenId);
               }
@@ -171,7 +172,8 @@ const insertPedido = async (req, res) => {
       conn.exec(verificarOrdenQuery, [ordenId], (err, result) => {
         if (err) {
           console.error("Error al verificar la existencia de la orden:", err);
-          reject(err);        } else {
+          reject(new Error(err.message || "Error al verificar la existencia de la orden"));
+        } else {
           resolve(result);
         }
       });
@@ -195,7 +197,7 @@ const insertPedido = async (req, res) => {
           conn.exec(checkArticuloQuery, [producto.articuloId], (err, result) => {
             if (err) {
               console.error(`Error al verificar artículo ${producto.articuloId}:`, err);
-              reject(err);
+              reject(new Error(err.message || `Error al verificar artículo ${producto.articuloId}`));
             } else {
               resolve(result);
             }
@@ -213,7 +215,7 @@ const insertPedido = async (req, res) => {
           conn.exec(getLocationIdQuery, [organizacion], (err, result) => {
             if (err) {
               console.error(`Error al buscar Location_ID para ${organizacion}:`, err);
-              reject(err);
+              reject(new Error(err.message || `Error al buscar Location_ID para ${organizacion}`));
             } else {
               resolve(result);
             }
@@ -237,7 +239,8 @@ const insertPedido = async (req, res) => {
           conn.exec(buscarInventarioQuery, [producto.articuloId, locationId], (err, result) => {
             if (err) {
               console.error(`Error al buscar inventario para producto ${producto.articuloId}:`, err);
-              reject(err);            } else {
+              reject(new Error(err.message || `Error al buscar inventario para producto ${producto.articuloId}`));
+            } else {
               resolve(result);
             }
           });
@@ -262,7 +265,7 @@ const insertPedido = async (req, res) => {
             conn.exec(createInventarioQuery, [producto.articuloId, locationId], (err, result) => {
               if (err) {
                 console.error(`Error al crear inventario para artículo ${producto.articuloId}:`, err);
-                reject(err);
+                reject(new Error(err.message || `Error al crear inventario para artículo ${producto.articuloId}`));
               } else {
                 resolve(result);
               }
@@ -273,7 +276,7 @@ const insertPedido = async (req, res) => {
             conn.exec("SELECT TOP 1 Inventario_ID FROM Inventario2 ORDER BY Inventario_ID DESC", [], (err, result) => {
               if (err) {
                 console.error("Error al obtener ID del nuevo inventario:", err);
-                reject(err);
+                reject(new Error(err.message || "Error al obtener ID del nuevo inventario"));
               } else {
                 resolve(result);
               }
@@ -299,7 +302,8 @@ const insertPedido = async (req, res) => {
             (err, result) => {
               if (err) {
                 console.error(`Error al insertar producto ${producto.articuloId}:`, err);
-                reject(err);              } else {
+                reject(new Error(err.message || `Error al insertar producto ${producto.articuloId}`));
+              } else {
                 productosInsertados++;
                 resolve(result);
               }
@@ -341,7 +345,7 @@ const insertPedido = async (req, res) => {
         conn.exec(getUserQuery, [creadoPorId], (err, result) => {
           if (err) {
             console.error("Error al obtener usuario:", err);
-            reject(err);
+            reject(new Error(err.message || "Error al obtener usuario"));
           } else {
             resolve(result);
           }
@@ -395,7 +399,7 @@ const deletePedido = async (req, res) => {
     // Verificar que el pedido existe
     const pedidoResult = await new Promise((resolve, reject) => {
       connection.exec('SELECT Orden_ID FROM Ordenes2 WHERE Orden_ID = ?', [id], (err, result) => {
-        if (err) reject(err);
+        if (err) reject(new Error(err.message || "Error al verificar el pedido"));
         else resolve(result);
       });
     });
@@ -407,7 +411,7 @@ const deletePedido = async (req, res) => {
     // Primero eliminar los productos asociados
     await new Promise((resolve, reject) => {
       connection.exec('DELETE FROM OrdenesProductos2 WHERE Orden_ID = ?', [id], (err, result) => {
-        if (err) reject(err);
+        if (err) reject(new Error(err.message || "Error al eliminar productos asociados"));
         else resolve(result);
       });
     });
@@ -415,7 +419,7 @@ const deletePedido = async (req, res) => {
     // Luego eliminar el pedido
     await new Promise((resolve, reject) => {
       connection.exec('DELETE FROM Ordenes2 WHERE Orden_ID = ?', [id], (err, result) => {
-        if (err) reject(err);
+        if (err) reject(new Error(err.message || "Error al eliminar el pedido"));
         else resolve(result);
       });
     });
@@ -574,7 +578,7 @@ const aprobarPedido = async (req, res) => {
       connection.exec(checkOrderQuery, [id], (err, result) => {
         if (err) {
           console.error("Error al verificar pedido:", err);
-          reject(err);
+          reject(new Error(err.message || "Error al verificar pedido"));
           return;
         }
         resolve(result);
@@ -605,12 +609,12 @@ const aprobarPedido = async (req, res) => {
           id
         ], 
         (err, result) => {
-          if (err) {
-            console.error("Error al aprobar pedido:", err);
-            reject(err);
-            return;
-          }
-          resolve(result);
+                      if (err) {
+              console.error("Error al aprobar pedido:", err);
+              reject(new Error(err.message || "Error al aprobar pedido"));
+              return;
+            }
+            resolve(result);
         }
       );
     });
@@ -629,7 +633,7 @@ const aprobarPedido = async (req, res) => {
         connection.exec(getPedidoQuery, [id], (err, result) => {
           if (err) {
             console.error("Error al obtener info del pedido:", err);
-            reject(err);
+            reject(new Error(err.message || "Error al obtener info del pedido"));
           } else {
             resolve(result[0]);
           }
@@ -674,7 +678,7 @@ const entregarPedido = async (req, res) => {
       connection.exec(checkOrderQuery, [id], (err, result) => {
         if (err) {
           console.error("Error al verificar pedido:", err);
-          reject(err);
+          reject(new Error(err.message || "Error al verificar pedido"));
           return;
         }
         resolve(result);
@@ -721,12 +725,12 @@ const entregarPedido = async (req, res) => {
           id
         ], 
         (err, result) => {
-          if (err) {
-            console.error("Error al completar pedido:", err);
-            reject(err);
-            return;
-          }
-          resolve(result);
+                      if (err) {
+              console.error("Error al completar pedido:", err);
+              reject(new Error(err.message || "Error al completar pedido"));
+              return;
+            }
+            resolve(result);
         }
       );
     });
@@ -745,7 +749,7 @@ const entregarPedido = async (req, res) => {
         connection.exec(getPedidoQuery, [id], (err, result) => {
           if (err) {
             console.error("Error al obtener info del pedido:", err);
-            reject(err);
+            reject(new Error(err.message || "Error al obtener info del pedido"));
           } else {
             resolve(result[0]);
           }
@@ -799,7 +803,7 @@ const actualizarEstatus = async (req, res) => {
     // Verificar que el pedido existe
     const pedidoResult = await new Promise((resolve, reject) => {
       connection.exec(`SELECT Estado FROM Ordenes2 WHERE Orden_ID = ?`, [id], (err, result) => {
-        if (err) reject(err);
+        if (err) reject(new Error(err.message || "Error al verificar el pedido"));
         else resolve(result);
       });
     });
@@ -814,7 +818,7 @@ const actualizarEstatus = async (req, res) => {
       connection.exec(`
         UPDATE Ordenes2 SET Estado = ? WHERE Orden_ID = ?
       `, [estatus, id], (err, result) => {
-        if (err) reject(err);
+        if (err) reject(new Error(err.message || "Error al actualizar estatus"));
         else resolve(result);
       });
     });
@@ -919,7 +923,7 @@ const enviarAInventario = async (req, res) => {
     const mainWarehouseQuery = `SELECT TOP 1 Location_ID, Nombre FROM Location2 WHERE Tipo = 'Oficina'`;
     const mainWarehouseResult = await new Promise((resolve, reject) => {
       connection.exec(mainWarehouseQuery, [], (err, result) => {
-        if (err) reject(err);
+        if (err) reject(new Error(err.message || "Error al obtener almacén principal"));
         else resolve(result);
       });
     });
@@ -931,7 +935,7 @@ const enviarAInventario = async (req, res) => {
 
     const pedidoResult = await new Promise((resolve, reject) => {
       connection.exec(`SELECT Estado FROM Ordenes2 WHERE Orden_ID = ?`, [id], (err, result) => {
-        if (err) reject(err);
+        if (err) reject(new Error(err.message || "Error al obtener estado del pedido"));
         else resolve(result);
       });
     });
@@ -955,7 +959,7 @@ const enviarAInventario = async (req, res) => {
       connection.exec(checkOrderProductsQuery, [id], (err, result) => {
         if (err) {
           console.error("Error al verificar productos del pedido:", err);
-          reject(err);
+          reject(new Error(err.message || "Error al verificar productos del pedido"));
         } else {
           const count = result[0]?.COUNT || result[0]?.count || 0;
           console.log(`Pedido ${id} tiene ${count} productos en OrdenesProductos2`);
@@ -977,7 +981,7 @@ const enviarAInventario = async (req, res) => {
       `, [id], (err, result) => {
         if (err) {
           console.error("Error al obtener artículos del pedido:", err);
-          reject(err);
+          reject(new Error(err.message || "Error al obtener artículos del pedido"));
         } else {
           console.log(`Artículos encontrados para el pedido ${id}:`, result);
           resolve(result);
@@ -992,16 +996,11 @@ const enviarAInventario = async (req, res) => {
 
       const inventarioExistenteResult = await new Promise((resolve, reject) => {
         connection.exec(`
-          SELECT Inventario_ID 
-          FROM Inventario2 
-          WHERE Articulo_ID = ? AND Location_ID = ? AND FechaUltimaImportacion = CURRENT_DATE
+          SELECT Inventario_ID, StockActual FROM Inventario2 
+          WHERE Articulo_ID = ? AND Location_ID = ?
         `, [articuloId, mainWarehouseLocationId], (err, result) => {
-          if (err) {
-            console.error(`Error al verificar inventario existente para Articulo_ID ${articuloId}:`, err);
-            reject(err);
-          } else {
-            resolve(result);
-          }
+          if (err) reject(new Error(err.message || "Error al verificar inventario existente"));
+          else resolve(result);
         });
       });
 
@@ -1036,7 +1035,7 @@ const enviarAInventario = async (req, res) => {
       `, [id], (err, result) => {
         if (err) {
           console.error("Error al buscar productos del pedido:", err);
-          reject(err);
+          reject(new Error(err.message || "Error al buscar productos del pedido"));
         } else {
           console.log("Productos encontrados para pedido", id, ":", result);
           resolve(result);
@@ -1064,7 +1063,7 @@ const enviarAInventario = async (req, res) => {
           SELECT Inventario_ID, StockActual FROM Inventario2 
           WHERE Articulo_ID = ? AND Location_ID = ?
         `, [articuloId, mainWarehouseLocationId], (err, result) => {
-          if (err) reject(err);
+          if (err) reject(new Error(err.message || "Error al verificar inventario existente"));
           else resolve(result);
         });
       });
@@ -1082,7 +1081,7 @@ const enviarAInventario = async (req, res) => {
           `, [cantidad, cantidad, inventarioExistente.INVENTARIO_ID], (err, result) => {
             if (err) {
               console.error("Error al actualizar inventario:", err);
-              reject(err);
+              reject(new Error(err.message || "Error al actualizar inventario"));
             } else {
               resolve(result);
             }
@@ -1104,7 +1103,7 @@ const enviarAInventario = async (req, res) => {
           `, [articuloId, mainWarehouseLocationId, cantidad, cantidad], (err, result) => {
             if (err) {
               console.error("Error al insertar nuevo inventario:", err);
-              reject(err);
+              reject(new Error(err.message || "Error al insertar nuevo inventario"));
             } else {
               resolve(result);
             }
