@@ -70,11 +70,10 @@ const getModelUpdateLogs = async (req, res) => {
                 message: 'No se encontraron logs de actualización'
             });
         }
-        
-        // Get all log files
+          // Get all log files
         const files = fs.readdirSync(logsDir)
             .filter(file => file.startsWith('weekly_stock_update_'))
-            .sort()
+            .sort((a, b) => a.localeCompare(b))
             .reverse();
             
         if (files.length === 0) {
@@ -193,11 +192,10 @@ const getModelStatus = async (req, res) => {
         } else {
             // If status file doesn't exist, check logs to determine if model is running
             const logsDir = path.join(__dirname, '..', '..', 'mlops', 'logs');
-            
-            if (fs.existsSync(logsDir)) {
+              if (fs.existsSync(logsDir)) {
                 const files = fs.readdirSync(logsDir)
                     .filter(file => file.startsWith('weekly_stock_update_'))
-                    .sort()
+                    .sort((a, b) => a.localeCompare(b))
                     .reverse();
                 
                 if (files.length > 0) {

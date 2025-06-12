@@ -7,6 +7,16 @@
 const logger = require('../utils/logger');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+
+/**
+ * Generate a cryptographically secure random number between 0 and 1
+ * @returns {number} A secure random number between 0 and 1
+ */
+const secureRandom = () => {
+    const buffer = crypto.randomBytes(4);
+    return buffer.readUInt32BE(0) / 0xFFFFFFFF;
+};
 
 /**
  * Run a mock model update
@@ -180,9 +190,14 @@ const toggleModelStatus = async (req, res) => {
 const getModelMetrics = async (req, res) => {
     try {
         // Generate mock metrics for past 7 days
+        // Note: Using crypto for secure random generation for mock data
         const metrics = Array.from({ length: 7 }).map((_, idx) => {
             const date = new Date(Date.now() - idx * 24 * 60 * 60 * 1000);
-            return { date: date.toISOString(), mape: parseFloat((Math.random() * 10 + 5).toFixed(2)) };
+            // Generate realistic MAPE values between 5-15% with some variance
+            const baseMape = 8.5; // Realistic base MAPE for inventory forecasting
+            const variance = (secureRandom() - 0.5) * 6; // ±3% variance
+            const mape = Math.max(5, Math.min(15, baseMape + variance)); // Clamp between 5-15%
+            return { date: date.toISOString(), mape: parseFloat(mape.toFixed(2)) };
         }).reverse();
         return res.status(200).json({ success: true, metrics });
     } catch (error) {
