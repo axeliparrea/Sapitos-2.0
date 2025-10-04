@@ -674,8 +674,8 @@ const getUserById = async (id) => {
   return new Promise((resolve, reject) => {
     const query = `
       SELECT u.*, r.NOMBRE as ROLNOMBRE
-      FROM USUARIO u
-      LEFT JOIN ROL r ON u.ROL_ID = r.ROL_ID
+      FROM USUARIO2 u
+      LEFT JOIN ROL2 r ON u.ROL_ID = r.ROL_ID
       WHERE u.USUARIO_ID = ?
     `;
     

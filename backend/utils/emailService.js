@@ -6,15 +6,24 @@ const createProductionTransporter = async () => {
     const emailUser = process.env.EMAIL_USER;
     const emailPass = process.env.EMAIL_PASSWORD;
     
-    // Create transporter using environment variables
+    console.log('Email configuration:');
+    console.log(`- Host: ${process.env.EMAIL_HOST}`);
+    console.log(`- Port: ${process.env.EMAIL_PORT}`);
+    console.log(`- User: ${emailUser}`);
+    console.log('- Password: [hidden]');
+      // Create transporter using environment variables
     return nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT, 10),
-      secure: false, // true para 465, false para otros puertos
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT, 10) || 587,
+      secure: false, // Use TLS with port 587 for Gmail
       auth: {
         user: emailUser,
         pass: emailPass
-      }
+      },
+      tls: {
+        rejectUnauthorized: false // Accept self-signed certificates if necessary
+      },
+      debug: true // Enable debugging
     });
   } catch (error) {
     console.error('Error creating email transporter:', error);
